@@ -384,13 +384,13 @@
         <button id="themeToggle" class="theme-toggle" title="Temayı değiştir">🌙 Koyu</button>
         <button id="focusBtn" class="theme-toggle" title="Odak modu" style="display:none">🎯 Odak</button>
 
-        <div class="group">
+        <div class="group" id="studyGroup" style="display:none">
           <button id="toggleStudyBtn" class="primary">Çalışmaya Başla</button>
           <span id="myStatusPill" class="pill idle">Boşta</span>
           <span id="myAnim" class="anim-eq" style="display:none"><i></i><i></i><i></i></span>
         </div>
 
-        <div class="group">
+        <div class="group" id="presenceGroup" style="display:none">
           <span class="tag"><span class="status-dot dot-off" id="presenceDot"></span> <span id="presenceText">çevrimdışı</span></span>
         </div>
 
@@ -639,6 +639,8 @@
     };
     Object.assign(els, {
       focusBtn: document.getElementById("focusBtn"),
+      studyGroup: document.getElementById("studyGroup"),
+      presenceGroup: document.getElementById("presenceGroup"),
       focusView: document.getElementById("focusView"),
       focusTime: document.getElementById("focusTime"),
       focusStatus: document.getElementById("focusStatus"),
@@ -751,6 +753,8 @@
         els.authView.style.display = "none";
         els.appView.style.display = "block";
         if (els.focusBtn) els.focusBtn.style.display = "";
+        if (els.studyGroup) els.studyGroup.style.display = "";
+        if (els.presenceGroup) els.presenceGroup.style.display = "";
         renderAuthChip(user);
         installPresence(user.uid);
 
@@ -778,6 +782,8 @@
         els.appView.style.display = "none";
         els.authArea.innerHTML = "";
         if (els.focusBtn) els.focusBtn.style.display = "none";
+        if (els.studyGroup) els.studyGroup.style.display = "none";
+        if (els.presenceGroup) els.presenceGroup.style.display = "none";
         if (els.focusView) { els.focusView.classList.remove("open"); document.body.style.overflow = ""; }
       }
     });
@@ -787,11 +793,11 @@
       onValue(ref(db, "users"), usersSnap => {
         latestUsers = usersSnap.val() || {};
         draw();
-      });
+      }, err => console.error("users read failed — check Realtime Database rules:", err && err.message));
       onValue(ref(db, "presence"), presenceSnap => {
         latestPresence = presenceSnap.val() || {};
         draw();
-      });
+      }, err => console.error("presence read failed — check Realtime Database rules:", err && err.message));
       attachChat();
     }
 
