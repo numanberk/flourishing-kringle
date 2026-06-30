@@ -325,10 +325,7 @@
     #birthdayView .photo-cap{ font-size:.95rem; color:#444; margin-top:5px; }
     #birthdayView .photo-meta{ font-size:.8rem; color:#a4677d; margin-top:3px; }
     #birthdayView .item-del{ position:absolute; top:8px; right:8px; border:none; cursor:pointer; background:rgba(0,0,0,.45); color:#fff; width:28px; height:28px; border-radius:50%; font-size:14px; line-height:28px; padding:0; display:none; }
-    #birthdayView .photo-card:hover .item-del,
-    #birthdayView .note-card:hover .item-del{ display:block; }
-    /* notes feed */
-    #birthdayView .notes-wrap{ max-width:700px; margin:26px auto 0; text-align:left; }
+    #birthdayView .photo-card:hover .item-del{ display:block; }
 
     /* collapsible love letter */
     #birthdayView .letter-fold{ max-width:700px; margin:0 auto; }
@@ -345,20 +342,32 @@
     #birthdayView .letter-fold[open] .letter-arrow{ transform:rotate(90deg); }
     #birthdayView .letter-fold[open] .letter-summary{ border-bottom-left-radius:0; border-bottom-right-radius:0; }
     #birthdayView .letter-fold .letter{ margin-top:0; border-top-left-radius:0; border-top-right-radius:0; }
-    #birthdayView .notes-title{ font-family:'Great Vibes', cursive; font-size:1.9rem; color:crimson; text-align:center; margin:0 0 12px; }
-    #birthdayView .note-card{ position:relative; background:#fff; border:1px solid #ffe0e8; border-left:4px solid crimson; border-radius:12px; padding:14px 16px; margin:0 0 12px; box-shadow:0 3px 10px rgba(0,0,0,.06); }
-    #birthdayView .note-text{ font-size:1.05rem; line-height:1.55; color:#333; white-space:pre-wrap; word-wrap:break-word; }
-    #birthdayView .note-meta{ font-size:.8rem; color:#a4677d; margin-top:8px; }
-    /* notes grouped by year, accordion-style */
-    #birthdayView .year-folder{ margin-bottom:14px; }
-    #birthdayView .year-head{ display:flex; align-items:center; gap:10px; width:100%; text-align:left; background:#fff; border:1px solid #ffd0dc; border-radius:12px; padding:12px 16px; cursor:pointer; font-family:inherit; }
-    #birthdayView .year-head:hover{ background:#fff5f8; }
-    #birthdayView .year-head .year-num{ font-family:'Great Vibes', cursive; font-size:1.6rem; color:crimson; }
-    #birthdayView .year-head .year-count{ font-size:.85rem; color:#a4677d; margin-left:auto; }
-    #birthdayView .year-head .year-arrow{ font-size:.8rem; color:#c98aa0; transition:transform .2s; }
-    #birthdayView .year-folder.open .year-arrow{ transform:rotate(90deg); }
-    #birthdayView .year-body{ display:none; padding:12px 4px 0; }
-    #birthdayView .year-folder.open .year-body{ display:block; }
+
+    /* hidden A4 easter egg */
+    #a4Secret{ position:fixed; right:14px; bottom:14px; z-index:25; text-decoration:none; font-size:22px; opacity:.16; transition:opacity .25s, transform .25s; }
+    #a4Secret:hover{ opacity:1; transform:scale(1.25) rotate(-8deg); }
+
+    /* birthday polish */
+    #birthdayView section.active{ animation:bdayFade .5s ease both; }
+    @keyframes bdayFade{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:none; } }
+    #birthdayView nav{ backdrop-filter:blur(8px); background-color:rgba(255,255,255,.82); }
+    #birthdayView h1{ text-shadow:0 2px 12px rgba(220,20,60,.12); }
+
+    /* ===== Study app: focus mode + chat ===== */
+    #focusView{ position:fixed; inset:0; z-index:8000; display:none; background:var(--bg); align-items:center; justify-content:center; }
+    #focusView.open{ display:flex; }
+    #focusView .focus-inner{ text-align:center; padding:24px; }
+    #focusView .focus-label{ color:var(--muted); font-size:.95rem; letter-spacing:.14em; text-transform:uppercase; }
+    #focusView .focus-time{ font-size:clamp(3rem,15vw,7.5rem); font-weight:800; color:var(--text); font-variant-numeric:tabular-nums; line-height:1.05; margin:10px 0; }
+    #focusView .focus-status{ color:var(--acc); font-weight:700; font-size:1.15rem; margin-bottom:24px; }
+    #focusView .focus-toggle{ font-size:1.05rem; padding:14px 30px; }
+    #focusView .focus-exit{ position:fixed; top:16px; right:16px; }
+    .chat-messages{ max-height:280px; min-height:120px; overflow-y:auto; display:flex; flex-direction:column; gap:8px; padding-right:4px; }
+    .chat-msg{ background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:8px 10px; }
+    .chat-msg .who{ font-size:.78rem; color:var(--acc); font-weight:700; margin-bottom:2px; display:flex; justify-content:space-between; gap:10px; }
+    .chat-msg .who .when{ color:var(--muted); font-weight:400; }
+    .chat-msg .body{ font-size:.92rem; color:var(--text); white-space:pre-wrap; word-wrap:break-word; }
+    .chat-empty{ color:var(--muted); font-size:.9rem; padding:8px 0; }
 
     @media (prefers-reduced-motion: reduce){
       #pinModal.open, .pin-card, .pin-shake,
@@ -369,19 +378,20 @@
 <body>
   <div class="container">
     <header>
-      <div class="title"><span class="dot"></span> Study Buddies</div>
+      <div class="title"><span class="dot"></span> Çalışma Odası</div>
 
       <div class="controls" id="topRight">
-        <button id="themeToggle" class="theme-toggle" title="Toggle theme">🌙 Dark</button>
+        <button id="themeToggle" class="theme-toggle" title="Temayı değiştir">🌙 Koyu</button>
+        <button id="focusBtn" class="theme-toggle" title="Odak modu" style="display:none">🎯 Odak</button>
 
         <div class="group">
-          <button id="toggleStudyBtn" class="primary">Start Studying</button>
-          <span id="myStatusPill" class="pill idle">Idle</span>
+          <button id="toggleStudyBtn" class="primary">Çalışmaya Başla</button>
+          <span id="myStatusPill" class="pill idle">Boşta</span>
           <span id="myAnim" class="anim-eq" style="display:none"><i></i><i></i><i></i></span>
         </div>
 
         <div class="group">
-          <span class="tag"><span class="status-dot dot-off" id="presenceDot"></span> <span id="presenceText">offline</span></span>
+          <span class="tag"><span class="status-dot dot-off" id="presenceDot"></span> <span id="presenceText">çevrimdışı</span></span>
         </div>
 
         <div class="group" id="collabWrap"></div>
@@ -392,67 +402,87 @@
 
     <div id="authView" class="grid">
       <div class="col-6 card">
-        <h3 style="color:var(--acc);margin-top:0;">Login</h3>
+        <h3 style="color:var(--acc);margin-top:0;">Giriş</h3>
         <div class="row">
-          <input id="loginEmail" placeholder="Email"/>
-          <input id="loginPassword" type="password" placeholder="Password"/>
-          <button class="primary" id="loginBtn">Login</button>
+          <input id="loginEmail" placeholder="E-posta"/>
+          <input id="loginPassword" type="password" placeholder="Şifre"/>
+          <button class="primary" id="loginBtn">Giriş Yap</button>
         </div>
-        <div class="muted">No account? Create one in the sign-up card →</div>
+        <div class="muted">Hesabın yok mu? Sağdaki karttan oluştur →</div>
       </div>
       <div class="col-6 card">
-        <h3 style="color:var(--acc);margin-top:0;">Sign Up</h3>
+        <h3 style="color:var(--acc);margin-top:0;">Kayıt Ol</h3>
         <div class="row">
-          <input id="signupName" placeholder="Display name (e.g., Numan)"/>
-          <input id="signupEmail" placeholder="Email"/>
-          <input id="signupPassword" type="password" placeholder="Password (min 6 chars)"/>
-          <button class="primary" id="signupBtn">Create Account</button>
+          <input id="signupName" placeholder="Görünen ad (örn. Numan)"/>
+          <input id="signupEmail" placeholder="E-posta"/>
+          <input id="signupPassword" type="password" placeholder="Şifre (en az 6 karakter)"/>
+          <button class="primary" id="signupBtn">Hesap Oluştur</button>
         </div>
-        <div class="muted">Your name is shown to others globally.</div>
+        <div class="muted">Adın herkese görünür.</div>
       </div>
     </div>
 
     <div id="appView" style="display:none;">
       <div class="grid">
-        <!-- LEFT: People + BIG video -->
+        <!-- SOL: Kişiler + büyük video -->
         <div class="col-8">
           <div class="card">
-            <h3 style="margin-top:0;color:var(--acc)">People (Global)</h3>
+            <h3 style="margin-top:0;color:var(--acc)">Kişiler</h3>
             <div id="usersList" class="user-list"></div>
           </div>
 
           <div class="card video-card" id="collabVideoCard" style="margin-top:16px;">
-            <h3 style="margin-top:0;color:var(--acc)">Focus Video</h3>
+            <h3 style="margin-top:0;color:var(--acc)">Odak Videosu</h3>
             <div class="video-wrap">
-              <!-- Netlify-hosted MP4s in /videos/ -->
               <video id="collabVideo" playsinline muted loop preload="metadata" poster="/videos/poster.jpg"
                      data-src-numan-solo="/videos/numan-solo.mp4"
                      data-src-others-solo="/videos/others-solo.mp4"
                      data-src-collab="/videos/collab.mp4"></video>
               <div class="video-overlay" id="videoOverlay">
-                <button id="overlayPlay">Tap to Play</button>
+                <button id="overlayPlay">Oynatmak için dokun</button>
               </div>
             </div>
             <div class="video-controls">
-              <button id="videoPlayPause">Pause</button>
-              <button id="videoMuteUnmute">Unmute</button>
+              <button id="videoPlayPause">Durdur</button>
+              <button id="videoMuteUnmute">Sesi Aç</button>
             </div>
             <div class="muted small">
-              • Videos are served from <code>/videos/</code>. Replace with your own MP4s.  
-              • Autoplay-friendly (muted, inline) and loop by default.
+              • Videolar <code>/videos/</code> klasöründen gelir; kendi MP4'lerinle değiştirebilirsin.
+              • Sessiz, satır içi ve döngüde, otomatik oynatmaya uygun.
             </div>
           </div>
         </div>
 
-        <!-- RIGHT: Leaderboard -->
+        <!-- SAĞ: Sıralama + Sohbet -->
         <div class="col-4">
           <div class="card">
-            <h3 style="margin-top:0;color:var(--acc)">Leaderboard (Today)</h3>
+            <h3 style="margin-top:0;color:var(--acc)">Günün Sıralaması</h3>
             <ul id="leaderboard" class="leaderboard" style="list-style:none;padding-left:0;margin:0;"></ul>
           </div>
-          <div class="footer">Tip: keep the tab open while studying for live timers ⏱️</div>
+
+          <div class="card" id="chatCard" style="margin-top:16px;">
+            <h3 style="margin-top:0;color:var(--acc)">Sohbet</h3>
+            <div id="chatMessages" class="chat-messages"></div>
+            <div class="row" style="margin-top:10px;gap:8px;">
+              <input id="chatInput" placeholder="Mesaj yaz..." maxlength="500"/>
+              <button class="primary" id="chatSend">Gönder</button>
+            </div>
+          </div>
+
+          <div class="footer">İpucu: canlı sayaç için çalışırken sekmeyi açık tut ⏱️</div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ============ FOCUS MODE (distraction-free timer) ============ -->
+  <div id="focusView">
+    <button id="focusExitBtn" class="theme-toggle focus-exit">✕ Çık</button>
+    <div class="focus-inner">
+      <div class="focus-label">Bugünkü çalışma</div>
+      <div id="focusTime" class="focus-time">00:00:00</div>
+      <div id="focusStatus" class="focus-status">Boşta</div>
+      <button id="focusToggleBtn" class="primary focus-toggle">Çalışmaya Başla</button>
     </div>
   </div>
 
@@ -476,18 +506,18 @@
     <button id="birthdayBack">← Zamanlayıcıya dön</button>
     <div class="audio-control" id="bdayAudio"></div>
 
+    <a id="a4Secret" href="https://www.youtube.com/watch?v=E1rI9Vhp0PQ" target="_blank" rel="noopener" aria-label="?">🎁</a>
+
     <nav>
       <button onclick="showBirthdaySection('giris')">Giriş</button>
       <button onclick="showBirthdaySection('fotograflar')">Albümümüz</button>
-      <button onclick="showBirthdaySection('mektup')">Bir Küçük Not</button>
-      <button onclick="showBirthdaySection('hikaye')">Dün, Bugün, Yarın</button>
-      <button onclick="showBirthdaySection('surpriz')">A4</button>
+      <button onclick="showBirthdaySection('mektup')">Bizi konuşmak istiyorum</button>
     </nav>
 
     <section id="giris" class="active">
-      <h1>Doğum Günün Kutlu Olsun Canımın İçi 💖</h1>
-      <img id="bdayIntroImg" src="https://i.pinimg.com/736x/9e/1e/ba/9e1eba2ead22c08f09bef55effa3d3b4.jpg" alt="Aşkım 💖" style="max-width:300px;border-radius:15px;margin-top:20px;box-shadow:0 4px 6px rgba(0,0,0,0.2);">
-      <p style="margin-top:20px;">İyi ki doğdun kovalamalara doyamadığım ateş böceğim 🌟</p>
+      <h1>Hoşgeldin doğum günü kızı 💖</h1>
+      <img id="bdayIntroImg" src="https://i.pinimg.com/736x/9e/1e/ba/9e1eba2ead22c08f09bef55effa3d3b4.jpg" alt="Aşkım 💖" style="max-width:300px;border-radius:18px;margin-top:24px;box-shadow:0 10px 30px rgba(220,20,60,.18);">
+      <p style="margin-top:22px;font-size:1.15rem;color:#7a4a57;">iyi doğdun canımın en içi</p>
     </section>
 
     <section id="fotograflar">
@@ -504,9 +534,10 @@
     </section>
 
     <section id="mektup">
-      <h2>Bir Küçük Not</h2>
-      <details class="letter-fold" id="letterFold">
-        <summary class="letter-summary"><span class="letter-arrow">▶</span> 💌 Mektubumu oku</summary>
+      <h2>Bizi konuşmak istiyorum</h2>
+
+      <details class="letter-fold" id="conv2025">
+        <summary class="letter-summary"><span class="letter-arrow">▶</span> 2025 konuşması</summary>
         <div class="letter">
           <p>Sevgili dexterva,</p>
           <p>Öncelikle, iyi ki varsın ve iyi ki doğdun canımın içi. Bir geleneğin başlangıcı olmasını umduğum bu doğum günü sayfası asla unutmak istemediğim ve unutmayı göze alamıyacağım en değerlimi saklıcağım o kasa olsun istedim. hayatıma etkisi bakımından kıyaslandığında en bomba doğum günüm(evet ilk doğum günümü bile alır) bizim doğum günümüz, en mutlu günüm oldu. Bencilce mi bilmem ama senin bu doğum gününü de bize mal etmek istedim. O yüzden bu günü de 03.06 da yaktığımız o ateşi ölmüsüz hale getirdiğimiz gün ilan ediyorum. Seninle birlikte oluşturduğumuz anıları, birbirimize söylediklerimizi, hissettiklerimizi biriktirebileceğimiz bize özel bir yer fikri... Bana dünya üstündeki her şeyden daha kıymetli geldi. Oluşturulma vizyonunu aradan çıkardığımıza göre doğum günü kızıyla ilgili de bir kaç kelam etmek isterim. Segili Bitanem, ben biz olana kadar söylemeye can attığım bu hitaplar artık beni korkutuyor. Bir gün monoton olcak da her zamanki gibi hissetiricek diye. Şunu bilmeni isterim ki ne zaman canımın içi, ne zaman aşkım, ne zaman bitanem dersem onu tüm kalbimde hissederek, son hecesini uzatarak, bağıra bağıra söylüyor olucam ve yine her duyduğumda ilk defa duymuş gibi havalara uçucağım. Ayrıca yaptığım her şeyin keyfini sonsuza katladığın ve sadece aklımdan çıkmayarak beni dünyanın en mutlu insanı yaptığın için teşekkür ederim. Kafamı herhangi bir anda meşgul eden herhangi bir şeyin ne kadar önemsiz olduğunu, uğruna pişman oluncak tek şeyin birlikte geçiremediğimiz zamanlar olduğunu gösterdin bana. İnşallah senin yan koltukta uyuyabilir olduğun o yolculuklara çıkar, bulduğumuz güzel manzaraya karşı açıp istediğimiz cdmizi(recep ivedik) izlediğimiz, kimseciklerin bizi tanımadığı, napıyor bunlar demediği, her gün istediğimiz yapabilecek kadar özgür olduğumuz günlerde buluşuruz. Tekrardan tüm kalbimle iyi ki doğdun iyikim. 💖</p>
@@ -514,49 +545,20 @@
         </div>
       </details>
 
-      <div class="notes-wrap">
-        <h3 class="notes-title">Notlar 💌</h3>
-        <div id="noteComposer" class="bday-uploader" style="display:none;">
-          <textarea id="noteText" class="bday-input" rows="3" placeholder="dexterva'ya yeni bir not yaz..." maxlength="1000"></textarea>
-          <input type="number" id="noteYear" class="bday-input" style="flex:0 0 110px;" min="2020" max="2099" placeholder="Yıl">
-          <button type="button" id="noteAddBtn" class="bday-btn">💌 Not ekle</button>
+      <details class="letter-fold" id="conv2026">
+        <summary class="letter-summary"><span class="letter-arrow">▶</span> 2026 konuşması</summary>
+        <div class="letter">
+          <p style="text-align:center;color:#a4677d;">2026 konuşmamız henüz yazılmadı 💗<br>yakında buraya eklenecek.</p>
         </div>
-        <div id="noteHint" class="bday-hint"></div>
-        <div id="notesYears"></div>
-        <div id="notesEmpty" class="bday-empty">Henüz not yok 💗</div>
-      </div>
+      </details>
     </section>
 
-    <section id="hikaye">
-      <h2>Dün, Bugün, Yarın</h2>
-      <div class="timeline">
-        <ul>
-          <li>18 Şubat 2025 — geçen hafta tesadüf eseri ilk hipnoz şeysini gördüm bu hafta da bakıyım dedim de bunun bu kadar iyi olduğunu niye söylemediniz</li>
-          <li>25 Mart 2025 — birlikte japonyaya gitmeyi okeyledin 😏</li>
-          <li>10 Nisan 2025 — dünyanın en iyi 10€ harcayışı ve ilk meetimiz</li>
-          <li>30 Nisan 2025 — kg bitenzi ama hemeen ardından dexterva doğdu</li>
-          <li>1 Mayıs 2025 — Artık saatlerce aralıksız konuşuyoruz</li>
-          <li>21 Mayıs 2025 — Gs fb ayağına ilk kalbimizi aldık</li>
-          <li>3 Haziran 2025 — doğduk</li>
-          <li>8 Haziran 2025 — uludağ üniversitesi date</li>
-          <li>19 Haziran 2025 — sabiha gökçen date</li>
-          <li>26 Haziran 2025 — roblox date</li>
-          <li>1 Temmuz 2025 — iyi ki doğdun canımın içi</li>
-          <li>Yarın — ...</li>
-        </ul>
-      </div>
-    </section>
-
-    <section id="surpriz">
-      <h2>A4 🎁</h2>
-      <p class="surprise"><a href="https://www.youtube.com/watch?v=E1rI9Vhp0PQ" target="_blank" rel="noopener" style="color:darkmagenta;font-weight:700;text-decoration:none;">🎁 Sürprizini aç</a></p>
-    </section>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
-    import { getDatabase, ref, update, get, onValue, onDisconnect } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+    import { getDatabase, ref, update, get, onValue, onDisconnect, push, query, limitToLast } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
     /* ======= Firebase ======= */
     const firebaseConfig = {
@@ -635,6 +637,17 @@
       videoOverlay: document.getElementById("videoOverlay"),
       overlayPlay: document.getElementById("overlayPlay")
     };
+    Object.assign(els, {
+      focusBtn: document.getElementById("focusBtn"),
+      focusView: document.getElementById("focusView"),
+      focusTime: document.getElementById("focusTime"),
+      focusStatus: document.getElementById("focusStatus"),
+      focusToggleBtn: document.getElementById("focusToggleBtn"),
+      focusExitBtn: document.getElementById("focusExitBtn"),
+      chatMessages: document.getElementById("chatMessages"),
+      chatInput: document.getElementById("chatInput"),
+      chatSend: document.getElementById("chatSend")
+    });
 
     /* ---------------- THEME: init + toggle (persist) ---------------- */
     const THEME_KEY = "sb_theme";
@@ -642,12 +655,12 @@
       const root = document.documentElement;
       if(theme === "dark"){
         root.classList.add("theme-dark");
-        els.themeToggle.textContent = "☀️ Light";
-        els.themeToggle.title = "Switch to light theme";
+        els.themeToggle.textContent = "☀️ Açık";
+        els.themeToggle.title = "Açık temaya geç";
       }else{
         root.classList.remove("theme-dark");
-        els.themeToggle.textContent = "🌙 Dark";
-        els.themeToggle.title = "Switch to dark theme";
+        els.themeToggle.textContent = "🌙 Koyu";
+        els.themeToggle.title = "Koyu temaya geç";
       }
     }
     (function initTheme(){
@@ -667,15 +680,17 @@
 
     /* ---------------- Presence helpers ---------------- */
     function setStatus(study) {
-      els.myStatusPill.textContent = study ? "Studying" : "Idle";
+      els.myStatusPill.textContent = study ? "Çalışıyor" : "Boşta";
       els.myStatusPill.className = "pill " + (study ? "study" : "idle");
-      els.toggleStudyBtn.textContent = study ? "Stop Studying" : "Start Studying";
+      els.toggleStudyBtn.textContent = study ? "Çalışmayı Bitir" : "Çalışmaya Başla";
       const myAnim = document.getElementById("myAnim");
       if (myAnim) myAnim.style.display = study ? "inline-flex" : "none";
+      if (els.focusToggleBtn) els.focusToggleBtn.textContent = study ? "Çalışmayı Bitir" : "Çalışmaya Başla";
+      if (els.focusStatus) els.focusStatus.textContent = study ? "Çalışıyor 🔥" : "Boşta";
     }
     function setPresence(on) {
       els.presenceDot.className = "status-dot " + (on ? "dot-on" : "dot-off");
-      els.presenceText.textContent = on ? "online" : "offline";
+      els.presenceText.textContent = on ? "çevrimiçi" : "çevrimdışı";
     }
     function installPresence(uid) {
       if (presenceInstalled) return;
@@ -707,7 +722,7 @@
           totals: { allTimeMs: 0, perDay: {} },
           streak: 0
         });
-        alert("Account created! You can log in now.");
+        alert("Hesap oluşturuldu! Artık giriş yapabilirsin.");
       } catch (e) { alert(e.message); }
     };
 
@@ -716,8 +731,8 @@
       const chip = `
         <span class="tag">${avatarHTML(name, user.uid, 18, '--h')} <span class="name">${name}</span></span>
         <form id="nameForm" class="inline-form small">
-          <input id="newName" placeholder="Set display name" value="${user.displayName || ''}"/>
-          <button class="primary" type="submit">Save</button>
+          <input id="newName" placeholder="Görünen adını ayarla" value="${user.displayName || ''}"/>
+          <button class="primary" type="submit">Kaydet</button>
         </form>`;
       els.authArea.innerHTML = chip;
       document.getElementById("nameForm").onsubmit = async e => {
@@ -735,6 +750,7 @@
       if (user) {
         els.authView.style.display = "none";
         els.appView.style.display = "block";
+        if (els.focusBtn) els.focusBtn.style.display = "";
         renderAuthChip(user);
         installPresence(user.uid);
 
@@ -761,6 +777,8 @@
         els.authView.style.display = "grid";
         els.appView.style.display = "none";
         els.authArea.innerHTML = "";
+        if (els.focusBtn) els.focusBtn.style.display = "none";
+        if (els.focusView) { els.focusView.classList.remove("open"); document.body.style.overflow = ""; }
       }
     });
 
@@ -774,6 +792,7 @@
         latestPresence = presenceSnap.val() || {};
         draw();
       });
+      attachChat();
     }
 
     /* ---------------- Local 1s UI ticker ---------------- */
@@ -800,7 +819,7 @@
       Object.keys(users).forEach(uid => {
         const u = users[uid];
         const isOnline = presence[uid]?.online;
-        const name = u.displayName || "User";
+        const name = u.displayName || "Kullanıcı";
         const studying = !!u.studying;
         const startAt = u.currentStartAt;
         const perDay = u.totals?.perDay || {};
@@ -826,16 +845,16 @@
                   ${studying ? '<span class="anim-eq" aria-label="studying"><i></i><i></i><i></i></span>' : ''}
                 </h4>
               </div>
-              <span class="tag"><span class="status-dot ${isOnline ? 'dot-on':'dot-off'}"></span> ${isOnline?'online':'offline'}</span>
+              <span class="tag"><span class="status-dot ${isOnline ? 'dot-on':'dot-off'}"></span> ${isOnline?'çevrimiçi':'çevrimdışı'}</span>
             </div>
             <div class="row" style="margin-top:8px; gap:8px;">
-              <span class="pill ${studying?'study':'idle'}">${studying?'Studying':'Idle'}</span>
-              <span class="muted">Current: ${msToHHMMSS(currentMs)}</span>
+              <span class="pill ${studying?'study':'idle'}">${studying?'Çalışıyor':'Boşta'}</span>
+              <span class="muted">Şu an: ${msToHHMMSS(currentMs)}</span>
             </div>
             <div class="row" style="margin-top:8px; gap:16px;">
-              <div class="muted">Today: <b>${msToHHMMSS(todayMs)}</b></div>
-              <div class="muted">All-time: <b>${msToHHMMSS(allTimeMs)}</b></div>
-              <div class="muted">Streak: <b>${u.streak || 0} 🔥</b></div>
+              <div class="muted">Bugün: <b>${msToHHMMSS(todayMs)}</b></div>
+              <div class="muted">Toplam: <b>${msToHHMMSS(allTimeMs)}</b></div>
+              <div class="muted">Seri: <b>${u.streak || 0} 🔥</b></div>
             </div>
           </div>
         `);
@@ -849,6 +868,7 @@
       updateCollab(studyingList, myUid);
       setStatus(studyingList.some(u => u.uid === myUid));
       setVideoByState(studyingList, myUid, myEmail);
+      updateFocus();
     }
 
     function updateCollab(studyingList, myUid){
@@ -860,7 +880,7 @@
         const meH = hashHue((me.uid||'')+(me.name||''));
         const pH = hashHue((partner.uid||'')+(partner.name||''));
         els.collabWrap.innerHTML = `
-          <div class="collab" title="Working together">
+          <div class="collab" title="Birlikte çalışıyor">
             <div class="wire">
               <svg viewBox="0 0 120 16" preserveAspectRatio="none" aria-hidden="true">
                 <path d="M2 8 C 30 2, 90 14, 118 8"></path>
@@ -883,12 +903,12 @@
         v.play().then(()=> els.videoOverlay.classList.remove('show')).catch(()=>{});
       };
       els.videoPlayPause.onclick = () => {
-        if (v.paused) { v.play(); els.videoPlayPause.textContent='Pause'; }
-        else { v.pause(); els.videoPlayPause.textContent='Play'; }
+        if (v.paused) { v.play(); els.videoPlayPause.textContent='Durdur'; }
+        else { v.pause(); els.videoPlayPause.textContent='Oynat'; }
       };
       els.videoMuteUnmute.onclick = () => {
         v.muted = !v.muted;
-        els.videoMuteUnmute.textContent = v.muted ? 'Unmute' : 'Mute';
+        els.videoMuteUnmute.textContent = v.muted ? 'Sesi Aç' : 'Sesi Kapat';
       };
     }
 
@@ -931,15 +951,15 @@
         }).catch(()=>{
           els.videoOverlay.classList.add('show'); // needs user gesture
         });
-        els.videoPlayPause.textContent = 'Pause';
-        els.videoMuteUnmute.textContent = v.muted ? 'Unmute' : 'Mute';
+        els.videoPlayPause.textContent = 'Durdur';
+        els.videoMuteUnmute.textContent = v.muted ? 'Sesi Aç' : 'Sesi Kapat';
       }
 
       card.classList.add('active');
     }
 
     /* ---------------- Study toggle handler ---------------- */
-    els.toggleStudyBtn.onclick = async () => {
+    async function toggleStudy(){
       const uid = (auth.currentUser||{}).uid; if(!uid) return;
       const uref = ref(db, `users/${uid}`);
       const snap = await get(uref); const u = snap.val() || {};
@@ -975,7 +995,70 @@
           streak: newStreak
         });
       }
-    };
+    }
+    els.toggleStudyBtn.onclick = toggleStudy;
+
+    /* ---------------- Focus mode (distraction-free timer) ---------------- */
+    function myTodayMs(){
+      const u = (latestUsers || {})[(auth.currentUser||{}).uid] || {};
+      const today = todayKey();
+      const base = (u.totals && u.totals.perDay && u.totals.perDay[today]) || 0;
+      const live = (u.studying && u.currentStartAt) ? Math.max(0, Date.now() - u.currentStartAt) : 0;
+      return base + live;
+    }
+    function updateFocus(){
+      if (!els.focusView || !els.focusView.classList.contains('open')) return;
+      els.focusTime.textContent = msToHHMMSS(myTodayMs());
+    }
+    function openFocus(){
+      els.focusView.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      updateFocus();
+    }
+    function closeFocus(){
+      els.focusView.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    if (els.focusBtn) els.focusBtn.onclick = openFocus;
+    if (els.focusExitBtn) els.focusExitBtn.onclick = closeFocus;
+    if (els.focusToggleBtn) els.focusToggleBtn.onclick = toggleStudy;
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && els.focusView && els.focusView.classList.contains('open')) closeFocus();
+    });
+
+    /* ---------------- Global chat ---------------- */
+    let chatAttached = false;
+    const chatEsc = s => (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    function chatTime(ms){ try { return new Date(ms).toLocaleTimeString('tr-TR', { hour:'2-digit', minute:'2-digit' }); } catch(e){ return ''; } }
+    function renderChat(val){
+      if (!els.chatMessages) return;
+      const items = Object.entries(val || {}).map(([k,v]) => Object.assign({ k }, v)).sort((a,b) => (a.at||0)-(b.at||0));
+      if (!items.length){ els.chatMessages.innerHTML = '<div class="chat-empty">Henüz mesaj yok. İlk mesajı sen yaz! ✍️</div>'; return; }
+      const nearBottom = els.chatMessages.scrollHeight - els.chatMessages.scrollTop - els.chatMessages.clientHeight < 60;
+      els.chatMessages.innerHTML = items.map(m =>
+        '<div class="chat-msg">'
+        + '<div class="who"><span>' + (chatEsc(m.name) || 'Biri') + '</span><span class="when">' + chatTime(m.at) + '</span></div>'
+        + '<div class="body">' + chatEsc(m.text) + '</div>'
+        + '</div>'
+      ).join('');
+      if (nearBottom) els.chatMessages.scrollTop = els.chatMessages.scrollHeight;
+    }
+    async function sendChat(){
+      const u = auth.currentUser; if (!u) return;
+      const text = (els.chatInput.value || '').trim(); if (!text) return;
+      els.chatInput.value = '';
+      try { await push(ref(db, 'chat'), { uid: u.uid, name: u.displayName || u.email, text: text, at: Date.now() }); }
+      catch(e){ alert(e.message); }
+    }
+    function attachChat(){
+      if (chatAttached || !els.chatMessages) return;
+      chatAttached = true;
+      onValue(query(ref(db, 'chat'), limitToLast(100)), s => renderChat(s.val()));
+    }
+    if (els.chatSend) els.chatSend.onclick = sendChat;
+    if (els.chatInput) els.chatInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendChat(); }
+    });
 
     /* ---------------- Presence install ---------------- */
     onAuthStateChanged(auth, user => {
@@ -1134,13 +1217,10 @@
 
   <script>
     /* =========================================================
-       BIRTHDAY DATA  —  live photo album + year-grouped notes feed
-       • Photos: any logged-in study buddy can add.
-       • Notes : only Numan (the special account) can post, filed under the
-                 year he picks; everyone reads, grouped into year folders
-                 you click open. Path: notes/{year}/{id}.
-       Stored in the existing Realtime Database under  gallery/  and  notes/ .
-       Photos are shrunk in the browser first so the DB stays light.
+       BIRTHDAY DATA  —  live photo album
+       Any logged-in study buddy can add a photo. Stored in the
+       existing Realtime Database under  gallery/ ; photos are shrunk
+       in the browser first so the DB stays light.
        ========================================================= */
     (function(){
       const SPECIAL_EMAIL = "numanberk2005@gmail.com";   // only this account may post notes
@@ -1148,9 +1228,6 @@
 
       const photoFile = $('photoFile'), photoCaption = $('photoCaption'), photoAddBtn = $('photoAddBtn'),
             photoHint = $('photoHint'), galleryGrid = $('galleryGrid'), galleryEmpty = $('galleryEmpty');
-      const noteComposer = $('noteComposer'), noteText = $('noteText'), noteYear = $('noteYear'), noteAddBtn = $('noteAddBtn'),
-            noteHint = $('noteHint'), notesYears = $('notesYears'), notesEmpty = $('notesEmpty');
-      const openYears = new Set();   // which year-folders are currently expanded (UI state, resets on reload)
 
       let fb = null, inited = false, busy = false;
 
@@ -1185,8 +1262,7 @@
 
       function refreshAuthUI(){
         const u = user();
-        photoHint.textContent = u ? '' : 'Fotoğraf eklemek için yukarıdan Study Buddies\'e giriş yap 💗';
-        if (isNuman(u)){ noteComposer.style.display = ''; if (!noteYear.value) noteYear.value = new Date().getFullYear(); } else { noteComposer.style.display = 'none'; }
+        photoHint.textContent = u ? '' : 'Fotoğraf eklemek için yukarıdan Çalışma Odası\'na giriş yap 💗';
       }
       window.addEventListener('sb-auth', refreshAuthUI);
 
@@ -1206,47 +1282,19 @@
             + '</div>';
         }).join('');
       }
-      function renderNotes(val){
-        const val_ = val || {};
-        const years = Object.keys(val_).map(Number).filter(y => !isNaN(y)).sort((a,b) => a - b); // oldest → newest, like the timeline
-        const canDel = isNuman(user());
-        notesEmpty.style.display = years.length ? 'none' : '';
-        notesYears.innerHTML = years.map(year => {
-          const items = Object.entries(val_[year] || {}).map(([k,v]) => Object.assign({ k }, v)).sort((a,b) => (a.at||0)-(b.at||0));
-          const isOpen = openYears.has(String(year));
-          const body = items.map(it =>
-            '<div class="note-card">'
-            + (canDel ? '<button class="item-del" data-kind="notes/' + year + '" data-key="' + it.k + '" title="Sil">✕</button>' : '')
-            + '<div class="note-text">' + esc(it.text) + '</div>'
-            + '<div class="note-meta">' + (esc(it.by) || '') + ' • ' + fmtDate(it.at) + '</div>'
-            + '</div>'
-          ).join('') || '<div class="bday-empty" style="margin:6px 0;">Bu yılda henüz not yok.</div>';
-          return '<div class="year-folder' + (isOpen ? ' open' : '') + '" data-year="' + year + '">'
-            + '<button type="button" class="year-head">'
-            + '<span class="year-arrow">▶</span><span class="year-num">' + year + '</span>'
-            + '<span class="year-count">' + items.length + ' not</span>'
-            + '</button>'
-            + '<div class="year-body">' + body + '</div>'
-            + '</div>';
-        }).join('');
-      }
-
       function init(){
         if (inited) return; inited = true;
         whenFb(_fb => {
           fb = _fb;
           refreshAuthUI();
           fb.onValue(fb.ref(fb.db, 'gallery'), s => renderGallery(s.val()));
-          fb.onValue(fb.ref(fb.db, 'notes'),   s => renderNotes(s.val()));
         });
       }
       window.onBirthdayOpen  = function(){
         init();
         refreshAuthUI();
-        // start every visit with the letter and all year folders collapsed
-        const lf = document.getElementById('letterFold'); if (lf) lf.removeAttribute('open');
-        openYears.clear();
-        notesYears.querySelectorAll('.year-folder.open').forEach(f => f.classList.remove('open'));
+        // start every visit with the conversation folders collapsed
+        document.querySelectorAll('#mektup .letter-fold[open]').forEach(d => d.removeAttribute('open'));
       };
       window.onBirthdayClose = function(){ /* listeners stay attached; nothing to do */ };
 
@@ -1272,35 +1320,6 @@
           photoCaption.value = ''; photoHint.textContent = '';
         } catch(err){ photoHint.textContent = 'Yükleme başarısız: ' + (err && err.message ? err.message : err); }
         finally { busy = false; photoFile.value = ''; photoAddBtn.textContent = label; photoAddBtn.disabled = false; }
-      });
-
-      /* add a note (Numan only) — files under the chosen year */
-      noteAddBtn.addEventListener('click', async () => {
-        const u = user();
-        if (!isNuman(u) || busy) return;                 // composer is hidden for others; double-check anyway
-        const text = (noteText.value || '').trim();
-        const year = parseInt(noteYear.value, 10);
-        if (!text){ noteHint.textContent = 'Önce bir şeyler yaz 💗'; return; }
-        if (!year || year < 2000 || year > 2200){ noteHint.textContent = 'Geçerli bir yıl gir (örn. 2025).'; return; }
-        busy = true; noteHint.textContent = '';
-        const label = noteAddBtn.textContent; noteAddBtn.textContent = 'Ekleniyor…'; noteAddBtn.disabled = true;
-        try {
-          const key = Date.now() + '-' + Math.random().toString(36).slice(2,8);
-          await fb.update(fb.ref(fb.db, 'notes/' + year + '/' + key), { text: text, by: u.displayName || u.email, at: Date.now() });
-          noteText.value = '';
-          openYears.add(String(year));   // jump straight to the year it landed in
-        } catch(err){ noteHint.textContent = 'Eklenemedi: ' + (err && err.message ? err.message : err); }
-        finally { busy = false; noteAddBtn.textContent = label; noteAddBtn.disabled = false; }
-      });
-
-      /* expand / collapse a year folder */
-      notesYears.addEventListener('click', (e) => {
-        const head = e.target.closest ? e.target.closest('.year-head') : null;
-        if (!head) return;
-        const folder = head.closest('.year-folder');
-        const year = folder.getAttribute('data-year');
-        if (openYears.has(year)) openYears.delete(year); else openYears.add(year);
-        folder.classList.toggle('open');
       });
 
       /* delete (a photo's uploader, or Numan for anything) */
