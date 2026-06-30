@@ -357,9 +357,7 @@
     #focusView{ position:fixed; inset:0; z-index:8000; display:none; background:var(--bg); align-items:center; justify-content:center; }
     #focusView.open{ display:flex; }
     #focusView .focus-inner{ text-align:center; padding:24px; }
-    #focusView .focus-label{ color:var(--muted); font-size:.95rem; letter-spacing:.14em; text-transform:uppercase; }
     #focusView .focus-time{ font-size:clamp(3rem,15vw,7.5rem); font-weight:800; color:var(--text); font-variant-numeric:tabular-nums; line-height:1.05; margin:10px 0; }
-    #focusView .focus-status{ color:var(--acc); font-weight:700; font-size:1.15rem; margin-bottom:24px; }
     #focusView .focus-toggle{ font-size:1.05rem; padding:14px 30px; }
     #focusView .focus-exit{ position:fixed; top:16px; right:16px; }
     .chat-messages{ max-height:280px; min-height:120px; overflow-y:auto; display:flex; flex-direction:column; gap:8px; padding-right:4px; }
@@ -401,24 +399,14 @@
     </header>
 
     <div id="authView" class="grid">
-      <div class="col-6 card">
+      <div class="col-12 card">
         <h3 style="color:var(--acc);margin-top:0;">Giriş</h3>
         <div class="row">
           <input id="loginEmail" placeholder="E-posta"/>
           <input id="loginPassword" type="password" placeholder="Şifre"/>
           <button class="primary" id="loginBtn">Giriş Yap</button>
         </div>
-        <div class="muted">Hesabın yok mu? Sağdaki karttan oluştur →</div>
-      </div>
-      <div class="col-6 card">
-        <h3 style="color:var(--acc);margin-top:0;">Kayıt Ol</h3>
-        <div class="row">
-          <input id="signupName" placeholder="Görünen ad (örn. Numan)"/>
-          <input id="signupEmail" placeholder="E-posta"/>
-          <input id="signupPassword" type="password" placeholder="Şifre (en az 6 karakter)"/>
-          <button class="primary" id="signupBtn">Hesap Oluştur</button>
-        </div>
-        <div class="muted">Adın herkese görünür.</div>
+        <div class="muted">Sadece mevcut hesaplar giriş yapabilir.</div>
       </div>
     </div>
 
@@ -479,9 +467,7 @@
   <div id="focusView">
     <button id="focusExitBtn" class="theme-toggle focus-exit">✕ Çık</button>
     <div class="focus-inner">
-      <div class="focus-label">Bugünkü çalışma</div>
       <div id="focusTime" class="focus-time">00:00:00</div>
-      <div id="focusStatus" class="focus-status">Boşta</div>
       <button id="focusToggleBtn" class="primary focus-toggle">Çalışmaya Başla</button>
     </div>
   </div>
@@ -491,8 +477,10 @@
     <div class="pin-card" id="pinCard">
       <div class="pin-lock" id="pinLock">🔒</div>
       <h3>Gizli kapı</h3>
-      <div class="pin-sub">Açmak için şifreyi gir 💗</div>
-      <div class="pin-inputs" id="pinInputs"></div>
+      <div class="pin-sub">11 haneli o şifreyi gir</div>
+      <div class="pin-inputs" id="pinInputs">
+        <input id="pinSingle" type="text" inputmode="numeric" autocomplete="off" maxlength="11" aria-label="Şifre" placeholder="•••••••••••" style="width:100%;height:54px;text-align:center;letter-spacing:.3em;font-size:20px;font-weight:700;padding:0 12px;">
+      </div>
       <div class="pin-msg" id="pinMsg"></div>
       <div class="pin-actions">
         <button id="pinCancel">Vazgeç</button>
@@ -510,18 +498,18 @@
 
     <nav>
       <button onclick="showBirthdaySection('giris')">Giriş</button>
-      <button onclick="showBirthdaySection('fotograflar')">Albümümüz</button>
+      <button onclick="showBirthdaySection('fotograflar')">biz</button>
       <button onclick="showBirthdaySection('mektup')">Bizi konuşmak istiyorum</button>
     </nav>
 
     <section id="giris" class="active">
       <h1>Hoşgeldin doğum günü kızı 💖</h1>
       <img id="bdayIntroImg" src="https://i.pinimg.com/736x/9e/1e/ba/9e1eba2ead22c08f09bef55effa3d3b4.jpg" alt="Aşkım 💖" style="max-width:300px;border-radius:18px;margin-top:24px;box-shadow:0 10px 30px rgba(220,20,60,.18);">
-      <p style="margin-top:22px;font-size:1.15rem;color:#7a4a57;">iyi doğdun canımın en içi</p>
+      <p style="margin-top:22px;font-size:1.3rem;font-weight:700;letter-spacing:.03em;color:#7a4a57;">İYİ Kİ DOĞDUN CANIMIN İÇİ</p>
     </section>
 
     <section id="fotograflar">
-      <h2>Albümümüz</h2>
+      <h2>biz</h2>
       <p style="max-width:600px;margin:0 auto 20px;font-size:1.1rem;">Şimdilik nispeten küçük olabilir ama uzun bi süre dolduracağımızdan dünyanın en büyük albümü olacaktır.</p>
       <div id="photoUploader" class="bday-uploader">
         <input type="file" id="photoFile" accept="image/*" hidden>
@@ -618,10 +606,6 @@
       loginEmail: document.getElementById("loginEmail"),
       loginPassword: document.getElementById("loginPassword"),
       loginBtn: document.getElementById("loginBtn"),
-      signupName: document.getElementById("signupName"),
-      signupEmail: document.getElementById("signupEmail"),
-      signupPassword: document.getElementById("signupPassword"),
-      signupBtn: document.getElementById("signupBtn"),
       toggleStudyBtn: document.getElementById("toggleStudyBtn"),
       myStatusPill: document.getElementById("myStatusPill"),
       presenceDot: document.getElementById("presenceDot"),
@@ -711,21 +695,6 @@
     els.loginBtn.onclick = async () => {
       try { await signInWithEmailAndPassword(auth, els.loginEmail.value, els.loginPassword.value); }
       catch (e) { alert(e.message); }
-    };
-    els.signupBtn.onclick = async () => {
-      try {
-        const cred = await createUserWithEmailAndPassword(auth, els.signupEmail.value, els.signupPassword.value);
-        const name = els.signupName.value || els.signupEmail.value.split('@')[0];
-        await updateProfile(cred.user, { displayName: name });
-        await update(ref(db, `users/${cred.user.uid}`), {
-          email: els.signupEmail.value,
-          displayName: name,
-          studying: false,
-          totals: { allTimeMs: 0, perDay: {} },
-          streak: 0
-        });
-        alert("Hesap oluşturuldu! Artık giriş yapabilirsin.");
-      } catch (e) { alert(e.message); }
     };
 
     function renderAuthChip(user) {
@@ -1090,7 +1059,7 @@
        ========================================================= */
     (function(){
       /* ====== CHANGE THE PIN HERE ====== */
-      const SECRET_PIN = "0306";     // the secret code (any number of digits)
+      const SECRET_PIN = "10254043302";     // the secret code (any number of digits)
       /* ================================= */
       const TAPS_NEEDED = 5;         // taps on the glowing logo dot to reveal the gate
       const TAP_WINDOW  = 2000;      // taps must land within this many ms
@@ -1101,40 +1070,21 @@
       const bday = $('birthdayView'), bdayAudio = $('bdayAudio');
       const dot = document.querySelector('.title .dot');
 
-      /* build one input box per PIN digit */
-      const boxes = [];
-      for (let i = 0; i < SECRET_PIN.length; i++){
-        const inp = document.createElement('input');
-        inp.type = 'text'; inp.inputMode = 'numeric'; inp.autocomplete = 'off';
-        inp.maxLength = 1; inp.setAttribute('aria-label', 'Şifre hanesi ' + (i + 1));
-        pinInputs.appendChild(inp); boxes.push(inp);
-      }
-      boxes.forEach((inp, i) => {
-        inp.addEventListener('input', () => {
-          inp.value = inp.value.replace(/\D/g, '').slice(0, 1);
-          if (inp.value && i < boxes.length - 1) boxes[i + 1].focus();
-          if (boxes.every(b => b.value)) trySubmit();
-        });
-        inp.addEventListener('keydown', e => {
-          if (e.key === 'Backspace' && !inp.value && i > 0){ boxes[i - 1].focus(); boxes[i - 1].value = ''; e.preventDefault(); }
-          if (e.key === 'Enter') trySubmit();
-        });
-        inp.addEventListener('paste', e => {
-          e.preventDefault();
-          const d = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, boxes.length).split('');
-          d.forEach((ch, k) => { if (boxes[k]) boxes[k].value = ch; });
-          (boxes[Math.min(d.length, boxes.length - 1)] || inp).focus();
-          if (boxes.every(b => b.value)) trySubmit();
-        });
+      /* single field for the secret code */
+      const pinSingle = $('pinSingle');
+      pinSingle.addEventListener('input', () => {
+        pinSingle.value = pinSingle.value.replace(/\D/g, '').slice(0, SECRET_PIN.length);
+        if (pinSingle.value.length === SECRET_PIN.length) trySubmit();
       });
+      pinSingle.addEventListener('keydown', e => { if (e.key === 'Enter') trySubmit(); });
 
-      function clearPin(){ boxes.forEach(b => b.value = ''); pinMsg.textContent = ''; pinMsg.style.color = ''; }
-      function openModal(){ clearPin(); pinLock.textContent = '🔒'; pinModal.classList.add('open'); setTimeout(() => boxes[0] && boxes[0].focus(), 60); }
+      function clearPin(){ pinSingle.value = ''; pinMsg.textContent = ''; pinMsg.style.color = ''; }
+      function openModal(){ clearPin(); pinLock.textContent = '🔒'; pinModal.classList.add('open'); setTimeout(() => pinSingle.focus(), 60); }
       function closeModal(){ pinModal.classList.remove('open'); clearPin(); }
 
       function trySubmit(){
-        const val = boxes.map(b => b.value).join('');
-        if (val.length < boxes.length) return;
+        const val = pinSingle.value.replace(/\D/g, '');
+        if (val.length < SECRET_PIN.length) return;
         if (val === SECRET_PIN){
           pinLock.textContent = '🔓';
           pinMsg.style.color = 'var(--ok)';
@@ -1144,7 +1094,7 @@
         } else {
           pinMsg.textContent = 'Yanlış şifre, tekrar dene 💔';
           pinCard.classList.remove('pin-shake'); void pinCard.offsetWidth; pinCard.classList.add('pin-shake');
-          boxes.forEach(b => b.value = ''); boxes[0] && boxes[0].focus();
+          pinSingle.value = ''; pinSingle.focus();
         }
       }
 
