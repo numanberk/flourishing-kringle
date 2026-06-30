@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Study Buddies — Global Room</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ---------- Light theme (default) ---------- */
+    :root {
+      --bg:#ffffff;
+      --card:#f6f3ff;
+      --muted:#7e73a8;
+      --text:#2b2240;
+      --acc:#7a5af8;      /* violet */
+      --ok:#4cd676;
+      --border:#d6cfff;
+      --danger:#ff6a6a;
+      --tag-bg:#ede8ff;
+      --btn-grad: linear-gradient(180deg,rgba(122,90,248,.2),transparent 60%),#ede8ff;
+      --shadow: 0 4px 10px rgba(122,90,248,0.1);
+      --hover-shadow: 0 4px 16px rgba(122,90,248,.25);
+      --input-bg:#ffffff;
+      --line: color-mix(in srgb, var(--acc) 85%, #ffffff);
+    }
+
+    /* ---------- Dark theme (toggle via class on <html>) ---------- */
+    :root.theme-dark {
+      --bg:#100d14;
+      --card:#1a1420;
+      --muted:#c9a8be;
+      --text:#ffeef7;
+      --acc:#ff5db1;
+      --ok:#61e29a;
+      --border:#342336;
+      --danger:#ff7a7a;
+      --tag-bg:#25192b;
+      --btn-grad: linear-gradient(180deg,rgba(255,93,177,.18),transparent 60%),#1f1726;
+      --shadow: 0 6px 18px rgba(0,0,0,.45);
+      --hover-shadow: 0 8px 22px rgba(255,93,177,.18);
+      --input-bg:#151019;
+      --line: color-mix(in srgb, var(--acc) 90%, #ffffff);
+    }
+
+    *{box-sizing:border-box}
+    html,body{
+      margin:0;padding:0;
+      background:var(--bg);
+      color:var(--text);
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      min-height:100vh;
+      min-height:100dvh;
+      transition: background .2s ease, color .2s ease;
+    }
+    .container{max-width:1100px;margin:32px auto;padding:0 16px}
+    header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+    .title{font-size:24px;font-weight:700;letter-spacing:.3px;display:flex;align-items:center;gap:10px;color:var(--acc)}
+    .title .dot{width:10px;height:10px;border-radius:50%;background:var(--acc);box-shadow:0 0 12px var(--acc)}
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:16px;
+      box-shadow:var(--shadow);
+      transition: background .2s ease, border-color .2s ease, box-shadow .2s ease;
+    }
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+    .col-4{grid-column:span 4}.col-8{grid-column:span 8}.col-12{grid-column:span 12}
+    @media (max-width:900px){.col-8,.col-6,.col-4{grid-column:span 12}}
+    input,button{
+      background:var(--input-bg);
+      border:1px solid var(--border);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:10px;
+      font-size:14px;
+      outline:none;
+      transition: background .2s ease, color .2s ease, border-color .2s ease, box-shadow .2s ease, transform .08s ease;
+    }
+    input::placeholder{color:color-mix(in srgb, var(--muted) 70%, transparent)}
+    button{ background:var(--btn-grad); cursor:pointer; }
+    button.primary{border-color:color-mix(in srgb, var(--acc) 40%, transparent)}
+    button:hover{box-shadow:var(--hover-shadow);transform:translateY(-1px)}
+    .muted{color:var(--muted);font-size:13px}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .spaced{display:flex;justify-content:space-between;align-items:center;gap:10px}
+    .tag{
+      display:inline-flex;align-items:center;gap:8px;font-size:12px;
+      background:var(--tag-bg);padding:6px 10px;border-radius:999px;border:1px solid var(--border)
+    }
+    .status-dot{width:8px;height:8px;border-radius:50%}
+    .dot-on{background:var(--ok);box-shadow:0 0 10px var(--ok)}
+    .dot-off{background:color-mix(in srgb, var(--muted) 60%, transparent)}
+    .leaderboard li{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed var(--border)}
+    .leaderboard li:last-child{border-bottom:0}
+    .user-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+    .user-card{border:1px solid var(--border);border-radius:14px;padding:12px;background:var(--input-bg)}
+    .user-card h4{margin:0 0 6px 0;font-size:16px;color:var(--acc)}
+    .pill{font-size:12px;padding:4px 8px;border-radius:999px}
+    .pill.study{background:color-mix(in srgb, var(--ok) 16%, transparent);color:color-mix(in srgb, var(--ok) 60%, #157a3c);border:1px solid color-mix(in srgb, var(--ok) 40%, transparent)}
+    .pill.idle{background:color-mix(in srgb, #ffb167 18%, transparent);color:#b05921;border:1px solid color-mix(in srgb, #ffb167 40%, transparent)}
+    .big-actions{display:flex;gap:10px;flex-wrap:wrap}
+    .footer{margin-top:14px;font-size:12px;color:var(--muted);text-align:center}
+    .inline-form{display:inline-flex;gap:8px;align-items:center}
+    .small{font-size:12px}
+    .theme-toggle{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;border:1px solid var(--border);background:var(--input-bg);cursor:pointer}
+
+    /* ==== Header study controls ==== */
+    .controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .controls .group{display:flex;align-items:center;gap:8px}
+
+    /* ==== Avatar styles ==== */
+    .avatar {
+      --h: 220;
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      display:inline-flex; align-items:center; justify-content:center;
+      color: #fff;
+      font-size: 14px; font-weight: 700;
+      background: linear-gradient(135deg, hsl(var(--h), 85%, 60%), hsl(var(--h), 85%, 45%));
+      box-shadow: 0 0 0 2px rgba(255,255,255,.12), 0 4px 10px rgba(0,0,0,.15);
+      user-select:none;
+    }
+    .avatar + .name { margin-left:8px; }
+
+    /* ==== Studying equalizer + glow ==== */
+    .anim-eq {
+      display: inline-flex;
+      align-items: flex-end;
+      gap: 3px;
+      width: 18px; height: 14px;
+      filter: drop-shadow(0 0 6px color-mix(in srgb, var(--acc) 50%, transparent));
+    }
+    .anim-eq i {
+      display: inline-block;
+      width: 3px; height: 30%;
+      background: var(--acc);
+      border-radius: 2px;
+      transform-origin: bottom;
+      animation: sb-eq 900ms ease-in-out infinite;
+    }
+    .anim-eq i:nth-child(2){ animation-delay: .12s }
+    .anim-eq i:nth-child(3){ animation-delay: .24s }
+    @keyframes sb-eq {
+      0%{transform:scaleY(0.4)}25%{transform:scaleY(1)}50%{transform:scaleY(0.55)}75%{transform:scaleY(0.9)}100%{transform:scaleY(0.4)}
+    }
+    .user-card.is-studying {
+      box-shadow: 0 10px 28px rgba(255, 93, 177, 0.18), var(--shadow);
+      border-color: color-mix(in srgb, var(--acc) 45%, var(--border));
+    }
+
+    /* ==== "Working together" collab animation (header) ==== */
+    .collab {
+      position: relative;
+      height: 42px;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .collab .av {
+      width: 30px; height: 30px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      color:#fff; font-weight:700; font-size:12px;
+      background: linear-gradient(135deg, hsl(var(--h1),85%,60%), hsl(var(--h1),85%,45%));
+      box-shadow: 0 0 0 2px rgba(255,255,255,.1), 0 4px 14px rgba(0,0,0,.3);
+      z-index: 2;
+      animation: bob 1.5s ease-in-out infinite;
+    }
+    .collab .av.partner { --h1: var(--h2); margin-left: 36px; animation-delay: .2s; }
+    .collab .wire { position:absolute; left:6px; right:6px; top:14px; height:0; z-index:1; pointer-events:none; }
+    .collab .wire svg { width:100%; height:14px; overflow:visible }
+    .collab .wire path {
+      stroke: var(--line); stroke-width:3; fill:none; stroke-linecap:round; stroke-dasharray: 6 10;
+      animation: dash 1.2s linear infinite;
+      filter: drop-shadow(0 0 8px color-mix(in srgb, var(--acc) 55%, transparent));
+    }
+    @keyframes dash { to { stroke-dashoffset: -16; } }
+    @keyframes bob { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-3px) } }
+
+    /* ==== Focus Video — BIG under People ==== */
+    .video-card { display:none; }
+    .video-card.active { display:block; }
+    .video-wrap {
+      position:relative;
+      border-radius:14px;
+      overflow:hidden;
+      background:#000;
+      /* Big and cinematic */
+      aspect-ratio: 16 / 9;
+      width: 100%;
+    }
+    .video-wrap video { width:100%; height:100%; object-fit:cover; display:block; background:#000; }
+    .video-controls { display:flex; gap:8px; align-items:center; margin-top:10px; flex-wrap:wrap; }
+
+    .video-overlay {
+      position:absolute; inset:0; display:none;
+      align-items:center; justify-content:center;
+      background:rgba(0,0,0,.35);
+      backdrop-filter: blur(1px);
+    }
+    .video-overlay.show { display:flex; }
+    .video-overlay button { background:#ffffff; color:#111; border:0; padding:10px 14px; border-radius:999px; font-weight:700; cursor:pointer; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .anim-eq i, .collab .wire path, .collab .av { animation: none }
+    }
+  </style>
+  <!-- Birthday surprise fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Open+Sans&display=swap" rel="stylesheet">
+  <style>
+    /* ============================================================
+       PIN GATEWAY + BIRTHDAY SURPRISE  (layered on top of the timer)
+       Everything above is the original timer, untouched.
+       All birthday rules are scoped under #birthdayView so the two
+       designs can never collide.
+       ============================================================ */
+
+    /* ---- enlarge the secret dot's tap target (its look is unchanged) ---- */
+    .title .dot{ position:relative; }
+    .title .dot::after{ content:""; position:absolute; inset:-12px; border-radius:50%; }
+
+    /* ---- PIN modal: reuses the timer's theme variables (so it follows dark/light) ---- */
+    #pinModal{
+      position:fixed; inset:0; z-index:9000;
+      display:none; align-items:center; justify-content:center;
+      background:rgba(16,13,20,.55); backdrop-filter:blur(6px);
+      padding:20px;
+    }
+    #pinModal.open{ display:flex; animation:pinFade .25s ease; }
+    @keyframes pinFade{ from{opacity:0} to{opacity:1} }
+    .pin-card{
+      width:100%; max-width:360px;
+      background:var(--card); color:var(--text);
+      border:1px solid var(--border); border-radius:20px;
+      box-shadow:0 20px 60px rgba(0,0,0,.45);
+      padding:28px 24px 22px; text-align:center;
+      animation:pinPop .3s cubic-bezier(.2,.9,.3,1.2);
+    }
+    @keyframes pinPop{ from{transform:scale(.92);opacity:0} to{transform:scale(1);opacity:1} }
+    .pin-lock{ font-size:34px; line-height:1; }
+    .pin-card h3{ margin:8px 0 2px; color:var(--acc); font-size:18px; }
+    .pin-card .pin-sub{ color:var(--muted); font-size:13px; margin-bottom:18px; }
+    .pin-inputs{ display:flex; gap:10px; justify-content:center; }
+    .pin-inputs input{
+      width:52px; height:60px; text-align:center;
+      font-size:24px; font-weight:700; padding:0;
+      border:1px solid var(--border); border-radius:12px;
+      background:var(--input-bg); color:var(--text);
+    }
+    .pin-inputs input:focus{
+      border-color:var(--acc);
+      box-shadow:0 0 0 3px color-mix(in srgb, var(--acc) 25%, transparent);
+    }
+    .pin-msg{ min-height:18px; font-size:13px; color:var(--danger); margin:10px 0 14px; }
+    .pin-actions{ display:flex; gap:10px; }
+    .pin-actions button{ flex:1; }
+    .pin-shake{ animation:pinShake .4s; }
+    @keyframes pinShake{
+      0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)}
+      40%{transform:translateX(8px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)}
+    }
+
+    /* ---- Birthday view: full-screen takeover, its own romantic world ---- */
+    #birthdayView{
+      position:fixed; inset:0; z-index:10000;
+      display:none; overflow-y:auto; -webkit-overflow-scrolling:touch;
+      font-family:'Open Sans', sans-serif;
+      background:linear-gradient(to bottom, #ffe4e1, #fff0f5);
+      color:#333; text-align:center;
+    }
+    #birthdayView.open{ display:block; }
+    #birthdayBack{
+      position:fixed; top:12px; left:12px; z-index:20;
+      display:inline-flex; align-items:center; gap:8px;
+      background:rgba(255,255,255,.92); color:crimson;
+      border:1px solid #ffd0dc; border-radius:999px;
+      padding:8px 14px; font-size:.9rem; font-weight:700;
+      font-family:'Open Sans', sans-serif; cursor:pointer;
+      box-shadow:0 4px 12px rgba(220,20,60,.18); backdrop-filter:blur(4px);
+    }
+    #birthdayBack:hover{ background:#fff; transform:translateY(-1px); }
+    #birthdayView h1{ font-family:'Great Vibes', cursive; font-size:3rem; margin-top:50px; }
+    #birthdayView h2{ font-family:'Great Vibes', cursive; font-size:2.4rem; color:crimson; margin:0; }
+    #birthdayView section{ display:none; padding:90px 20px 60px; min-height:90vh; }
+    #birthdayView section.active{ display:block; }
+    #birthdayView .gallery{ display:flex; flex-wrap:wrap; justify-content:center; gap:10px; padding:20px; }
+    #birthdayView .gallery img{
+      width:100%; max-width:300px; height:auto;
+      border-radius:15px; box-shadow:0 4px 6px rgba(0,0,0,0.1); object-fit:contain;
+    }
+    #birthdayView .letter{
+      margin:0 auto; max-width:700px; background:#fff;
+      padding:30px; border-radius:15px; box-shadow:0 4px 12px rgba(0,0,0,0.1);
+    }
+    #birthdayView .letter p{ font-size:1.1rem; line-height:1.6; text-align:left; }
+    #birthdayView .timeline{ max-width:700px; margin:0 auto; text-align:left; }
+    #birthdayView .timeline ul{ list-style:none; padding:0; }
+    #birthdayView .timeline li{ margin-bottom:20px; position:relative; padding-left:20px; }
+    #birthdayView .timeline li::before{ content:"\2764"; position:absolute; left:0; color:crimson; }
+    #birthdayView nav{
+      background-color:#fff; box-shadow:0 2px 5px rgba(0,0,0,0.1);
+      padding:10px; position:fixed; width:100%; top:0; left:0; z-index:5;
+      display:flex; justify-content:center; flex-wrap:wrap;
+    }
+    #birthdayView nav button{
+      margin:4px 10px; background:none; border:none; color:crimson;
+      font-weight:bold; font-size:1rem; cursor:pointer; padding:6px 8px; border-radius:8px;
+    }
+    #birthdayView nav button:hover{ background:#fff0f5; box-shadow:none; transform:none; }
+    #birthdayView .audio-control{ display:none; }
+    #birthdayView .surprise{ margin-top:30px; font-size:1.2rem; color:darkmagenta; }
+
+    /* ---- uploader + notes controls ---- */
+    #birthdayView .bday-uploader{ max-width:600px; margin:0 auto 14px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; align-items:center; }
+    #birthdayView .bday-input{ flex:1 1 220px; min-width:0; padding:10px 12px; border-radius:10px; border:1px solid #ffd0dc; background:#fff; color:#333; font-family:inherit; font-size:.95rem; }
+    #birthdayView textarea.bday-input{ flex-basis:100%; width:100%; resize:vertical; }
+    #birthdayView .bday-btn{ background:crimson; color:#fff; border:none; border-radius:999px; padding:10px 16px; font-weight:700; cursor:pointer; font-family:inherit; font-size:.95rem; box-shadow:0 4px 12px rgba(220,20,60,.25); }
+    #birthdayView .bday-btn:hover{ background:#c01540; transform:translateY(-1px); }
+    #birthdayView .bday-btn[disabled]{ opacity:.55; cursor:default; transform:none; box-shadow:none; }
+    #birthdayView .bday-hint{ flex-basis:100%; font-size:.85rem; color:#b3567a; margin-top:2px; }
+    #birthdayView .bday-empty{ color:#c98aa0; font-size:.95rem; margin:14px 0; }
+    /* photo cards */
+    #birthdayView .photo-card{ position:relative; width:100%; max-width:300px; }
+    #birthdayView .photo-card img{ width:100%; height:auto; border-radius:15px; box-shadow:0 4px 6px rgba(0,0,0,.12); display:block; object-fit:contain; }
+    #birthdayView .photo-cap{ font-size:.95rem; color:#444; margin-top:5px; }
+    #birthdayView .photo-meta{ font-size:.8rem; color:#a4677d; margin-top:3px; }
+    #birthdayView .item-del{ position:absolute; top:8px; right:8px; border:none; cursor:pointer; background:rgba(0,0,0,.45); color:#fff; width:28px; height:28px; border-radius:50%; font-size:14px; line-height:28px; padding:0; display:none; }
+    #birthdayView .photo-card:hover .item-del,
+    #birthdayView .note-card:hover .item-del{ display:block; }
+    /* notes feed */
+    #birthdayView .notes-wrap{ max-width:700px; margin:26px auto 0; text-align:left; }
+
+    /* collapsible love letter */
+    #birthdayView .letter-fold{ max-width:700px; margin:0 auto; }
+    #birthdayView .letter-summary{
+      list-style:none; cursor:pointer; user-select:none;
+      display:flex; align-items:center; justify-content:center; gap:10px;
+      background:#fff; border:1px solid #ffd0dc; border-radius:14px;
+      padding:16px 20px; font-family:'Great Vibes', cursive; font-size:1.7rem; color:crimson;
+      box-shadow:0 3px 10px rgba(0,0,0,.06);
+    }
+    #birthdayView .letter-summary::-webkit-details-marker{ display:none; }
+    #birthdayView .letter-summary:hover{ background:#fff5f8; }
+    #birthdayView .letter-arrow{ font-size:.8rem; color:#c98aa0; transition:transform .2s; }
+    #birthdayView .letter-fold[open] .letter-arrow{ transform:rotate(90deg); }
+    #birthdayView .letter-fold[open] .letter-summary{ border-bottom-left-radius:0; border-bottom-right-radius:0; }
+    #birthdayView .letter-fold .letter{ margin-top:0; border-top-left-radius:0; border-top-right-radius:0; }
+    #birthdayView .notes-title{ font-family:'Great Vibes', cursive; font-size:1.9rem; color:crimson; text-align:center; margin:0 0 12px; }
+    #birthdayView .note-card{ position:relative; background:#fff; border:1px solid #ffe0e8; border-left:4px solid crimson; border-radius:12px; padding:14px 16px; margin:0 0 12px; box-shadow:0 3px 10px rgba(0,0,0,.06); }
+    #birthdayView .note-text{ font-size:1.05rem; line-height:1.55; color:#333; white-space:pre-wrap; word-wrap:break-word; }
+    #birthdayView .note-meta{ font-size:.8rem; color:#a4677d; margin-top:8px; }
+    /* notes grouped by year, accordion-style */
+    #birthdayView .year-folder{ margin-bottom:14px; }
+    #birthdayView .year-head{ display:flex; align-items:center; gap:10px; width:100%; text-align:left; background:#fff; border:1px solid #ffd0dc; border-radius:12px; padding:12px 16px; cursor:pointer; font-family:inherit; }
+    #birthdayView .year-head:hover{ background:#fff5f8; }
+    #birthdayView .year-head .year-num{ font-family:'Great Vibes', cursive; font-size:1.6rem; color:crimson; }
+    #birthdayView .year-head .year-count{ font-size:.85rem; color:#a4677d; margin-left:auto; }
+    #birthdayView .year-head .year-arrow{ font-size:.8rem; color:#c98aa0; transition:transform .2s; }
+    #birthdayView .year-folder.open .year-arrow{ transform:rotate(90deg); }
+    #birthdayView .year-body{ display:none; padding:12px 4px 0; }
+    #birthdayView .year-folder.open .year-body{ display:block; }
+
+    @media (prefers-reduced-motion: reduce){
+      #pinModal.open, .pin-card, .pin-shake,
+      #birthdayBack:hover, #birthdayView nav button:hover{ animation:none; transition:none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="title"><span class="dot"></span> Study Buddies</div>
+
+      <div class="controls" id="topRight">
+        <button id="themeToggle" class="theme-toggle" title="Toggle theme">🌙 Dark</button>
+
+        <div class="group">
+          <button id="toggleStudyBtn" class="primary">Start Studying</button>
+          <span id="myStatusPill" class="pill idle">Idle</span>
+          <span id="myAnim" class="anim-eq" style="display:none"><i></i><i></i><i></i></span>
+        </div>
+
+        <div class="group">
+          <span class="tag"><span class="status-dot dot-off" id="presenceDot"></span> <span id="presenceText">offline</span></span>
+        </div>
+
+        <div class="group" id="collabWrap"></div>
+
+        <div id="authArea" class="row"></div>
+      </div>
+    </header>
+
+    <div id="authView" class="grid">
+      <div class="col-6 card">
+        <h3 style="color:var(--acc);margin-top:0;">Login</h3>
+        <div class="row">
+          <input id="loginEmail" placeholder="Email"/>
+          <input id="loginPassword" type="password" placeholder="Password"/>
+          <button class="primary" id="loginBtn">Login</button>
+        </div>
+        <div class="muted">No account? Create one in the sign-up card →</div>
+      </div>
+      <div class="col-6 card">
+        <h3 style="color:var(--acc);margin-top:0;">Sign Up</h3>
+        <div class="row">
+          <input id="signupName" placeholder="Display name (e.g., Numan)"/>
+          <input id="signupEmail" placeholder="Email"/>
+          <input id="signupPassword" type="password" placeholder="Password (min 6 chars)"/>
+          <button class="primary" id="signupBtn">Create Account</button>
+        </div>
+        <div class="muted">Your name is shown to others globally.</div>
+      </div>
+    </div>
+
+    <div id="appView" style="display:none;">
+      <div class="grid">
+        <!-- LEFT: People + BIG video -->
+        <div class="col-8">
+          <div class="card">
+            <h3 style="margin-top:0;color:var(--acc)">People (Global)</h3>
+            <div id="usersList" class="user-list"></div>
+          </div>
+
+          <div class="card video-card" id="collabVideoCard" style="margin-top:16px;">
+            <h3 style="margin-top:0;color:var(--acc)">Focus Video</h3>
+            <div class="video-wrap">
+              <!-- Netlify-hosted MP4s in /videos/ -->
+              <video id="collabVideo" playsinline muted loop preload="metadata" poster="/videos/poster.jpg"
+                     data-src-numan-solo="/videos/numan-solo.mp4"
+                     data-src-others-solo="/videos/others-solo.mp4"
+                     data-src-collab="/videos/collab.mp4"></video>
+              <div class="video-overlay" id="videoOverlay">
+                <button id="overlayPlay">Tap to Play</button>
+              </div>
+            </div>
+            <div class="video-controls">
+              <button id="videoPlayPause">Pause</button>
+              <button id="videoMuteUnmute">Unmute</button>
+            </div>
+            <div class="muted small">
+              • Videos are served from <code>/videos/</code>. Replace with your own MP4s.  
+              • Autoplay-friendly (muted, inline) and loop by default.
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Leaderboard -->
+        <div class="col-4">
+          <div class="card">
+            <h3 style="margin-top:0;color:var(--acc)">Leaderboard (Today)</h3>
+            <ul id="leaderboard" class="leaderboard" style="list-style:none;padding-left:0;margin:0;"></ul>
+          </div>
+          <div class="footer">Tip: keep the tab open while studying for live timers ⏱️</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= PIN GATEWAY (asked every time) ================= -->
+  <div id="pinModal" role="dialog" aria-modal="true" aria-label="Gizli kapı">
+    <div class="pin-card" id="pinCard">
+      <div class="pin-lock" id="pinLock">🔒</div>
+      <h3>Gizli kapı</h3>
+      <div class="pin-sub">Açmak için şifreyi gir 💗</div>
+      <div class="pin-inputs" id="pinInputs"></div>
+      <div class="pin-msg" id="pinMsg"></div>
+      <div class="pin-actions">
+        <button id="pinCancel">Vazgeç</button>
+        <button id="pinSubmit" class="primary">Aç</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= BIRTHDAY SURPRISE (full-screen) ================= -->
+  <div id="birthdayView" aria-hidden="true">
+    <button id="birthdayBack">← Zamanlayıcıya dön</button>
+    <div class="audio-control" id="bdayAudio"></div>
+
+    <nav>
+      <button onclick="showBirthdaySection('giris')">Giriş</button>
+      <button onclick="showBirthdaySection('fotograflar')">Albümümüz</button>
+      <button onclick="showBirthdaySection('mektup')">Bir Küçük Not</button>
+      <button onclick="showBirthdaySection('hikaye')">Dün, Bugün, Yarın</button>
+      <button onclick="showBirthdaySection('surpriz')">A4</button>
+    </nav>
+
+    <section id="giris" class="active">
+      <h1>Doğum Günün Kutlu Olsun Canımın İçi 💖</h1>
+      <img id="bdayIntroImg" src="https://i.pinimg.com/736x/9e/1e/ba/9e1eba2ead22c08f09bef55effa3d3b4.jpg" alt="Aşkım 💖" style="max-width:300px;border-radius:15px;margin-top:20px;box-shadow:0 4px 6px rgba(0,0,0,0.2);">
+      <p style="margin-top:20px;">İyi ki doğdun kovalamalara doyamadığım ateş böceğim 🌟</p>
+    </section>
+
+    <section id="fotograflar">
+      <h2>Albümümüz</h2>
+      <p style="max-width:600px;margin:0 auto 20px;font-size:1.1rem;">Şimdilik nispeten küçük olabilir ama uzun bi süre dolduracağımızdan dünyanın en büyük albümü olacaktır.</p>
+      <div id="photoUploader" class="bday-uploader">
+        <input type="file" id="photoFile" accept="image/*" hidden>
+        <input type="text" id="photoCaption" class="bday-input" placeholder="Bir not ekle (isteğe bağlı)" maxlength="120">
+        <button type="button" id="photoAddBtn" class="bday-btn">📷 Fotoğraf ekle</button>
+        <div id="photoHint" class="bday-hint"></div>
+      </div>
+      <div id="galleryGrid" class="gallery"></div>
+      <div id="galleryEmpty" class="bday-empty">Henüz fotoğraf yok — ilkini sen ekle 💕</div>
+    </section>
+
+    <section id="mektup">
+      <h2>Bir Küçük Not</h2>
+      <details class="letter-fold" id="letterFold">
+        <summary class="letter-summary"><span class="letter-arrow">▶</span> 💌 Mektubumu oku</summary>
+        <div class="letter">
+          <p>Sevgili dexterva,</p>
+          <p>Öncelikle, iyi ki varsın ve iyi ki doğdun canımın içi. Bir geleneğin başlangıcı olmasını umduğum bu doğum günü sayfası asla unutmak istemediğim ve unutmayı göze alamıyacağım en değerlimi saklıcağım o kasa olsun istedim. hayatıma etkisi bakımından kıyaslandığında en bomba doğum günüm(evet ilk doğum günümü bile alır) bizim doğum günümüz, en mutlu günüm oldu. Bencilce mi bilmem ama senin bu doğum gününü de bize mal etmek istedim. O yüzden bu günü de 03.06 da yaktığımız o ateşi ölmüsüz hale getirdiğimiz gün ilan ediyorum. Seninle birlikte oluşturduğumuz anıları, birbirimize söylediklerimizi, hissettiklerimizi biriktirebileceğimiz bize özel bir yer fikri... Bana dünya üstündeki her şeyden daha kıymetli geldi. Oluşturulma vizyonunu aradan çıkardığımıza göre doğum günü kızıyla ilgili de bir kaç kelam etmek isterim. Segili Bitanem, ben biz olana kadar söylemeye can attığım bu hitaplar artık beni korkutuyor. Bir gün monoton olcak da her zamanki gibi hissetiricek diye. Şunu bilmeni isterim ki ne zaman canımın içi, ne zaman aşkım, ne zaman bitanem dersem onu tüm kalbimde hissederek, son hecesini uzatarak, bağıra bağıra söylüyor olucam ve yine her duyduğumda ilk defa duymuş gibi havalara uçucağım. Ayrıca yaptığım her şeyin keyfini sonsuza katladığın ve sadece aklımdan çıkmayarak beni dünyanın en mutlu insanı yaptığın için teşekkür ederim. Kafamı herhangi bir anda meşgul eden herhangi bir şeyin ne kadar önemsiz olduğunu, uğruna pişman oluncak tek şeyin birlikte geçiremediğimiz zamanlar olduğunu gösterdin bana. İnşallah senin yan koltukta uyuyabilir olduğun o yolculuklara çıkar, bulduğumuz güzel manzaraya karşı açıp istediğimiz cdmizi(recep ivedik) izlediğimiz, kimseciklerin bizi tanımadığı, napıyor bunlar demediği, her gün istediğimiz yapabilecek kadar özgür olduğumuz günlerde buluşuruz. Tekrardan tüm kalbimle iyi ki doğdun iyikim. 💖</p>
+          <p>Her zaman seninle,<br>el primo</p>
+        </div>
+      </details>
+
+      <div class="notes-wrap">
+        <h3 class="notes-title">Notlar 💌</h3>
+        <div id="noteComposer" class="bday-uploader" style="display:none;">
+          <textarea id="noteText" class="bday-input" rows="3" placeholder="dexterva'ya yeni bir not yaz..." maxlength="1000"></textarea>
+          <input type="number" id="noteYear" class="bday-input" style="flex:0 0 110px;" min="2020" max="2099" placeholder="Yıl">
+          <button type="button" id="noteAddBtn" class="bday-btn">💌 Not ekle</button>
+        </div>
+        <div id="noteHint" class="bday-hint"></div>
+        <div id="notesYears"></div>
+        <div id="notesEmpty" class="bday-empty">Henüz not yok 💗</div>
+      </div>
+    </section>
+
+    <section id="hikaye">
+      <h2>Dün, Bugün, Yarın</h2>
+      <div class="timeline">
+        <ul>
+          <li>18 Şubat 2025 — geçen hafta tesadüf eseri ilk hipnoz şeysini gördüm bu hafta da bakıyım dedim de bunun bu kadar iyi olduğunu niye söylemediniz</li>
+          <li>25 Mart 2025 — birlikte japonyaya gitmeyi okeyledin 😏</li>
+          <li>10 Nisan 2025 — dünyanın en iyi 10€ harcayışı ve ilk meetimiz</li>
+          <li>30 Nisan 2025 — kg bitenzi ama hemeen ardından dexterva doğdu</li>
+          <li>1 Mayıs 2025 — Artık saatlerce aralıksız konuşuyoruz</li>
+          <li>21 Mayıs 2025 — Gs fb ayağına ilk kalbimizi aldık</li>
+          <li>3 Haziran 2025 — doğduk</li>
+          <li>8 Haziran 2025 — uludağ üniversitesi date</li>
+          <li>19 Haziran 2025 — sabiha gökçen date</li>
+          <li>26 Haziran 2025 — roblox date</li>
+          <li>1 Temmuz 2025 — iyi ki doğdun canımın içi</li>
+          <li>Yarın — ...</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="surpriz">
+      <h2>A4 🎁</h2>
+      <p class="surprise"><a href="https://www.youtube.com/watch?v=E1rI9Vhp0PQ" target="_blank" rel="noopener" style="color:darkmagenta;font-weight:700;text-decoration:none;">🎁 Sürprizini aç</a></p>
+    </section>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+    import { getDatabase, ref, update, get, onValue, onDisconnect } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+
+    /* ======= Firebase ======= */
+    const firebaseConfig = {
+      apiKey: "AIzaSyAhddopD10UBhXtjXkvzhRn1EmYxKNIsYw",
+      authDomain: "studywithme-6e234.firebaseapp.com",
+      databaseURL: "https://studywithme-6e234-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "studywithme-6e234",
+      storageBucket: "studywithme-6e234.firebasestorage.app",
+      messagingSenderId: "145454196147",
+      appId: "1:145454196147:web:866e5e4a4cb959c17157c6"
+    };
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    /* ---- bridge: let the birthday album/notes (classic script below) reuse Firebase ---- */
+    window.fb = { db, auth, ref, update, get, onValue };
+    window.dispatchEvent(new Event('fb-ready'));
+    onAuthStateChanged(auth, function (u) {
+      window.dispatchEvent(new CustomEvent('sb-auth', { detail: { uid: u ? u.uid : null, email: u ? u.email : null } }));
+    });
+
+    /* ---------- Utils ---------- */
+    const SPECIAL_EMAIL = "numanberk2005@gmail.com";
+    const msToHHMMSS = ms => {
+      const t = Math.max(0, Math.floor(ms / 1000));
+      const h = String(Math.floor(t / 3600)).padStart(2, '0');
+      const m = String(Math.floor((t % 3600) / 60)).padStart(2, '0');
+      const s = String(t % 60).padStart(2, '0');
+      return `${h}:${m}:${s}`;
+    };
+    const todayKey = (d = new Date()) => d.toISOString().slice(0, 10);
+    const initials = (name='') => {
+      const parts = name.trim().split(/\s+/);
+      if(!parts[0]) return '?';
+      return ((parts[0][0]||'') + (parts[1]?.[0]||'')).toUpperCase();
+    };
+    const hashHue = (s='')=>{
+      let h=0; for(let i=0;i<s.length;i++) h=(h*31 + s.charCodeAt(i))>>>0;
+      return h % 360;
+    };
+    const avatarHTML = (name, key, size=32, varName='--h') => {
+      const H = hashHue((key||'') + (name||'')); // deterministic per user
+      return `<span class="avatar" style="${varName}: ${H}; width:${size}px;height:${size}px;">${initials(name)}</span>`;
+    };
+
+    /* ---------- App State ---------- */
+    let presenceInstalled = false;
+    let latestUsers = {};
+    let latestPresence = {};
+    let uiTick = null;
+
+    const els = {
+      authView: document.getElementById("authView"),
+      appView: document.getElementById("appView"),
+      authArea: document.getElementById("authArea"),
+      loginEmail: document.getElementById("loginEmail"),
+      loginPassword: document.getElementById("loginPassword"),
+      loginBtn: document.getElementById("loginBtn"),
+      signupName: document.getElementById("signupName"),
+      signupEmail: document.getElementById("signupEmail"),
+      signupPassword: document.getElementById("signupPassword"),
+      signupBtn: document.getElementById("signupBtn"),
+      toggleStudyBtn: document.getElementById("toggleStudyBtn"),
+      myStatusPill: document.getElementById("myStatusPill"),
+      presenceDot: document.getElementById("presenceDot"),
+      presenceText: document.getElementById("presenceText"),
+      usersList: document.getElementById("usersList"),
+      leaderboard: document.getElementById("leaderboard"),
+      themeToggle: document.getElementById("themeToggle"),
+      collabWrap: document.getElementById("collabWrap"),
+      collabVideoCard: document.getElementById("collabVideoCard"),
+      collabVideo: document.getElementById("collabVideo"),
+      videoPlayPause: document.getElementById("videoPlayPause"),
+      videoMuteUnmute: document.getElementById("videoMuteUnmute"),
+      videoOverlay: document.getElementById("videoOverlay"),
+      overlayPlay: document.getElementById("overlayPlay")
+    };
+
+    /* ---------------- THEME: init + toggle (persist) ---------------- */
+    const THEME_KEY = "sb_theme";
+    function applyTheme(theme){
+      const root = document.documentElement;
+      if(theme === "dark"){
+        root.classList.add("theme-dark");
+        els.themeToggle.textContent = "☀️ Light";
+        els.themeToggle.title = "Switch to light theme";
+      }else{
+        root.classList.remove("theme-dark");
+        els.themeToggle.textContent = "🌙 Dark";
+        els.themeToggle.title = "Switch to dark theme";
+      }
+    }
+    (function initTheme(){
+      const saved = localStorage.getItem(THEME_KEY);
+      if(saved){ applyTheme(saved); }
+      else {
+        const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+        applyTheme(prefersDark ? "dark" : "light");
+      }
+    })();
+    els.themeToggle.onclick = () => {
+      const root = document.documentElement;
+      const next = root.classList.contains("theme-dark") ? "light" : "dark";
+      localStorage.setItem(THEME_KEY, next);
+      applyTheme(next);
+    };
+
+    /* ---------------- Presence helpers ---------------- */
+    function setStatus(study) {
+      els.myStatusPill.textContent = study ? "Studying" : "Idle";
+      els.myStatusPill.className = "pill " + (study ? "study" : "idle");
+      els.toggleStudyBtn.textContent = study ? "Stop Studying" : "Start Studying";
+      const myAnim = document.getElementById("myAnim");
+      if (myAnim) myAnim.style.display = study ? "inline-flex" : "none";
+    }
+    function setPresence(on) {
+      els.presenceDot.className = "status-dot " + (on ? "dot-on" : "dot-off");
+      els.presenceText.textContent = on ? "online" : "offline";
+    }
+    function installPresence(uid) {
+      if (presenceInstalled) return;
+      presenceInstalled = true;
+      onValue(ref(db, ".info/connected"), snap => {
+        if (snap.val()) {
+          const meRef = ref(db, `presence/${uid}`);
+          update(meRef, { online: true, lastOnline: Date.now() });
+          onDisconnect(meRef).update({ online: false, lastOnline: Date.now() });
+          setPresence(true);
+        } else setPresence(false);
+      });
+    }
+
+    /* ---------------- Auth actions ---------------- */
+    els.loginBtn.onclick = async () => {
+      try { await signInWithEmailAndPassword(auth, els.loginEmail.value, els.loginPassword.value); }
+      catch (e) { alert(e.message); }
+    };
+    els.signupBtn.onclick = async () => {
+      try {
+        const cred = await createUserWithEmailAndPassword(auth, els.signupEmail.value, els.signupPassword.value);
+        const name = els.signupName.value || els.signupEmail.value.split('@')[0];
+        await updateProfile(cred.user, { displayName: name });
+        await update(ref(db, `users/${cred.user.uid}`), {
+          email: els.signupEmail.value,
+          displayName: name,
+          studying: false,
+          totals: { allTimeMs: 0, perDay: {} },
+          streak: 0
+        });
+        alert("Account created! You can log in now.");
+      } catch (e) { alert(e.message); }
+    };
+
+    function renderAuthChip(user) {
+      const name = user.displayName || user.email;
+      const chip = `
+        <span class="tag">${avatarHTML(name, user.uid, 18, '--h')} <span class="name">${name}</span></span>
+        <form id="nameForm" class="inline-form small">
+          <input id="newName" placeholder="Set display name" value="${user.displayName || ''}"/>
+          <button class="primary" type="submit">Save</button>
+        </form>`;
+      els.authArea.innerHTML = chip;
+      document.getElementById("nameForm").onsubmit = async e => {
+        e.preventDefault();
+        const val = document.getElementById("newName").value.trim();
+        if (!val) return;
+        await updateProfile(user, { displayName: val });
+        await update(ref(db, `users/${user.uid}`), { displayName: val });
+        renderAuthChip(user);
+      };
+    }
+
+    /* ---------------- App lifecycle ---------------- */
+    onAuthStateChanged(auth, async user => {
+      if (user) {
+        els.authView.style.display = "none";
+        els.appView.style.display = "block";
+        renderAuthChip(user);
+        installPresence(user.uid);
+
+        const uref = ref(db, `users/${user.uid}`);
+        const snap = await get(uref);
+        if (!snap.exists()) {
+          await update(uref, {
+            email: user.email,
+            displayName: user.displayName || user.email.split('@')[0],
+            studying: false,
+            totals: { allTimeMs: 0, perDay: {} },
+            streak: 0
+          });
+        }
+
+        attachGlobalListeners();
+        initVideoDefaults();
+        startUITicker();   // live timers independent of DB changes
+      } else {
+        stopUITicker();
+        latestUsers = {};
+        latestPresence = {};
+        els.usersList.innerHTML = els.leaderboard.innerHTML = "";
+        els.authView.style.display = "grid";
+        els.appView.style.display = "none";
+        els.authArea.innerHTML = "";
+      }
+    });
+
+    /* ---------------- Global listeners (populate snapshots) ---------------- */
+    function attachGlobalListeners() {
+      onValue(ref(db, "users"), usersSnap => {
+        latestUsers = usersSnap.val() || {};
+        draw();
+      });
+      onValue(ref(db, "presence"), presenceSnap => {
+        latestPresence = presenceSnap.val() || {};
+        draw();
+      });
+    }
+
+    /* ---------------- Local 1s UI ticker ---------------- */
+    function startUITicker(){
+      if (uiTick) return;
+      uiTick = setInterval(draw, 1000);
+    }
+    function stopUITicker(){
+      if (uiTick){ clearInterval(uiTick); uiTick = null; }
+    }
+
+    /* ---------------- Render from latest snapshots ---------------- */
+    function draw(){
+      const users = latestUsers || {};
+      const presence = latestPresence || {};
+      const today = todayKey();
+      const myUid = auth.currentUser?.uid;
+      const myEmail = (auth.currentUser?.email || '').toLowerCase();
+
+      const cards = [];
+      const lb = [];
+      const studyingList = [];
+
+      Object.keys(users).forEach(uid => {
+        const u = users[uid];
+        const isOnline = presence[uid]?.online;
+        const name = u.displayName || "User";
+        const studying = !!u.studying;
+        const startAt = u.currentStartAt;
+        const perDay = u.totals?.perDay || {};
+        const todayMsBase = perDay[today] || 0;
+        const allTimeMsBase = u.totals?.allTimeMs || 0;
+
+        let currentMs = 0;
+        if (studying && startAt) currentMs = Math.max(0, Date.now() - startAt);
+
+        const todayMs = todayMsBase + (studying ? currentMs : 0);
+        const allTimeMs = allTimeMsBase + (studying ? currentMs : 0);
+
+        if (studying) studyingList.push({ uid, name });
+
+        lb.push({ name, ms: todayMs });
+
+        cards.push(`
+          <div class="user-card ${studying ? 'is-studying' : ''}">
+            <div class="spaced">
+              <div style="display:flex;align-items:center;gap:8px">
+                ${avatarHTML(name, uid)}
+                <h4 style="margin:0">${name}
+                  ${studying ? '<span class="anim-eq" aria-label="studying"><i></i><i></i><i></i></span>' : ''}
+                </h4>
+              </div>
+              <span class="tag"><span class="status-dot ${isOnline ? 'dot-on':'dot-off'}"></span> ${isOnline?'online':'offline'}</span>
+            </div>
+            <div class="row" style="margin-top:8px; gap:8px;">
+              <span class="pill ${studying?'study':'idle'}">${studying?'Studying':'Idle'}</span>
+              <span class="muted">Current: ${msToHHMMSS(currentMs)}</span>
+            </div>
+            <div class="row" style="margin-top:8px; gap:16px;">
+              <div class="muted">Today: <b>${msToHHMMSS(todayMs)}</b></div>
+              <div class="muted">All-time: <b>${msToHHMMSS(allTimeMs)}</b></div>
+              <div class="muted">Streak: <b>${u.streak || 0} 🔥</b></div>
+            </div>
+          </div>
+        `);
+      });
+
+      els.usersList.innerHTML = cards.join('');
+      lb.sort((a,b)=>b.ms-a.ms);
+      els.leaderboard.innerHTML = lb.map(item => `<li><span>${item.name}</span><span>${msToHHMMSS(item.ms)}</span></li>`).join('');
+
+      // header: collab avatars + status pill + video routing
+      updateCollab(studyingList, myUid);
+      setStatus(studyingList.some(u => u.uid === myUid));
+      setVideoByState(studyingList, myUid, myEmail);
+    }
+
+    function updateCollab(studyingList, myUid){
+      const meIdx = studyingList.findIndex(u => u.uid === myUid);
+      const others = studyingList.filter(u => u.uid !== myUid);
+      if (meIdx !== -1 && others.length > 0){
+        const partner = others[0];
+        const me = studyingList[meIdx];
+        const meH = hashHue((me.uid||'')+(me.name||''));
+        const pH = hashHue((partner.uid||'')+(partner.name||''));
+        els.collabWrap.innerHTML = `
+          <div class="collab" title="Working together">
+            <div class="wire">
+              <svg viewBox="0 0 120 16" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M2 8 C 30 2, 90 14, 118 8"></path>
+              </svg>
+            </div>
+            <div class="av" style="--h1:${meH}">${initials(me.name)}</div>
+            <div class="av partner" style="--h2:${pH}">${initials(partner.name)}</div>
+          </div>`;
+      } else {
+        els.collabWrap.innerHTML = '';
+      }
+    }
+
+    /* ---------------- Video routing logic ---------------- */
+    function initVideoDefaults(){
+      const v = els.collabVideo;
+      v.loop = true;
+      v.muted = true;
+      els.overlayPlay.onclick = () => {
+        v.play().then(()=> els.videoOverlay.classList.remove('show')).catch(()=>{});
+      };
+      els.videoPlayPause.onclick = () => {
+        if (v.paused) { v.play(); els.videoPlayPause.textContent='Pause'; }
+        else { v.pause(); els.videoPlayPause.textContent='Play'; }
+      };
+      els.videoMuteUnmute.onclick = () => {
+        v.muted = !v.muted;
+        els.videoMuteUnmute.textContent = v.muted ? 'Unmute' : 'Mute';
+      };
+    }
+
+    function setVideoByState(studyingList, myUid, myEmail){
+      const card = els.collabVideoCard;
+      const v = els.collabVideo;
+
+      const meStudying = studyingList.some(u => u.uid === myUid);
+      const othersStudying = studyingList.filter(u => u.uid !== myUid);
+      const collab = meStudying && othersStudying.length > 0;
+
+      if (!meStudying){
+        // Not studying -> hide big video
+        card.classList.remove('active');
+        v.pause();
+        els.videoOverlay.classList.remove('show');
+        return;
+      }
+
+      // Choose source from data-* (served by Netlify under /videos/)
+      const srcNuman = v.dataset.srcNumanSolo;
+      const srcOthers = v.dataset.srcOthersSolo;
+      const srcCollab = v.dataset.srcCollab;
+
+      let nextSrc = '';
+      if (collab){
+        nextSrc = srcCollab;
+      } else {
+        nextSrc = (myEmail.toLowerCase() === SPECIAL_EMAIL) ? srcNuman : srcOthers;
+      }
+
+      // Swap only if changed
+      const absoluteNext = new URL(nextSrc, location.origin).href;
+      if (v.currentSrc !== absoluteNext){
+        v.pause();
+        v.src = nextSrc;
+        v.load();
+        v.play().then(()=>{
+          els.videoOverlay.classList.remove('show');
+        }).catch(()=>{
+          els.videoOverlay.classList.add('show'); // needs user gesture
+        });
+        els.videoPlayPause.textContent = 'Pause';
+        els.videoMuteUnmute.textContent = v.muted ? 'Unmute' : 'Mute';
+      }
+
+      card.classList.add('active');
+    }
+
+    /* ---------------- Study toggle handler ---------------- */
+    els.toggleStudyBtn.onclick = async () => {
+      const uid = (auth.currentUser||{}).uid; if(!uid) return;
+      const uref = ref(db, `users/${uid}`);
+      const snap = await get(uref); const u = snap.val() || {};
+      const now = Date.now();
+      if (!u.studying){
+        await update(uref, { studying:true, currentStartAt: now });
+      } else {
+        const startAt = u.currentStartAt || now;
+        const elapsed = Math.max(0, now - startAt);
+        const totals = u.totals || { allTimeMs:0, perDay:{} };
+        const perDay = totals.perDay || {};
+        const day = todayKey(new Date(startAt));
+        perDay[day] = (perDay[day] || 0) + elapsed;
+        const allTimeMs = (totals.allTimeMs || 0) + elapsed;
+
+        const stoppedDay = todayKey(new Date());
+        let newStreak = u.streak || 0;
+        const lastDay = u.lastStudyDay;
+        if (!lastDay) newStreak = 1;
+        else {
+          const last = new Date(lastDay+'T00:00:00Z');
+          const cur = new Date(stoppedDay+'T00:00:00Z');
+          const diff = Math.round((cur - last)/86400000);
+          if (diff === 1) newStreak = (newStreak||0) + 1;
+          else if (diff > 1) newStreak = 1;
+        }
+
+        await update(uref, {
+          studying:false,
+          currentStartAt:null,
+          totals:{ allTimeMs, perDay },
+          lastStudyDay: stoppedDay,
+          streak: newStreak
+        });
+      }
+    };
+
+    /* ---------------- Presence install ---------------- */
+    onAuthStateChanged(auth, user => {
+      if (!user) return;
+      if (presenceInstalled) return;
+      presenceInstalled = true;
+      onValue(ref(db, ".info/connected"), snap => {
+        if (snap.val()) {
+          const meRef = ref(db, `presence/${user.uid}`);
+          update(meRef, { online: true, lastOnline: Date.now() });
+          onDisconnect(meRef).update({ online: false, lastOnline: Date.now() });
+          setPresence(true);
+        } else setPresence(false);
+      });
+    });
+
+  </script>
+  <script>
+    /* =========================================================
+       SECRET GATEWAY  →  PIN  →  BIRTHDAY SURPRISE
+       Separate from the study-timer module above. Touches nothing
+       in the timer; only listens to the logo dot and runs the gate.
+       ========================================================= */
+    (function(){
+      /* ====== CHANGE THE PIN HERE ====== */
+      const SECRET_PIN = "0306";     // the secret code (any number of digits)
+      /* ================================= */
+      const TAPS_NEEDED = 5;         // taps on the glowing logo dot to reveal the gate
+      const TAP_WINDOW  = 2000;      // taps must land within this many ms
+
+      const $ = id => document.getElementById(id);
+      const pinModal = $('pinModal'), pinInputs = $('pinInputs'), pinMsg = $('pinMsg');
+      const pinCard = $('pinCard'), pinLock = $('pinLock');
+      const bday = $('birthdayView'), bdayAudio = $('bdayAudio');
+      const dot = document.querySelector('.title .dot');
+
+      /* build one input box per PIN digit */
+      const boxes = [];
+      for (let i = 0; i < SECRET_PIN.length; i++){
+        const inp = document.createElement('input');
+        inp.type = 'text'; inp.inputMode = 'numeric'; inp.autocomplete = 'off';
+        inp.maxLength = 1; inp.setAttribute('aria-label', 'Şifre hanesi ' + (i + 1));
+        pinInputs.appendChild(inp); boxes.push(inp);
+      }
+      boxes.forEach((inp, i) => {
+        inp.addEventListener('input', () => {
+          inp.value = inp.value.replace(/\D/g, '').slice(0, 1);
+          if (inp.value && i < boxes.length - 1) boxes[i + 1].focus();
+          if (boxes.every(b => b.value)) trySubmit();
+        });
+        inp.addEventListener('keydown', e => {
+          if (e.key === 'Backspace' && !inp.value && i > 0){ boxes[i - 1].focus(); boxes[i - 1].value = ''; e.preventDefault(); }
+          if (e.key === 'Enter') trySubmit();
+        });
+        inp.addEventListener('paste', e => {
+          e.preventDefault();
+          const d = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, boxes.length).split('');
+          d.forEach((ch, k) => { if (boxes[k]) boxes[k].value = ch; });
+          (boxes[Math.min(d.length, boxes.length - 1)] || inp).focus();
+          if (boxes.every(b => b.value)) trySubmit();
+        });
+      });
+
+      function clearPin(){ boxes.forEach(b => b.value = ''); pinMsg.textContent = ''; pinMsg.style.color = ''; }
+      function openModal(){ clearPin(); pinLock.textContent = '🔒'; pinModal.classList.add('open'); setTimeout(() => boxes[0] && boxes[0].focus(), 60); }
+      function closeModal(){ pinModal.classList.remove('open'); clearPin(); }
+
+      function trySubmit(){
+        const val = boxes.map(b => b.value).join('');
+        if (val.length < boxes.length) return;
+        if (val === SECRET_PIN){
+          pinLock.textContent = '🔓';
+          pinMsg.style.color = 'var(--ok)';
+          pinMsg.textContent = 'Hoş geldin 💖';
+          startMusic();                       // fire within the gesture → best autoplay chance
+          setTimeout(() => { closeModal(); openBirthday(); }, 480);
+        } else {
+          pinMsg.textContent = 'Yanlış şifre, tekrar dene 💔';
+          pinCard.classList.remove('pin-shake'); void pinCard.offsetWidth; pinCard.classList.add('pin-shake');
+          boxes.forEach(b => b.value = ''); boxes[0] && boxes[0].focus();
+        }
+      }
+
+      $('pinSubmit').addEventListener('click', trySubmit);
+      $('pinCancel').addEventListener('click', closeModal);
+      pinModal.addEventListener('click', e => { if (e.target === pinModal) closeModal(); });
+
+      /* ---- open / close the birthday world ---- */
+      function startMusic(){
+        // idempotent; called within the unlock tap so browsers allow autoplay
+        if (!bdayAudio.innerHTML){
+          bdayAudio.innerHTML = '<iframe width="0" height="0" src="https://www.youtube.com/embed/sPWfmXBvgz4?autoplay=1&loop=1&playlist=sPWfmXBvgz4" frameborder="0" allow="autoplay" allowfullscreen></iframe>';
+        }
+      }
+      function openBirthday(){
+        startMusic();
+        bday.classList.add('open');
+        bday.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        showBirthdaySection('giris');
+        bday.scrollTop = 0;
+        if (typeof window.onBirthdayOpen === 'function') window.onBirthdayOpen();
+      }
+      function closeBirthday(){
+        bday.classList.remove('open');
+        bday.setAttribute('aria-hidden', 'true');
+        bdayAudio.innerHTML = '';            // stops the music
+        document.body.style.overflow = '';
+        if (typeof window.onBirthdayClose === 'function') window.onBirthdayClose();
+      }
+      $('birthdayBack').addEventListener('click', closeBirthday);
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape'){ if (bday.classList.contains('open')) closeBirthday(); else if (pinModal.classList.contains('open')) closeModal(); }
+      });
+
+      /* ---- birthday internal navigation (scoped to the surprise) ---- */
+      window.showBirthdaySection = function(id){
+        bday.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+        const t = bday.querySelector('#' + id);
+        if (t) t.classList.add('active');
+        bday.scrollTop = 0;
+      };
+
+      /* ---- soft fallback if a photo file isn't in /images yet ---- */
+      function placeholder(label){
+        const svg = "<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'>"
+          + "<defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'>"
+          + "<stop offset='0' stop-color='#ffe1ea'/><stop offset='1' stop-color='#fff0f5'/></linearGradient></defs>"
+          + "<rect width='300' height='300' rx='15' fill='url(#g)'/>"
+          + "<text x='150' y='138' font-size='54' text-anchor='middle'>💗</text>"
+          + "<text x='150' y='184' font-family='Open Sans, sans-serif' font-size='16' fill='#c25e7a' text-anchor='middle'>" + label + "</text>"
+          + "<text x='150' y='208' font-family='Open Sans, sans-serif' font-size='12' fill='#d68fa3' text-anchor='middle'>fotoğraf yakında 💌</text>"
+          + "</svg>";
+        return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+      }
+      function guard(img, label){
+        const setPh = () => { img.src = placeholder(label); };
+        img.addEventListener('error', function onErr(){ img.removeEventListener('error', onErr); setPh(); });
+        if (img.complete && img.naturalWidth === 0) setPh();
+      }
+      bday.querySelectorAll('.gallery img').forEach((img, i) => guard(img, img.alt || ('Foto ' + (i + 1))));
+      const intro = $('bdayIntroImg'); if (intro) guard(intro, 'Aşkım 💖');
+
+      /* ---- the secret trigger: tap the glowing logo dot ---- */
+      let taps = 0, t = null;
+      if (dot){
+        dot.addEventListener('click', () => {
+          taps++;
+          clearTimeout(t);
+          t = setTimeout(() => { taps = 0; }, TAP_WINDOW);
+          if (taps >= TAPS_NEEDED){ taps = 0; clearTimeout(t); openModal(); }
+        });
+      }
+    })();
+  </script>
+
+  <script>
+    /* =========================================================
+       BIRTHDAY DATA  —  live photo album + year-grouped notes feed
+       • Photos: any logged-in study buddy can add.
+       • Notes : only Numan (the special account) can post, filed under the
+                 year he picks; everyone reads, grouped into year folders
+                 you click open. Path: notes/{year}/{id}.
+       Stored in the existing Realtime Database under  gallery/  and  notes/ .
+       Photos are shrunk in the browser first so the DB stays light.
+       ========================================================= */
+    (function(){
+      const SPECIAL_EMAIL = "numanberk2005@gmail.com";   // only this account may post notes
+      const $ = id => document.getElementById(id);
+
+      const photoFile = $('photoFile'), photoCaption = $('photoCaption'), photoAddBtn = $('photoAddBtn'),
+            photoHint = $('photoHint'), galleryGrid = $('galleryGrid'), galleryEmpty = $('galleryEmpty');
+      const noteComposer = $('noteComposer'), noteText = $('noteText'), noteYear = $('noteYear'), noteAddBtn = $('noteAddBtn'),
+            noteHint = $('noteHint'), notesYears = $('notesYears'), notesEmpty = $('notesEmpty');
+      const openYears = new Set();   // which year-folders are currently expanded (UI state, resets on reload)
+
+      let fb = null, inited = false, busy = false;
+
+      function whenFb(cb){
+        if (window.fb){ cb(window.fb); return; }
+        window.addEventListener('fb-ready', () => cb(window.fb), { once:true });
+      }
+      const user = () => (fb && fb.auth) ? fb.auth.currentUser : null;
+      const isNuman = u => !!u && (u.email || '').toLowerCase() === SPECIAL_EMAIL.toLowerCase();
+      const esc = s => (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      const fmtDate = ms => { try { return new Date(ms).toLocaleDateString('tr-TR', { day:'numeric', month:'long', year:'numeric' }); } catch(e){ return ''; } };
+
+      /* shrink a chosen photo in the browser before saving */
+      function compress(file, maxDim, quality){
+        return new Promise((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = e => {
+            const img = new Image();
+            img.onload = () => {
+              let w = img.width, h = img.height;
+              if (w > h && w > maxDim){ h = Math.round(h * maxDim / w); w = maxDim; }
+              else if (h > maxDim){ w = Math.round(w * maxDim / h); h = maxDim; }
+              const c = document.createElement('canvas'); c.width = w; c.height = h;
+              c.getContext('2d').drawImage(img, 0, 0, w, h);
+              resolve(c.toDataURL('image/jpeg', quality));
+            };
+            img.onerror = reject; img.src = e.target.result;
+          };
+          r.onerror = reject; r.readAsDataURL(file);
+        });
+      }
+
+      function refreshAuthUI(){
+        const u = user();
+        photoHint.textContent = u ? '' : 'Fotoğraf eklemek için yukarıdan Study Buddies\'e giriş yap 💗';
+        if (isNuman(u)){ noteComposer.style.display = ''; if (!noteYear.value) noteYear.value = new Date().getFullYear(); } else { noteComposer.style.display = 'none'; }
+      }
+      window.addEventListener('sb-auth', refreshAuthUI);
+
+      function renderGallery(val){
+        const items = Object.entries(val || {}).map(([k,v]) => Object.assign({ k }, v)).sort((a,b) => (b.at||0)-(a.at||0));
+        const me = user();
+        galleryEmpty.style.display = items.length ? 'none' : '';
+        galleryGrid.innerHTML = items.map(it => {
+          const safe = (it.img && /^data:image\//.test(it.img)) ? it.img : '';
+          if (!safe) return '';
+          const canDel = me && (me.uid === it.byUid || isNuman(me));
+          return '<div class="photo-card">'
+            + (canDel ? '<button class="item-del" data-kind="gallery" data-key="' + it.k + '" title="Sil">✕</button>' : '')
+            + '<img loading="lazy" src="' + safe + '" alt="' + (esc(it.caption) || 'Fotoğraf') + '">'
+            + (it.caption ? '<div class="photo-cap">' + esc(it.caption) + '</div>' : '')
+            + '<div class="photo-meta">' + (esc(it.by) || 'Biri') + ' • ' + fmtDate(it.at) + '</div>'
+            + '</div>';
+        }).join('');
+      }
+      function renderNotes(val){
+        const val_ = val || {};
+        const years = Object.keys(val_).map(Number).filter(y => !isNaN(y)).sort((a,b) => a - b); // oldest → newest, like the timeline
+        const canDel = isNuman(user());
+        notesEmpty.style.display = years.length ? 'none' : '';
+        notesYears.innerHTML = years.map(year => {
+          const items = Object.entries(val_[year] || {}).map(([k,v]) => Object.assign({ k }, v)).sort((a,b) => (a.at||0)-(b.at||0));
+          const isOpen = openYears.has(String(year));
+          const body = items.map(it =>
+            '<div class="note-card">'
+            + (canDel ? '<button class="item-del" data-kind="notes/' + year + '" data-key="' + it.k + '" title="Sil">✕</button>' : '')
+            + '<div class="note-text">' + esc(it.text) + '</div>'
+            + '<div class="note-meta">' + (esc(it.by) || '') + ' • ' + fmtDate(it.at) + '</div>'
+            + '</div>'
+          ).join('') || '<div class="bday-empty" style="margin:6px 0;">Bu yılda henüz not yok.</div>';
+          return '<div class="year-folder' + (isOpen ? ' open' : '') + '" data-year="' + year + '">'
+            + '<button type="button" class="year-head">'
+            + '<span class="year-arrow">▶</span><span class="year-num">' + year + '</span>'
+            + '<span class="year-count">' + items.length + ' not</span>'
+            + '</button>'
+            + '<div class="year-body">' + body + '</div>'
+            + '</div>';
+        }).join('');
+      }
+
+      function init(){
+        if (inited) return; inited = true;
+        whenFb(_fb => {
+          fb = _fb;
+          refreshAuthUI();
+          fb.onValue(fb.ref(fb.db, 'gallery'), s => renderGallery(s.val()));
+          fb.onValue(fb.ref(fb.db, 'notes'),   s => renderNotes(s.val()));
+        });
+      }
+      window.onBirthdayOpen  = function(){
+        init();
+        refreshAuthUI();
+        // start every visit with the letter and all year folders collapsed
+        const lf = document.getElementById('letterFold'); if (lf) lf.removeAttribute('open');
+        openYears.clear();
+        notesYears.querySelectorAll('.year-folder.open').forEach(f => f.classList.remove('open'));
+      };
+      window.onBirthdayClose = function(){ /* listeners stay attached; nothing to do */ };
+
+      /* add a photo (any logged-in user) */
+      photoAddBtn.addEventListener('click', () => {
+        if (!user()){ photoHint.textContent = 'Önce yukarıdan Study Buddies\'e giriş yapmalısın 💗'; return; }
+        photoFile.click();
+      });
+      photoFile.addEventListener('change', async () => {
+        const file = photoFile.files && photoFile.files[0];
+        if (!file || busy) return;
+        const u = user();
+        if (!u){ photoHint.textContent = 'Giriş gerekli.'; photoFile.value = ''; return; }
+        busy = true;
+        const label = photoAddBtn.textContent; photoAddBtn.textContent = 'Yükleniyor…'; photoAddBtn.disabled = true;
+        try {
+          const img = await compress(file, 1280, 0.82);
+          const key = Date.now() + '-' + Math.random().toString(36).slice(2,8);
+          await fb.update(fb.ref(fb.db, 'gallery/' + key), {
+            img: img, caption: (photoCaption.value || '').trim(),
+            by: u.displayName || u.email, byUid: u.uid, at: Date.now()
+          });
+          photoCaption.value = ''; photoHint.textContent = '';
+        } catch(err){ photoHint.textContent = 'Yükleme başarısız: ' + (err && err.message ? err.message : err); }
+        finally { busy = false; photoFile.value = ''; photoAddBtn.textContent = label; photoAddBtn.disabled = false; }
+      });
+
+      /* add a note (Numan only) — files under the chosen year */
+      noteAddBtn.addEventListener('click', async () => {
+        const u = user();
+        if (!isNuman(u) || busy) return;                 // composer is hidden for others; double-check anyway
+        const text = (noteText.value || '').trim();
+        const year = parseInt(noteYear.value, 10);
+        if (!text){ noteHint.textContent = 'Önce bir şeyler yaz 💗'; return; }
+        if (!year || year < 2000 || year > 2200){ noteHint.textContent = 'Geçerli bir yıl gir (örn. 2025).'; return; }
+        busy = true; noteHint.textContent = '';
+        const label = noteAddBtn.textContent; noteAddBtn.textContent = 'Ekleniyor…'; noteAddBtn.disabled = true;
+        try {
+          const key = Date.now() + '-' + Math.random().toString(36).slice(2,8);
+          await fb.update(fb.ref(fb.db, 'notes/' + year + '/' + key), { text: text, by: u.displayName || u.email, at: Date.now() });
+          noteText.value = '';
+          openYears.add(String(year));   // jump straight to the year it landed in
+        } catch(err){ noteHint.textContent = 'Eklenemedi: ' + (err && err.message ? err.message : err); }
+        finally { busy = false; noteAddBtn.textContent = label; noteAddBtn.disabled = false; }
+      });
+
+      /* expand / collapse a year folder */
+      notesYears.addEventListener('click', (e) => {
+        const head = e.target.closest ? e.target.closest('.year-head') : null;
+        if (!head) return;
+        const folder = head.closest('.year-folder');
+        const year = folder.getAttribute('data-year');
+        if (openYears.has(year)) openYears.delete(year); else openYears.add(year);
+        folder.classList.toggle('open');
+      });
+
+      /* delete (a photo's uploader, or Numan for anything) */
+      document.addEventListener('click', async (e) => {
+        const btn = e.target.closest ? e.target.closest('.item-del') : null;
+        if (!btn || !fb) return;
+        const kind = btn.getAttribute('data-kind'), key = btn.getAttribute('data-key');
+        if (!kind || !key) return;
+        if (!confirm('Bunu silmek istediğine emin misin?')) return;
+        try { await fb.update(fb.ref(fb.db, kind), { [key]: null }); }
+        catch(err){ alert('Silinemedi: ' + (err && err.message ? err.message : err)); }
+      });
+    })();
+  </script>
+</body>
+</html>
