@@ -279,6 +279,14 @@
       box-shadow:0 4px 12px rgba(220,20,60,.18); backdrop-filter:blur(4px);
     }
     #birthdayBack:hover{ background:#fff; transform:translateY(-1px); }
+    #musicMute{
+      position:fixed; top:12px; right:12px; z-index:20;
+      width:42px; height:42px; padding:0; border-radius:50%;
+      background:rgba(255,255,255,.92); color:crimson;
+      border:1px solid #ffd0dc; cursor:pointer; font-size:18px; line-height:1;
+      box-shadow:0 4px 12px rgba(220,20,60,.18); backdrop-filter:blur(4px);
+    }
+    #musicMute:hover{ background:#fff; transform:translateY(-1px); }
     #birthdayView h1{ font-family:'Great Vibes', cursive; font-size:3rem; margin-top:50px; }
     #birthdayView h2{ font-family:'Great Vibes', cursive; font-size:2.4rem; color:crimson; margin:0; }
     #birthdayView section{ display:none; padding:90px 20px 60px; min-height:90vh; }
@@ -370,6 +378,38 @@
     @media (prefers-reduced-motion: reduce){
       #pinModal.open, .pin-card, .pin-shake,
       #birthdayBack:hover, #birthdayView nav button:hover{ animation:none; transition:none; }
+    }
+
+    /* ===================== mobile readability ===================== */
+    @media (max-width:640px){
+      /* ----- study app ----- */
+      .container{ margin:16px auto; padding:0 12px; }
+      header{ flex-direction:column; align-items:flex-start; gap:10px; }
+      .controls{ width:100%; justify-content:flex-start; }
+      .card{ padding:14px; }
+      .title{ font-size:21px; }
+      .user-list{ grid-template-columns:1fr; }
+      .grid{ gap:12px; }
+      #focusView .focus-inner{ padding:18px; }
+      #focusView .focus-toggle{ font-size:1rem; padding:13px 26px; }
+
+      /* ----- birthday page ----- */
+      #birthdayView h1{ font-size:2.05rem; margin-top:24px; line-height:1.18; }
+      #birthdayView h2{ font-size:1.85rem; }
+      #birthdayView section{ padding:88px 16px 48px; }
+      #birthdayView nav{ justify-content:flex-start; padding:8px 6px 8px 56px; gap:0; }
+      #birthdayView nav button{ font-size:.88rem; margin:3px 4px; padding:6px 7px; }
+      #birthdayView .letter{ padding:20px 18px; }
+      #birthdayView .letter p{ font-size:1.02rem; line-height:1.62; }
+      #birthdayView .letter-summary{ font-size:1.45rem; padding:14px 16px; }
+      #birthdayView .gallery{ padding:10px; gap:12px; }
+      #birthdayView .bday-uploader{ gap:8px; }
+      #birthdayView #bdayIntroImg{ max-width:min(300px,82vw) !important; }
+      /* compact back button so it never collides with the tabs */
+      #birthdayBack{ top:8px; left:8px; padding:9px 12px; font-size:0; gap:0; }
+      #birthdayBack::before{ content:"←"; font-size:1.2rem; line-height:1; }
+      #musicMute{ top:8px; right:8px; width:38px; height:38px; font-size:16px; }
+      #a4Secret{ right:10px; bottom:10px; }
     }
   </style>
 </head>
@@ -492,14 +532,15 @@
   <!-- ================= BIRTHDAY SURPRISE (full-screen) ================= -->
   <div id="birthdayView" aria-hidden="true">
     <button id="birthdayBack">← Zamanlayıcıya dön</button>
+    <button id="musicMute" aria-label="Müziği aç/kapat" title="Müziği aç/kapat">🔊</button>
     <div class="audio-control" id="bdayAudio"></div>
 
     <a id="a4Secret" href="https://www.youtube.com/watch?v=E1rI9Vhp0PQ" target="_blank" rel="noopener" aria-label="?">🎁</a>
 
     <nav>
       <button onclick="showBirthdaySection('giris')">Giriş</button>
-      <button onclick="showBirthdaySection('fotograflar')">biz</button>
-      <button onclick="showBirthdaySection('mektup')">Bizi konuşmak istiyorum</button>
+      <button onclick="showBirthdaySection('fotograflar')">📷</button>
+      <button onclick="showBirthdaySection('mektup')">bal konuşması</button>
     </nav>
 
     <section id="giris" class="active">
@@ -509,11 +550,11 @@
     </section>
 
     <section id="fotograflar">
-      <h2>biz</h2>
+      <h2>📷</h2>
       <p style="max-width:600px;margin:0 auto 20px;font-size:1.1rem;">Şimdilik nispeten küçük olabilir ama uzun bi süre dolduracağımızdan dünyanın en büyük albümü olacaktır.</p>
       <div id="photoUploader" class="bday-uploader">
         <input type="file" id="photoFile" accept="image/*" hidden>
-        <input type="text" id="photoCaption" class="bday-input" placeholder="Bir not ekle (isteğe bağlı)" maxlength="120">
+        <input type="text" id="photoCaption" class="bday-input" placeholder="bir not ekle(ya da ekleme sen biliyon)" maxlength="120">
         <button type="button" id="photoAddBtn" class="bday-btn">📷 Fotoğraf ekle</button>
         <div id="photoHint" class="bday-hint"></div>
       </div>
@@ -522,10 +563,10 @@
     </section>
 
     <section id="mektup">
-      <h2>Bizi konuşmak istiyorum</h2>
+      <h2>bal konuşması</h2>
 
       <details class="letter-fold" id="conv2025">
-        <summary class="letter-summary"><span class="letter-arrow">▶</span> 2025 konuşması</summary>
+        <summary class="letter-summary"><span class="letter-arrow">▶</span> 2025</summary>
         <div class="letter">
           <p>Sevgili dexterva,</p>
           <p>Öncelikle, iyi ki varsın ve iyi ki doğdun canımın içi. Bir geleneğin başlangıcı olmasını umduğum bu doğum günü sayfası asla unutmak istemediğim ve unutmayı göze alamıyacağım en değerlimi saklıcağım o kasa olsun istedim. hayatıma etkisi bakımından kıyaslandığında en bomba doğum günüm(evet ilk doğum günümü bile alır) bizim doğum günümüz, en mutlu günüm oldu. Bencilce mi bilmem ama senin bu doğum gününü de bize mal etmek istedim. O yüzden bu günü de 03.06 da yaktığımız o ateşi ölmüsüz hale getirdiğimiz gün ilan ediyorum. Seninle birlikte oluşturduğumuz anıları, birbirimize söylediklerimizi, hissettiklerimizi biriktirebileceğimiz bize özel bir yer fikri... Bana dünya üstündeki her şeyden daha kıymetli geldi. Oluşturulma vizyonunu aradan çıkardığımıza göre doğum günü kızıyla ilgili de bir kaç kelam etmek isterim. Segili Bitanem, ben biz olana kadar söylemeye can attığım bu hitaplar artık beni korkutuyor. Bir gün monoton olcak da her zamanki gibi hissetiricek diye. Şunu bilmeni isterim ki ne zaman canımın içi, ne zaman aşkım, ne zaman bitanem dersem onu tüm kalbimde hissederek, son hecesini uzatarak, bağıra bağıra söylüyor olucam ve yine her duyduğumda ilk defa duymuş gibi havalara uçucağım. Ayrıca yaptığım her şeyin keyfini sonsuza katladığın ve sadece aklımdan çıkmayarak beni dünyanın en mutlu insanı yaptığın için teşekkür ederim. Kafamı herhangi bir anda meşgul eden herhangi bir şeyin ne kadar önemsiz olduğunu, uğruna pişman oluncak tek şeyin birlikte geçiremediğimiz zamanlar olduğunu gösterdin bana. İnşallah senin yan koltukta uyuyabilir olduğun o yolculuklara çıkar, bulduğumuz güzel manzaraya karşı açıp istediğimiz cdmizi(recep ivedik) izlediğimiz, kimseciklerin bizi tanımadığı, napıyor bunlar demediği, her gün istediğimiz yapabilecek kadar özgür olduğumuz günlerde buluşuruz. Tekrardan tüm kalbimle iyi ki doğdun iyikim. 💖</p>
@@ -534,9 +575,11 @@
       </details>
 
       <details class="letter-fold" id="conv2026">
-        <summary class="letter-summary"><span class="letter-arrow">▶</span> 2026 konuşması</summary>
+        <summary class="letter-summary"><span class="letter-arrow">▶</span> 2026</summary>
         <div class="letter">
-          <p style="text-align:center;color:#a4677d;">2026 konuşmamız henüz yazılmadı 💗<br>yakında buraya eklenecek.</p>
+          <p>Sevgili dexterva,</p>
+          <p>İyi ki doğdun bitaneeem iyi ki varsın iyi ki doğdun iyi ki. Öncelikle şunu demek istiyorum canım aşkım, benim için dünyalara bedelsin senin için vazgeçemiyeceğim hiçbişey yapmıcağım hiçbişey yok. Ama klasjdflkjkljzxlkcjv yok şaka aması yok valla kılçıksız dünyalara bedelsin. Eyyy benim en kıymetlim sana çok teşekkür ederim birçok şey için ama öncelikle buranın konusu yapmak istediğim şeyy dünyanın en iyi arkadaşı,dostu,yoldaşı,sırdaşı  olduğun için teşekkürler gerçekten söyliyebileceğim her türlü şeye her türlü soruna her türlü cevaba açıksın gibi hissediyorum bu sefer sadece hissetmiyorum öylesin ya bu esmin duosunun bir parçası olabildiğim içiiiiiiiiiiin o kadar şükürler içerisindeyim ki.Bence seninle birlikteyken iki kişiden çok daha fazlası oluyoruz dünya üstünde kaç tane ervamerve varsa hepsi ve ne kadar numanberk varsa hepsiyiz aynı zamanda da iki kişiden çok daha az oluyoruz,erman. o kadar tek kişi o kadar bütün o kadar tam oluyorum ki seninleyken dünyanın en iyi omzu oluğun için her daim yaslanabilceğimi bildiğim için teşekkürleeeerrr. Ve ve veee o kadar her zerreme nüfuz ettin o kadar canım oldun ki ya ne yaparsam yapıyım istersem bizimkilerle bir oyun oynıyım acaba ervayla da oynayabilir miyim diye düşünüyorum istersem dışarı çıkıyım ulan şimdi dışarı çıkmaktansa balla oturabilirdim diye düşünüyom istersem oturup annelerle televizyon izliyim bal burda hiçkimsenin görmeidği bişi görür kimsenin ayıkmadığı bi tespit yapar ısırasım gelir ısıramam diye düşünüyorum istersem babamla din tartışim bal gelip ikimizin de aynı şeyi söylediğini bize gösterir herbişeyi çözerdi diye düşünüyoruuum.-canımsın-.Belki de fazla takıldık önümüzdeki inanılmaz geleceğe çok heyecanlandık sen hep uyarıyordun gerçi bugünün ne kadar kıymetli olduğunu unutma diye,haklıydın tabiki. Ne kadar güzel bi yılı geride bıraktığımız düşüncesi önümüzdeki kim bilir kaç yılın hayalinden çoook daha havalara uçurucu. O ve içinde olduğumuz her günün seninle yaşıyor olduğum, yanımda ya da kafamda, her saniyenin ne kadar havalara uçurucu olduğunu kafama sığdıramıyorum aklım almıyoo.Düşündükçe gelecekte olmayışımız o kadar az dert olmaya başlıyo.Şimdi de gelecekten bi parça olann ikimizin de yetişkin olduğu o 11 ay başlıyo :D İyiki varsın a(n,s)lamım benim.</p>
+          <p>Tanıdığım en en eeen olan kıza,<br>el primo</p>
         </div>
       </details>
     </section>
@@ -1103,12 +1146,18 @@
       pinModal.addEventListener('click', e => { if (e.target === pinModal) closeModal(); });
 
       /* ---- open / close the birthday world ---- */
-      function startMusic(){
-        // idempotent; called within the unlock tap so browsers allow autoplay
-        if (!bdayAudio.innerHTML){
-          bdayAudio.innerHTML = '<iframe width="0" height="0" src="https://www.youtube.com/embed/sPWfmXBvgz4?autoplay=1&loop=1&playlist=sPWfmXBvgz4" frameborder="0" allow="autoplay" allowfullscreen></iframe>';
-        }
+      const MUSIC_IFRAME = '<iframe width="0" height="0" src="https://www.youtube.com/embed/sPWfmXBvgz4?autoplay=1&loop=1&playlist=sPWfmXBvgz4" frameborder="0" allow="autoplay" allowfullscreen></iframe>';
+      const muteBtn = $('musicMute');
+      let musicOn = false;
+      function renderMusic(){
+        if (musicOn){ if (!bdayAudio.innerHTML) bdayAudio.innerHTML = MUSIC_IFRAME; }
+        else { bdayAudio.innerHTML = ''; }
+        if (muteBtn) muteBtn.textContent = musicOn ? '🔊' : '🔇';
       }
+      function startMusic(){          // called within the unlock tap so browsers allow autoplay
+        musicOn = true; renderMusic();
+      }
+      if (muteBtn) muteBtn.addEventListener('click', () => { musicOn = !musicOn; renderMusic(); });
       function openBirthday(){
         startMusic();
         bday.classList.add('open');
@@ -1121,7 +1170,7 @@
       function closeBirthday(){
         bday.classList.remove('open');
         bday.setAttribute('aria-hidden', 'true');
-        bdayAudio.innerHTML = '';            // stops the music
+        musicOn = false; renderMusic();      // stops the music
         document.body.style.overflow = '';
         if (typeof window.onBirthdayClose === 'function') window.onBirthdayClose();
       }
