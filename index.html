@@ -560,12 +560,10 @@
       max-width:680px; margin:34px auto 0; background:#fff; border:1px solid #ffd0dc;
       border-radius:18px; padding:18px; box-shadow:0 6px 18px rgba(220,20,60,.08);
     }
-    #birthdayView .cd-weeks-title{ font-family:'Great Vibes',cursive; color:crimson; font-size:1.7rem; margin:0 0 12px; }
     #birthdayView .cd-weeks{ display:flex; flex-wrap:wrap; gap:4px; justify-content:center; font-size:14px; line-height:1.3; }
     #birthdayView .cd-weeks span{ width:18px; text-align:center; }
     #birthdayView .cd-weeks .now{ display:inline-block; animation:cdPulse 1.2s ease-in-out infinite; }
     @keyframes cdPulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.4); } }
-    #birthdayView .cd-legend{ font-size:.78rem; color:#c98aa0; margin-top:12px; }
 
     /* ---- travel guide ---- */
     #birthdayView .t-lock-card{
@@ -958,8 +956,7 @@
 
     <!-- ============ COUNTDOWN ============ -->
     <section id="geriSayim">
-      <h2>⏳ Geri Sayım</h2>
-      <p style="max-width:560px;margin:10px auto 0;font-size:1.08rem;">11 Haziran 2028'e…</p>
+      <h2 style="font-size:2rem;line-height:1.25;max-width:640px;margin-left:auto;margin-right:auto;">Evet şuanımızın kıymetini bilelim tabii amaa, bu da aslında hayallerimize ne kadar yaklaştığımızı gösteriyo güzel bence 💖</h2>
 
       <div class="cd-cards">
         <div class="cd-card"><div class="cd-num" id="cdD">–</div><div class="cd-lab">gün</div></div>
@@ -983,9 +980,7 @@
       </div>
 
       <div class="cd-weeks-wrap">
-        <h3 class="cd-weeks-title">Her kalp bir hafta</h3>
         <div class="cd-weeks" id="cdWeeks"></div>
-        <div class="cd-legend">❤️ geçti &nbsp;·&nbsp; 💗 bu hafta &nbsp;·&nbsp; 🤍 gelecek</div>
       </div>
     </section>
 
@@ -2610,9 +2605,9 @@
         const pct = passed / total * 100;
         $('cdFill').style.width = pct + '%';
         $('cdPlane').style.left = pct + '%';
-        $('cdPct').textContent = done ? 'O gün geldi!! 🎉💖' : 'Yolun %' + pct.toFixed(2) + '\u2019si geride kaldı';
-        $('cdPassed').textContent = '💘 ' + Math.floor(passed / 86400000) + ' gün geçti';
-        $('cdLeft').textContent = '⏳ ' + Math.ceil(left / 86400000) + ' gün kaldı';
+        $('cdPct').textContent = done ? 'O gün geldi!! 🎉💖' : '%' + pct.toFixed(2) + '\u2019ini beraber yürüdük bilee';
+        $('cdPassed').textContent = '💘 ' + Math.floor(passed / 86400000) + '\u2019i geçti';
+        $('cdLeft').textContent = '⏳ ' + Math.ceil(left / 86400000) + '\u2019i kaldı';
 
         const wk = 7 * 86400000;
         const totalWeeks = Math.ceil(total / wk);
