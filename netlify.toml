@@ -1,0 +1,6 @@
+# Netlify yapılandırması — bu dosya site klasörünün köküne konur.
+[build]
+  publish = "."
+  functions = "netlify/functions"
+  # nodemailer paketini kurmak için:
+  command = "npm install"
