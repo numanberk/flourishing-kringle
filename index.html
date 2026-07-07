@@ -506,6 +506,192 @@
       #sbToast, .progress-inner{ transition:none; }
     }
   </style>
+  <style>
+    /* ============================================================
+       BIRTHDAY ADDITIONS — photo lightbox, countdown, travel guide
+       ============================================================ */
+
+    /* ---- photo lightbox ---- */
+    #birthdayView .photo-card img{ cursor:zoom-in; }
+    #lightbox{
+      position:fixed; inset:0; z-index:11500; display:none;
+      background:rgba(14,8,11,.94); align-items:center; justify-content:center;
+    }
+    #lightbox.open{ display:flex; }
+    #lightbox img{
+      max-width:92vw; max-height:80vh; border-radius:12px;
+      box-shadow:0 20px 60px rgba(0,0,0,.6); user-select:none; -webkit-user-drag:none;
+    }
+    #lightbox .lb-cap{ position:fixed; bottom:54px; left:0; right:0; text-align:center; color:#ffe9f1; font-size:.95rem; padding:0 24px; }
+    #lightbox .lb-count{ position:fixed; bottom:24px; left:0; right:0; text-align:center; color:#d9a7ba; font-size:.8rem; letter-spacing:.08em; }
+    #lightbox button{
+      position:fixed; z-index:2; background:rgba(255,255,255,.12); color:#fff;
+      border:1px solid rgba(255,255,255,.28); border-radius:50%;
+      width:44px; height:44px; font-size:20px; line-height:1; padding:0; cursor:pointer;
+    }
+    #lightbox button:hover{ background:rgba(255,255,255,.24); transform:none; box-shadow:none; }
+    #lightbox .lb-close{ top:16px; right:16px; }
+    #lightbox .lb-prev{ left:12px; top:50%; transform:translateY(-50%); }
+    #lightbox .lb-next{ right:12px; top:50%; transform:translateY(-50%); }
+
+    /* ---- countdown ---- */
+    #birthdayView .cd-cards{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin:26px auto 6px; }
+    #birthdayView .cd-card{
+      background:#fff; border:1px solid #ffd0dc; border-radius:16px;
+      padding:14px 10px; min-width:86px; box-shadow:0 6px 18px rgba(220,20,60,.10);
+    }
+    #birthdayView .cd-num{ font-size:2.2rem; font-weight:800; color:crimson; font-variant-numeric:tabular-nums; line-height:1; }
+    #birthdayView .cd-lab{ font-size:.78rem; color:#b3567a; margin-top:6px; letter-spacing:.08em; text-transform:uppercase; }
+    #birthdayView .cd-stats{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:14px; }
+    #birthdayView .cd-chip{
+      background:#fff; border:1px solid #ffd0dc; border-radius:999px; padding:8px 16px;
+      font-size:.92rem; font-weight:700; color:#7a4a57; box-shadow:0 3px 10px rgba(220,20,60,.08);
+    }
+    #birthdayView .cd-path{ max-width:640px; margin:28px auto 0; }
+    #birthdayView .cd-track{ position:relative; height:14px; background:#fff; border:1px solid #ffd0dc; border-radius:999px; }
+    #birthdayView .cd-fill{ position:absolute; left:0; top:0; bottom:0; width:0%; background:linear-gradient(90deg,#ffb6c8,crimson); border-radius:999px; }
+    #birthdayView .cd-plane{
+      position:absolute; left:0%; top:50%; transform:translate(-50%,-60%);
+      font-size:22px; filter:drop-shadow(0 3px 6px rgba(220,20,60,.35)); transition:left 1s linear;
+    }
+    #birthdayView .cd-ends{ display:flex; justify-content:space-between; font-size:.8rem; color:#b3567a; margin-top:8px; }
+    #birthdayView .cd-pct{ margin-top:10px; font-weight:700; color:darkmagenta; }
+    #birthdayView .cd-weeks-wrap{
+      max-width:680px; margin:34px auto 0; background:#fff; border:1px solid #ffd0dc;
+      border-radius:18px; padding:18px; box-shadow:0 6px 18px rgba(220,20,60,.08);
+    }
+    #birthdayView .cd-weeks-title{ font-family:'Great Vibes',cursive; color:crimson; font-size:1.7rem; margin:0 0 12px; }
+    #birthdayView .cd-weeks{ display:flex; flex-wrap:wrap; gap:4px; justify-content:center; font-size:14px; line-height:1.3; }
+    #birthdayView .cd-weeks span{ width:18px; text-align:center; }
+    #birthdayView .cd-weeks .now{ display:inline-block; animation:cdPulse 1.2s ease-in-out infinite; }
+    @keyframes cdPulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.4); } }
+    #birthdayView .cd-legend{ font-size:.78rem; color:#c98aa0; margin-top:12px; }
+
+    /* ---- travel guide ---- */
+    #birthdayView .t-lock-card{
+      max-width:420px; margin:34px auto; background:#fff; border:1px dashed #f2a5bc;
+      border-radius:20px; padding:32px 24px; box-shadow:0 8px 24px rgba(220,20,60,.10);
+    }
+    #birthdayView #travelPin{
+      width:100%; max-width:240px; height:54px; margin-top:16px;
+      text-align:center; letter-spacing:.35em; font-size:20px; font-weight:700;
+      border:1px solid #ffd0dc; border-radius:12px; background:#fff; color:#333; font-family:inherit;
+    }
+    #birthdayView #travelPin:focus{ outline:none; border-color:crimson; box-shadow:0 0 0 3px rgba(220,20,60,.15); }
+    #birthdayView .t-pin-msg{ min-height:18px; color:crimson; font-size:.85rem; margin:10px 0 6px; }
+    #birthdayView .t-progress{ margin:16px auto 0; font-size:.98rem; color:darkmagenta; font-weight:700; }
+    #birthdayView .t-countries{
+      display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+      gap:14px; max-width:820px; margin:24px auto 0;
+    }
+    #birthdayView .t-country{
+      cursor:pointer; border:none; border-radius:18px; padding:22px 14px; color:#fff;
+      text-align:center; box-shadow:0 8px 20px rgba(0,0,0,.14);
+      transition:transform .15s; font-family:inherit;
+    }
+    #birthdayView .t-country:hover{ transform:translateY(-3px); box-shadow:0 12px 26px rgba(0,0,0,.2); }
+    #birthdayView .t-country .fl{ font-size:2.4rem; line-height:1; }
+    #birthdayView .t-country .nm{ font-weight:800; font-size:1.12rem; margin-top:10px; }
+    #birthdayView .t-country .tg{ font-size:.8rem; opacity:.93; margin-top:4px; }
+    #birthdayView .t-country .ct{ font-size:.75rem; margin-top:12px; background:rgba(255,255,255,.24); display:inline-block; border-radius:999px; padding:3px 10px; }
+    #birthdayView .t-back{
+      background:#fff; color:crimson; border:1px solid #ffd0dc; border-radius:999px;
+      padding:8px 16px; font-weight:700; cursor:pointer; font-family:inherit;
+    }
+    #birthdayView .t-back:hover{ background:#fff5f8; transform:none; box-shadow:none; }
+    #birthdayView .t-cities{
+      display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+      gap:14px; max-width:820px; margin:20px auto 0;
+    }
+    #birthdayView .t-city{
+      cursor:pointer; border-radius:18px; overflow:hidden; background:#fff;
+      border:1px solid #ffd0dc; text-align:left; padding:0;
+      box-shadow:0 5px 16px rgba(220,20,60,.08); transition:transform .15s; font-family:inherit;
+    }
+    #birthdayView .t-city:hover{ transform:translateY(-3px); box-shadow:0 10px 22px rgba(220,20,60,.16); }
+    #birthdayView .t-city .hero{ height:96px; display:flex; align-items:center; justify-content:center; font-size:2.7rem; }
+    #birthdayView .t-city .b{ padding:12px 14px 14px; }
+    #birthdayView .t-city .nm{ font-weight:800; color:#7a4a57; font-size:1.02rem; }
+    #birthdayView .t-city .tg{ font-size:.82rem; color:#b3567a; margin-top:3px; }
+
+    /* ---- clean city reader (distraction-free) ---- */
+    #cityReader{
+      position:fixed; inset:0; z-index:11000; display:none;
+      background:#fffdfd; color:#333; overflow-y:auto; -webkit-overflow-scrolling:touch;
+      text-align:left; font-family:'Open Sans',sans-serif;
+    }
+    #cityReader.open{ display:block; animation:bdayFade .35s ease both; }
+    #cityReader .cr-close{
+      position:fixed; top:14px; left:14px; z-index:5;
+      background:rgba(255,255,255,.92); color:crimson; border:1px solid #ffd0dc;
+      border-radius:999px; padding:9px 16px; font-weight:700; cursor:pointer;
+      font-family:inherit; box-shadow:0 4px 12px rgba(220,20,60,.18); backdrop-filter:blur(4px);
+    }
+    #cityReader .cr-close:hover{ background:#fff; transform:none; box-shadow:0 4px 12px rgba(220,20,60,.25); }
+    #cityReader .cr-hero{
+      min-height:32vh; display:flex; flex-direction:column; align-items:center; justify-content:center;
+      color:#fff; text-align:center; padding:64px 20px 34px;
+    }
+    #cityReader .cr-hero .em{ font-size:3.4rem; line-height:1; }
+    #cityReader .cr-hero h1{ font-family:'Great Vibes',cursive; font-size:3rem; margin:10px 0 0; text-shadow:0 2px 14px rgba(0,0,0,.25); }
+    #cityReader .cr-hero .mt{ opacity:.95; font-size:.95rem; margin-top:8px; }
+    #cityReader .cr-body{ max-width:640px; margin:0 auto; padding:28px 22px 80px; }
+    #cityReader .cr-body p{ font-size:1.05rem; line-height:1.75; }
+    #cityReader .cr-actions{ display:flex; gap:10px; flex-wrap:wrap; margin:4px 0 18px; }
+    #cityReader #crVisit{
+      background:#fff; color:crimson; border:1px solid #ffd0dc; border-radius:999px;
+      padding:10px 16px; font-weight:700; cursor:pointer; font-family:inherit;
+    }
+    #cityReader #crVisit.on{ background:#eefbf1; border-color:#b8e6c4; color:#1c8a44; }
+    #cityReader .cr-todo{ background:#fff5f8; border:1px solid #ffd0dc; border-radius:14px; padding:16px 18px; margin:22px 0; }
+    #cityReader .cr-todo h3{ margin:0 0 8px; color:crimson; }
+    #cityReader .cr-todo li{ margin:7px 0; line-height:1.5; }
+    #cityReader .cr-notes .n{ background:#fff; border:1px solid #ffe0e9; border-radius:12px; padding:10px 12px; margin-top:8px; font-size:.95rem; }
+    #cityReader .cr-notes .m{ font-size:.75rem; color:#b3567a; margin-top:4px; }
+    #cityReader .cr-note-row{ display:flex; gap:8px; margin-top:12px; }
+    #cityReader .cr-note-row input{ flex:1; }
+
+    @media (max-width:640px){
+      #birthdayView .cd-card{ min-width:70px; padding:12px 8px; }
+      #birthdayView .cd-num{ font-size:1.7rem; }
+      #cityReader .cr-hero h1{ font-size:2.2rem; }
+      #cityReader .cr-hero{ min-height:26vh; padding-top:70px; }
+      #lightbox .lb-prev{ left:6px; }
+      #lightbox .lb-next{ right:6px; }
+      #lightbox button{ width:40px; height:40px; }
+    }
+    @media (prefers-reduced-motion: reduce){
+      #birthdayView .cd-weeks .now{ animation:none; }
+      #birthdayView .cd-plane{ transition:none; }
+      #cityReader.open{ animation:none; }
+    }
+  </style>
+  <style>
+    /* ============================================================
+       LIBRARY — PDF'leri Kindle'lara gönder + okuma listesi
+       ============================================================ */
+    #libView{
+      position:fixed; inset:0; z-index:8000; display:none;
+      background:var(--bg); overflow-y:auto; -webkit-overflow-scrolling:touch;
+    }
+    #libView.open{ display:block; }
+    #libView .lib-inner{ max-width:680px; margin:0 auto; padding:70px 16px 60px; }
+    #libView h2{ color:var(--acc); margin:0 0 6px; }
+    .lib-item{
+      background:var(--card); border:1px solid var(--border); border-radius:14px;
+      padding:14px; margin-top:12px; box-shadow:var(--shadow);
+    }
+    .lib-title{ font-weight:700; color:var(--text); overflow-wrap:anywhere; }
+    .lib-del{ flex:none; border-radius:999px; padding:4px 10px; }
+    .lib-mails{ margin-top:10px; }
+    .lib-mails code{
+      font-size:11px; background:var(--tag-bg); border:1px solid var(--border);
+      border-radius:8px; padding:2px 6px; overflow-wrap:anywhere;
+    }
+    @media (max-width:640px){
+      #libView .lib-inner{ padding-top:64px; }
+    }
+  </style>
 </head>
 <body>
   <div class="container">
@@ -517,6 +703,7 @@
         <button id="focusBtn" class="theme-toggle" title="Odak modu" style="display:none">🎯 Odak</button>
         <button id="pomoBtn" class="theme-toggle" title="Pomodoro" style="display:none">🍅 Pomodoro</button>
         <button id="statsBtn" class="theme-toggle" title="İstatistik ve günlük" style="display:none">📊</button>
+        <button id="libBtn" class="theme-toggle" title="Kütüphane" style="display:none">📚</button>
         <button id="notifBtn" class="theme-toggle" title="Bildirimleri aç/kapat" style="display:none">🔕</button>
 
         <div id="pomoPanel" class="pomo-panel" style="display:none">
@@ -618,6 +805,31 @@
     </div>
   </div>
 
+  <!-- ============ LIBRARY (PDF → Kindle + okuma listesi) ============ -->
+  <div id="libView">
+    <button id="libClose" class="theme-toggle focus-exit">✕ Kapat</button>
+    <div class="lib-inner">
+      <h2>📚 Kütüphane</h2>
+      <div class="muted" style="margin-bottom:14px">
+        PDF seç → ikimizin Kindle'ına mail olarak gider → aşağıdaki listeye kaydolur.
+        Dosya sınırı ~25 MB; her kitabın yanında ⬇ indir bağlantısı da olur.
+      </div>
+      <div class="row" style="gap:8px;align-items:center">
+        <input id="libTitle" placeholder="Kitap adı (boş bırakılırsa dosya adı)" maxlength="80" style="flex:1;min-width:180px">
+        <button class="primary" id="libAddBtn">📤 PDF seç ve gönder</button>
+        <input type="file" id="libFile" accept="application/pdf,.pdf" hidden>
+      </div>
+      <div id="libHint" class="muted small" style="min-height:18px;margin-top:8px"></div>
+      <div class="muted small lib-mails">
+        Gidecek adresler:
+        <code>ervamervekalayci2_tUJaUy@kindle.com</code>
+        <code>NUMANBERK2005_WLVXEC@kindle.com</code>
+      </div>
+      <div id="libList"></div>
+      <div id="libEmpty" class="muted" style="margin-top:18px">Kütüphane henüz boş — ilk kitabı sen gönder 📖</div>
+    </div>
+  </div>
+
   <!-- ============ STATS & SESSION LOG MODAL ============ -->
   <div id="statsModal" class="sb-modal" role="dialog" aria-modal="true" aria-label="İstatistik ve günlük">
     <div class="sb-modal-card">
@@ -699,6 +911,8 @@
       <button onclick="showBirthdaySection('giris')">Giriş</button>
       <button onclick="showBirthdaySection('fotograflar')">📷</button>
       <button onclick="showBirthdaySection('mektup')">bal konuşması</button>
+      <button onclick="showBirthdaySection('geriSayim')">⏳</button>
+      <button onclick="showBirthdaySection('seyahat')">🚧</button>
     </nav>
 
     <section id="giris" class="active">
@@ -742,12 +956,111 @@
       </details>
     </section>
 
+    <!-- ============ COUNTDOWN ============ -->
+    <section id="geriSayim">
+      <h2>⏳ Geri Sayım</h2>
+      <p style="max-width:560px;margin:10px auto 0;font-size:1.08rem;">11 Haziran 2028'e…</p>
+
+      <div class="cd-cards">
+        <div class="cd-card"><div class="cd-num" id="cdD">–</div><div class="cd-lab">gün</div></div>
+        <div class="cd-card"><div class="cd-num" id="cdH">–</div><div class="cd-lab">saat</div></div>
+        <div class="cd-card"><div class="cd-num" id="cdM">–</div><div class="cd-lab">dakika</div></div>
+        <div class="cd-card"><div class="cd-num" id="cdS">–</div><div class="cd-lab">saniye</div></div>
+      </div>
+
+      <div class="cd-stats">
+        <span class="cd-chip" id="cdPassed">–</span>
+        <span class="cd-chip" id="cdLeft">–</span>
+      </div>
+
+      <div class="cd-path">
+        <div class="cd-track">
+          <div class="cd-fill" id="cdFill"></div>
+          <span class="cd-plane" id="cdPlane">✈️</span>
+        </div>
+        <div class="cd-ends"><span>3 Haziran 2025</span><span>11 Haziran 2028</span></div>
+        <div class="cd-pct" id="cdPct"></div>
+      </div>
+
+      <div class="cd-weeks-wrap">
+        <h3 class="cd-weeks-title">Her kalp bir hafta</h3>
+        <div class="cd-weeks" id="cdWeeks"></div>
+        <div class="cd-legend">❤️ geçti &nbsp;·&nbsp; 💗 bu hafta &nbsp;·&nbsp; 🤍 gelecek</div>
+      </div>
+    </section>
+
+    <!-- ============ TRAVEL GUIDE (own PIN) ============ -->
+    <section id="seyahat">
+      <div id="travelLock">
+        <div class="t-lock-card">
+          <div style="font-size:46px">🚧</div>
+          <h2 style="font-size:2rem;">inşaat devam ediyor...</h2>
+          <p style="color:#b3567a;font-size:.95rem;margin:10px 0 0;">Bu bölümün ayrı bir anahtarı var 🔑</p>
+          <input id="travelPin" type="password" inputmode="numeric" autocomplete="off" maxlength="8" placeholder="••••••••" aria-label="Seyahat şifresi">
+          <div id="travelPinMsg" class="t-pin-msg"></div>
+          <button id="travelPinBtn" class="bday-btn">Aç</button>
+        </div>
+      </div>
+
+      <div id="travelGuide" style="display:none">
+        <h2>🌍 Dünya Rehberimiz</h2>
+        <p style="max-width:620px;margin:10px auto 0;font-size:1.05rem;">Bir gün hepsi. Şimdilik plan yapıyoruz ✈️ Yazılar şimdilik geçici — zamanla beraber dolduracağız.</p>
+        <div class="t-progress" id="travelProgress"></div>
+        <div id="countryGrid" class="t-countries"></div>
+        <div id="cityWrap" style="display:none">
+          <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-top:22px;flex-wrap:wrap">
+            <button id="cityBack" class="t-back">← Ülkeler</button>
+            <h3 id="cityHead" style="margin:0;font-size:1.5rem;color:#7a4a57;"></h3>
+          </div>
+          <div id="cityGrid" class="t-cities"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CLEAN CITY READER ============ -->
+    <div id="cityReader" aria-hidden="true">
+      <button id="crClose" class="cr-close">← Geri</button>
+      <div class="cr-hero" id="crHero">
+        <div class="em" id="crEmoji"></div>
+        <h1 id="crName"></h1>
+        <div class="mt" id="crMeta"></div>
+      </div>
+      <div class="cr-body">
+        <div class="cr-actions">
+          <button id="crVisit">🧳 Henüz gitmedik</button>
+        </div>
+        <div id="crParas"></div>
+        <div class="cr-todo">
+          <h3>Yapılacaklar ✨</h3>
+          <ul id="crTodo" style="margin:0;padding-left:18px;"></ul>
+        </div>
+        <h3 style="color:crimson;">Notlarımız 💌</h3>
+        <div class="cr-notes" id="crNotes"></div>
+        <div class="cr-note-row">
+          <input id="crNoteInput" class="bday-input" placeholder="buraya dair bir not bırak…" maxlength="200">
+          <button id="crNoteBtn" class="bday-btn">Ekle</button>
+        </div>
+        <div id="crNoteHint" class="bday-hint" style="text-align:left"></div>
+      </div>
+    </div>
+
+    <!-- ============ PHOTO LIGHTBOX ============ -->
+    <div id="lightbox" aria-hidden="true">
+      <button class="lb-close" id="lbClose" aria-label="Kapat">✕</button>
+      <button class="lb-prev" id="lbPrev" aria-label="Önceki">‹</button>
+      <button class="lb-next" id="lbNext" aria-label="Sonraki">›</button>
+      <img id="lbImg" alt="Fotoğraf">
+      <div class="lb-cap" id="lbCap"></div>
+      <div class="lb-count" id="lbCount"></div>
+    </div>
+
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
     import { getDatabase, ref, update, get, onValue, onDisconnect, push, query, limitToLast } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+    import { getStorage, ref as sRef, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js";
 
     /* ======= Firebase ======= */
     const firebaseConfig = {
@@ -762,6 +1075,7 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getDatabase(app);
+    const storage = getStorage(app);
 
     /* ---- bridge: let the birthday album/notes (classic script below) reuse Firebase ---- */
     window.fb = { db, auth, ref, update, get, onValue };
@@ -848,7 +1162,16 @@
       notifBtn: document.getElementById("notifBtn"),
       chatBadge: document.getElementById("chatBadge"),
       chatCard: document.getElementById("chatCard"),
-      statsModal: document.getElementById("statsModal")
+      statsModal: document.getElementById("statsModal"),
+      libBtn: document.getElementById("libBtn"),
+      libView: document.getElementById("libView"),
+      libClose: document.getElementById("libClose"),
+      libTitle: document.getElementById("libTitle"),
+      libFile: document.getElementById("libFile"),
+      libAddBtn: document.getElementById("libAddBtn"),
+      libHint: document.getElementById("libHint"),
+      libList: document.getElementById("libList"),
+      libEmpty: document.getElementById("libEmpty")
     });
 
     /* ---------------- THEME: init + toggle (persist) ---------------- */
@@ -942,6 +1265,7 @@
         if (els.focusBtn) els.focusBtn.style.display = "";
         if (els.pomoBtn) els.pomoBtn.style.display = "";
         if (els.statsBtn) els.statsBtn.style.display = "";
+        if (els.libBtn) els.libBtn.style.display = "";
         if (els.notifBtn) els.notifBtn.style.display = "";
         if (els.studyGroup) els.studyGroup.style.display = "";
         if (els.presenceGroup) els.presenceGroup.style.display = "";
@@ -978,7 +1302,9 @@
         if (els.focusBtn) els.focusBtn.style.display = "none";
         if (els.pomoBtn) els.pomoBtn.style.display = "none";
         if (els.statsBtn) els.statsBtn.style.display = "none";
+        if (els.libBtn) els.libBtn.style.display = "none";
         if (els.notifBtn) els.notifBtn.style.display = "none";
+        if (els.libView) els.libView.classList.remove("open");
         if (els.pomoPanel) els.pomoPanel.style.display = "none";
         if (els.studyGroup) els.studyGroup.style.display = "none";
         if (els.presenceGroup) els.presenceGroup.style.display = "none";
@@ -1811,6 +2137,163 @@
     if (els.chatCard) els.chatCard.addEventListener('click', markChatRead);
     if (els.chatInput) els.chatInput.addEventListener('focus', markChatRead);
 
+    /* ---------- library: PDF → Kindle mails + shared reading list ---------- */
+    const LIB_ENDPOINT = '/.netlify/functions/send-to-kindle';
+    const LIB_MAX_BYTES = 25 * 1024 * 1024;  // Storage üzerinden gidiyor; e-posta tarafının pratik tavanı ~25MB (Resend eki + Kindle 50MB sınırı)
+    let latestLibrary = {};
+    let libAttached = false;
+
+    function attachLibrary(){
+      if (libAttached) return; libAttached = true;
+      onValue(ref(db, 'library'), s => {
+        latestLibrary = s.val() || {};
+        renderLibrary();
+      }, err => console.error('library read failed:', err && err.message));
+    }
+    function openLib(){
+      els.libView.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      attachLibrary();
+      renderLibrary();
+    }
+    function closeLib(){
+      els.libView.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    if (els.libBtn) els.libBtn.onclick = openLib;
+    if (els.libClose) els.libClose.onclick = closeLib;
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && els.libView && els.libView.classList.contains('open')) closeLib();
+    });
+
+    function libHintMsg(msg){ if (els.libHint) els.libHint.textContent = msg || ''; }
+    function libBusy(on, label){
+      if (!els.libAddBtn) return;
+      els.libAddBtn.disabled = on;
+      els.libAddBtn.textContent = on ? (label || '⏳ Gönderiliyor…') : '📤 PDF seç ve gönder';
+    }
+    function fmtSize(kb){
+      return kb >= 1024 ? (kb / 1024).toFixed(1) + ' MB' : (kb || 0) + ' KB';
+    }
+
+    function renderLibrary(){
+      if (!els.libList) return;
+      const myUid = (auth.currentUser || {}).uid;
+      const items = Object.entries(latestLibrary).map(([k, v]) => Object.assign({ k }, v)).sort((a, b) => (b.at || 0) - (a.at || 0));
+      if (els.libEmpty) els.libEmpty.style.display = items.length ? 'none' : '';
+      const userIds = Object.keys(latestUsers || {});
+      els.libList.innerHTML = items.map(b => {
+        const fin = b.finished || {};
+        const chips = userIds.map(uid => {
+          const nm = escapeHtml((latestUsers[uid] || {}).displayName || 'Kullanıcı');
+          const f = fin[uid];
+          return `<span class="tag">${f ? '✅' : '📖'} ${nm}: ${f ? new Date(f.at).toLocaleDateString('tr-TR') : '—'}</span>`;
+        }).join('');
+        const mine = !!fin[myUid];
+        return `<div class="lib-item">
+          <div class="spaced" style="gap:8px">
+            <div style="min-width:0">
+              <div class="lib-title">📕 ${escapeHtml(b.title || b.filename || 'Kitap')}</div>
+              <div class="muted small">${escapeHtml(b.by || 'Biri')} ekledi · ${new Date(b.at || 0).toLocaleDateString('tr-TR')} · ${fmtSize(b.sizeKB)}${b.url ? ' · <a href="' + escapeHtml(b.url) + '" target="_blank" rel="noopener">⬇ indir</a>' : ''}${b.sent === false ? ' · <span style="color:var(--danger)">Kindle\u2019a gönderilemedi</span>' : ''}</div>
+            </div>
+            <button class="lib-del small" data-key="${b.k}" title="Kaydı sil">✕</button>
+          </div>
+          <div class="row" style="margin-top:10px;gap:6px;align-items:center">
+            ${chips}
+            <button class="lib-fin small ${mine ? '' : 'primary'}" data-key="${b.k}">${mine ? '↺ Bitirmedim' : '✔ Bitirdim'}</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    if (els.libAddBtn) els.libAddBtn.onclick = () => { libHintMsg(''); els.libFile.click(); };
+    if (els.libFile) els.libFile.addEventListener('change', async () => {
+      const f = els.libFile.files && els.libFile.files[0];
+      els.libFile.value = '';
+      const u = auth.currentUser;
+      if (!f || !u) return;
+      if (!/\.pdf$/i.test(f.name)){ libHintMsg('Sadece PDF gönderilebilir 🙈'); return; }
+      if (f.size > LIB_MAX_BYTES){
+        libHintMsg('Bu PDF çok büyük (' + (f.size / 1048576).toFixed(1) + ' MB). E-posta yolunun tavanı ~25 MB — daha büyükleri amazon.com/sendtokindle ile gönderebilirsin.');
+        return;
+      }
+      const title = (els.libTitle.value || '').trim() || f.name.replace(/\.pdf$/i, '');
+      const key = push(ref(db, 'library')).key;
+      const storagePath = `library/${key}/${f.name}`;
+
+      // 1) upload to Firebase Storage (this is what bypasses the old 4.5MB cap)
+      libBusy(true, '⏫ Yükleniyor… %0');
+      let url = '';
+      try {
+        const task = uploadBytesResumable(sRef(storage, storagePath), f, { contentType: 'application/pdf' });
+        await new Promise((res, rej) => {
+          task.on('state_changed',
+            snap => libBusy(true, '⏫ Yükleniyor… %' + Math.round(snap.bytesTransferred / snap.totalBytes * 100)),
+            rej, res);
+        });
+        url = await getDownloadURL(task.snapshot.ref);
+      } catch(e){
+        libBusy(false);
+        libHintMsg('Yükleme başarısız: ' + e.message + ' (Firebase konsolunda Storage etkin ve kuralları ayarlı mı?)');
+        return;
+      }
+
+      // 2) tell the function to fetch it and mail both Kindles (tiny request, no size limit issue)
+      libBusy(true, '✉️ Kindle\u2019lara gönderiliyor…');
+      let sent = true, errMsg = '';
+      try {
+        const r = await fetch(LIB_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename: f.name, url })
+        });
+        if (!r.ok){
+          sent = false;
+          try { errMsg = (await r.json()).error || ('HTTP ' + r.status); } catch(e){ errMsg = 'HTTP ' + r.status; }
+        }
+      } catch(e){ sent = false; errMsg = e.message; }
+
+      if (!sent && !confirm('Kindle\u2019lara gönderilemedi (' + errMsg + ').\nYine de kütüphaneye kaydedilsin mi? (⬇ indir bağlantısı yine de çalışır)')){
+        try { await deleteObject(sRef(storage, storagePath)); } catch(e){}
+        libBusy(false); libHintMsg('Gönderilemedi: ' + errMsg);
+        return;
+      }
+      try {
+        await update(ref(db, `library/${key}`), {
+          title, filename: f.name, sizeKB: Math.round(f.size / 1024),
+          by: u.displayName || u.email, byUid: u.uid, at: Date.now(),
+          sent, url, storagePath
+        });
+        els.libTitle.value = '';
+        libHintMsg('');
+        toast(sent ? 'İki Kindle\u2019a da gönderildi 📚✉️' : 'Kütüphaneye eklendi (mail gönderilemedi)');
+      } catch(e){ alert(e.message); }
+      libBusy(false);
+    });
+
+    if (els.libList) els.libList.addEventListener('click', async e => {
+      const uid = (auth.currentUser || {}).uid; if (!uid) return;
+      const fin = e.target.closest('.lib-fin');
+      if (fin){
+        const key = fin.getAttribute('data-key');
+        const cur = (((latestLibrary[key] || {}).finished) || {})[uid];
+        try { await update(ref(db, `library/${key}/finished`), { [uid]: cur ? null : { at: Date.now() } }); }
+        catch(err){ alert(err.message); }
+        return;
+      }
+      const del = e.target.closest('.lib-del');
+      if (del){
+        if (!confirm('Bu kitap kaydını silmek istediğine emin misin? (Depodaki PDF de silinir)')) return;
+        const key = del.getAttribute('data-key');
+        const b = latestLibrary[key] || {};
+        try {
+          await update(ref(db, 'library'), { [key]: null });
+          if (b.storagePath){ try { await deleteObject(sRef(storage, b.storagePath)); } catch(e){} }
+        }
+        catch(err){ alert(err.message); }
+      }
+    });
+
   </script>
   <script>
     /* =========================================================
@@ -2055,6 +2538,419 @@
         try { await fb.update(fb.ref(fb.db, kind), { [key]: null }); }
         catch(err){ alert('Silinemedi: ' + (err && err.message ? err.message : err)); }
       });
+    })();
+  </script>
+
+  <script>
+    /* =========================================================
+       BIRTHDAY ADDITIONS — lightbox, countdown, travel guide.
+       Runs last so it can safely wrap hooks defined above.
+       ========================================================= */
+    (function(){
+      const $ = id => document.getElementById(id);
+      const bday = $('birthdayView');
+      const esc = s => (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+      /* ================= 1) PHOTO LIGHTBOX ================= */
+      const lb = $('lightbox'), lbImg = $('lbImg'), lbCap = $('lbCap'), lbCount = $('lbCount');
+      let lbItems = [], lbIdx = 0;
+      function lbCollect(){
+        lbItems = [...document.querySelectorAll('#galleryGrid .photo-card img')].map(img => ({
+          src: img.src,
+          cap: (img.closest('.photo-card').querySelector('.photo-cap') || {}).textContent || ''
+        }));
+      }
+      function lbShow(i){
+        if (!lbItems.length) return;
+        lbIdx = (i + lbItems.length) % lbItems.length;
+        lbImg.src = lbItems[lbIdx].src;
+        lbCap.textContent = lbItems[lbIdx].cap;
+        lbCount.textContent = (lbIdx + 1) + ' / ' + lbItems.length;
+      }
+      function lbClose(){ lb.classList.remove('open'); lbImg.src = ''; }
+      document.addEventListener('click', e => {
+        const img = e.target.closest('#galleryGrid .photo-card img');
+        if (!img) return;
+        lbCollect();
+        const idx = lbItems.findIndex(it => it.src === img.src);
+        lbShow(idx < 0 ? 0 : idx);
+        lb.classList.add('open');
+      });
+      $('lbClose').addEventListener('click', lbClose);
+      $('lbPrev').addEventListener('click', () => lbShow(lbIdx - 1));
+      $('lbNext').addEventListener('click', () => lbShow(lbIdx + 1));
+      lb.addEventListener('click', e => { if (e.target === lb) lbClose(); });
+      let touchX = null;
+      lb.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; }, { passive:true });
+      lb.addEventListener('touchend', e => {
+        if (touchX == null) return;
+        const dx = e.changedTouches[0].clientX - touchX; touchX = null;
+        if (Math.abs(dx) > 40) lbShow(lbIdx + (dx < 0 ? 1 : -1));
+      }, { passive:true });
+
+      /* ================= 2) COUNTDOWN → 11 Haziran 2028 ================= */
+      const CD_START = new Date('2025-06-03T00:00:00');   // yolculuğun başı (istersen değiştir)
+      const CD_END   = new Date('2028-06-11T00:00:00');   // hedef: 11 Haziran 2028
+      const pad = n => String(n).padStart(2, '0');
+      let weeksBuilt = -2;
+      function renderCountdown(){
+        if (!bday.classList.contains('open')) return;
+        const sec = $('geriSayim');
+        if (!sec || !sec.classList.contains('active')) return;
+        const now = Date.now();
+        let left = CD_END - now;
+        const done = left <= 0; if (done) left = 0;
+        $('cdD').textContent = Math.floor(left / 86400000);
+        $('cdH').textContent = pad(Math.floor(left / 3600000) % 24);
+        $('cdM').textContent = pad(Math.floor(left / 60000) % 60);
+        $('cdS').textContent = pad(Math.floor(left / 1000) % 60);
+
+        const total = CD_END - CD_START;
+        const passed = Math.min(total, Math.max(0, now - CD_START));
+        const pct = passed / total * 100;
+        $('cdFill').style.width = pct + '%';
+        $('cdPlane').style.left = pct + '%';
+        $('cdPct').textContent = done ? 'O gün geldi!! 🎉💖' : 'Yolun %' + pct.toFixed(2) + '\u2019si geride kaldı';
+        $('cdPassed').textContent = '💘 ' + Math.floor(passed / 86400000) + ' gün geçti';
+        $('cdLeft').textContent = '⏳ ' + Math.ceil(left / 86400000) + ' gün kaldı';
+
+        const wk = 7 * 86400000;
+        const totalWeeks = Math.ceil(total / wk);
+        const curWeek = done ? totalWeeks : Math.min(totalWeeks - 1, Math.floor(passed / wk));
+        if (curWeek !== weeksBuilt){
+          weeksBuilt = curWeek;
+          let out = '';
+          for (let i = 0; i < totalWeeks; i++){
+            if (i < curWeek) out += '<span>❤️</span>';
+            else if (i === curWeek && !done) out += '<span class="now">💗</span>';
+            else out += '<span>🤍</span>';
+          }
+          $('cdWeeks').innerHTML = out;
+        }
+      }
+      setInterval(renderCountdown, 1000);
+
+      /* ================= 3) TRAVEL GUIDE (own PIN) ================= */
+      /* ====== CHANGE THE TRAVEL PIN HERE ====== */
+      const TRAVEL_PIN = '12345677';
+      /* ======================================== */
+
+      const TRAVEL = [
+        { id:'ingiltere', name:'İngiltere', flag:'🇬🇧', tag:'çay, yağmur, kırmızı otobüsler', grad:['#5b79e3','#23368f'], cities:[
+          { id:'londra', name:'Londra', emoji:'🎡', tag:'iki kişilik bir şehir masalı', best:'Nisan–Haziran',
+            paras:[
+              'Big Ben\'in önünde klasik turist fotoğrafı, sonra Thames kenarında amaçsız yürüyüş. Kırmızı telefon kulübesinde saçma pozlar zorunlu.',
+              'Camden Market\'te dünya mutfağından atıştırıp Notting Hill\'in renkli kapılarını sayacağız. British Museum bedava — yağmurlu güne birebir.'
+            ],
+            todo:['Westminster\'dan Tower Bridge\'e nehir yürüyüşü','Çift katlı otobüsün üst katında en ön koltuk','Camden Market\'te bir şeyler atıştırmak','Notting Hill\'de en güzel kapıyı seçme yarışması'] },
+          { id:'oxford', name:'Oxford', emoji:'📚', tag:'kitap kokulu sokaklar', best:'Mayıs–Eylül',
+            paras:[
+              'Dünyanın en eski üniversite şehirlerinden birinde, taş avlular ve bisikletli öğrenciler arasında bir gün.',
+              'Christ Church\'ün yemekhanesi Harry Potter\'daki büyük salonun ilhamı — girip "birinci sınıflar buraya" diye fısıldaşacağız.'
+            ],
+            todo:['Bodleian Kütüphanesi turu','Christ Church yemekhanesi','Covered Market\'te cookie molası','Nehirde punting (sandal) denemesi'] },
+          { id:'bath', name:'Bath', emoji:'🛁', tag:'bal rengi taştan bir şehir', best:'Nisan–Ekim',
+            paras:[
+              'Romalılardan kalma hamamların etrafına kurulmuş, tamamı bal rengi taştan minicik bir şehir. Her sokağı kartpostal.',
+              'Jane Austen buralıymış; biz de Pulteney Köprüsü\'nde durup 200 yıl öncesini hayal edeceğiz.'
+            ],
+            todo:['Roma Hamamları','Royal Crescent önünde piknik','Sally Lunn\'s\'ta meşhur çörek','Termal çatı havuzunda gün batımı'] }
+        ]},
+        { id:'turkiye', name:'Türkiye', flag:'🇹🇷', tag:'bizim evimiz, baştan keşif', grad:['#e34d4d','#8f1d1d'], cities:[
+          { id:'istanbul', name:'İstanbul', emoji:'🌉', tag:'iki kıta, bir biz', best:'Nisan–Mayıs, Eylül–Ekim',
+            paras:[
+              'Karaköy\'den vapura binip martılara simit atarak Kadıköy\'e geçmek — dünyanın en ucuz ve en güzel "cruise"u.',
+              'Balat\'ın renkli merdivenleri, Kapalıçarşı\'nın labirenti, gece Galata\'nın ışıkları. Aynı şehirde yüz farklı şehir var.'
+            ],
+            todo:['Boğaz vapurunda çay + simit','Balat\'ta fotoğraf turu','Kadıköy\'de sokak lezzetleri','Gece Galata Kulesi çevresinde yürüyüş'] },
+          { id:'kapadokya', name:'Kapadokya', emoji:'🎈', tag:'gün doğumunda yüzlerce balon', best:'Nisan–Haziran, Eylül–Kasım',
+            paras:[
+              'Sabah 5\'te kalkmaya değecek tek şey: vadinin üzerinde aynı anda yükselen yüzlerce sıcak hava balonu.',
+              'Peri bacalarının arasında yürüyüş, mağara otelde kalma deneyimi ve testi kebabı. Başka gezegen gibi ama iki saat uçuş mesafesinde.'
+            ],
+            todo:['Balon turu (ya da en azından izleme terası)','Mağara otelde bir gece','Güvercinlik Vadisi yürüyüşü','Testi kebabı seremonisi'] },
+          { id:'izmir', name:'İzmir', emoji:'🌊', tag:'gün batımı Kordon\'da güzel', best:'Mayıs–Ekim',
+            paras:[
+              'Kordon\'da çimlere oturup denize karşı gün batımı — İzmir\'in en meşhur aktivitesi ve tamamen bedava.',
+              'Sabah boyoz + çay, öğlen Alaçatı\'nın taş sokakları, akşam Urla\'da sakin bir yemek. Ege modunda yavaşlamak serbest.'
+            ],
+            todo:['Kordon\'da gün batımı','Boyoz + kumru turu','Alaçatı gezisi','Tarihi Asansör\'den manzara'] }
+        ]},
+        { id:'avusturya', name:'Avusturya', flag:'🇦🇹', tag:'valsler ve dağ kasabaları', grad:['#c94f6d','#5e1c33'], cities:[
+          { id:'viyana', name:'Viyana', emoji:'🎻', tag:'kahvehanelerin başkenti', best:'Nisan–Haziran, Aralık',
+            paras:[
+              'Viyana kahvehanesi bir mekân değil, bir yaşam biçimi: bir sacher torte, bir melange ve saatlerce oturma hakkı.',
+              'Schönbrunn Sarayı\'nın bahçelerinde imparator gibi yürüyüp akşam bir konser salonuna sızacağız. Aralıkta gelirsek Noel pazarları ekstra büyü.'
+            ],
+            todo:['Café Central\'de sacher torte','Schönbrunn bahçeleri','Bir klasik müzik konseri','Noel pazarı (kış planı)'] },
+          { id:'salzburg', name:'Salzburg', emoji:'🏰', tag:'Mozart\'ın şehri', best:'Mayıs–Eylül',
+            paras:[
+              'Alplerin eteğinde, nehrin ikiye böldüğü minyatür bir barok şehir. Tepedeki kale her sokaktan görünüyor.',
+              'Mozart burada doğmuş; biz de doğduğu evin önünden geçip "yetenek bulaşıcı olsa keşke" diyeceğiz.'
+            ],
+            todo:['Hohensalzburg Kalesi','Getreidegasse\'de vitrin turu','Mirabell bahçeleri','Mozartkugel tadımı'] },
+          { id:'hallstatt', name:'Hallstatt', emoji:'🏞️', tag:'göl kenarında bir masal', best:'Mayıs–Ekim',
+            paras:[
+              'Dağla göl arasına sıkışmış, kartpostalların bile abartamadığı bir köy. Nüfusu bin kişilik ama güzelliği bin şehirlik.',
+              'Göl kenarında oturup su sesini dinlemekten başka plan yapmaya gerek yok. Zaten başka yapacak bir şey de yok — olay bu.'
+            ],
+            todo:['Klasik Hallstatt manzara noktası','Gölde kürek teknesi','Skywalk seyir terası','Köy fırınından taze bir şeyler'] }
+        ]},
+        { id:'norvec', name:'Norveç', flag:'🇳🇴', tag:'fiyortlar ve kuzey ışıkları', grad:['#3e7ea6','#12324a'], cities:[
+          { id:'oslo', name:'Oslo', emoji:'🛶', tag:'deniz kenarında modern kuzey', best:'Mayıs–Ağustos',
+            paras:[
+              'Opera binasının çatısına yürüyerek çıkılıyor — şehir ayaklarının altında, deniz burnunun dibinde.',
+              'Müze adası Bygdøy\'de viking gemileri, sonra limanda taze bir şeyler. Pahalı ama planlamak bedava.'
+            ],
+            todo:['Opera çatısında yürüyüş','Viking Gemi Müzesi','Aker Brygge limanı','Vigeland heykel parkı'] },
+          { id:'bergen', name:'Bergen', emoji:'🌧️', tag:'yedi dağın ve yağmurun şehri', best:'Haziran–Ağustos',
+            paras:[
+              'Bryggen\'in rengarenk ahşap evleri UNESCO listesinde; her biri yamuk yumuk ve tam da o yüzden mükemmel.',
+              'Fløyen fünikülerine binip yukarıdan fiyortlara bakacağız. Yağmur yağarsa — ki yağacak — şehrin en meşhur ikramı sayılır.'
+            ],
+            todo:['Bryggen rıhtımı','Fløyen tepesine füniküler','Balık pazarı','Fiyort turu başlangıcı'] },
+          { id:'tromso', name:'Tromsø', emoji:'🌌', tag:'kuzey ışıklarının kapısı', best:'Eylül–Mart (ışıklar için)',
+            paras:[
+              'Kutup dairesinin üstünde, kışın gökyüzünün yeşile boyandığı yer. Aurora görmek garantili değil — o yüzden gördüğünde efsane.',
+              'Kızak köpekleri, ren geyikleri ve gece yarısı hâlâ aydınlık yazlar. Kışın gidersek termal içlik ciddi bir yatırım.'
+            ],
+            todo:['Kuzey ışıkları avı turu','Fjellheisen teleferiği','Husky kızak deneyimi','Arctic Cathedral'] }
+        ]},
+        { id:'japonya', name:'Japonya', flag:'🇯🇵', tag:'neon, tapınak ve ramen', grad:['#e05f7f','#7e1e3c'], cities:[
+          { id:'tokyo', name:'Tokyo', emoji:'🗼', tag:'geleceğe kısa bir gezi', best:'Mart–Nisan (sakura), Ekim–Kasım',
+            paras:[
+              'Shibuya kavşağında bir anda binlerce kişiyle karşıdan karşıya geçmek — kaosun bu kadar düzenli olabildiği tek yer.',
+              'Sabah huzurlu bir tapınak, öğlen Akihabara\'da oyun makineleri, gece bir ramen tezgâhında sessiz mutluluk. Hepsi aynı gün.'
+            ],
+            todo:['Shibuya kavşağı + Hachiko','Senso-ji Tapınağı','Akihabara arcade turu','Gerçek bir ramen dükkânı'] },
+          { id:'kyoto', name:'Kyoto', emoji:'⛩️', tag:'bin kapının şehri', best:'Mart–Nisan, Kasım',
+            paras:[
+              'Fushimi Inari\'nin binlerce turuncu kapısının altından tepeye yürüyüş — sabah erken gidersek yol sadece bizim.',
+              'Arashiyama bambu ormanında rüzgârın sesi, Gion\'da eski ahşap sokaklar. Kyoto acele edilmeyecek bir şehir.'
+            ],
+            todo:['Fushimi Inari torii yolu','Arashiyama bambu ormanı','Gion\'da akşam yürüyüşü','Bir çay seremonisi'] },
+          { id:'osaka', name:'Osaka', emoji:'🐙', tag:'Japonya\'nın mutfağı', best:'Mart–Mayıs, Ekim–Kasım',
+            paras:[
+              'Şehrin sloganı "kuidaore": yemekten iflas etmek. Dotonbori\'nin neonları altında takoyaki, okonomiyaki, tekrar takoyaki.',
+              'İnsanları Tokyo\'dan daha gürültücü, daha şakacı. Sokak yemeği turu burada olimpik spor sayılır.'
+            ],
+            todo:['Dotonbori gece turu','Takoyaki tadımı','Osaka Kalesi','Kuromon pazarı kahvaltısı'] }
+        ]},
+        { id:'cin', name:'Çin', flag:'🇨🇳', tag:'sur, panda ve neon', grad:['#d1483b','#6e150d'], cities:[
+          { id:'pekin', name:'Pekin', emoji:'🏮', tag:'imparatorların başkenti', best:'Nisan–Mayıs, Eylül–Ekim',
+            paras:[
+              'Çin Seddi\'nin Mutianyu bölümünde kalabalıktan uzak yürüyüş — uzaydan görünmüyormuş ama tepesinden dünya görünüyor.',
+              'Yasak Şehir\'in avlularında yarım gün kaybolmak serbest. Akşam Pekin ördeği ile taçlandırma zorunlu.'
+            ],
+            todo:['Çin Seddi (Mutianyu)','Yasak Şehir','Pekin ördeği yemeği','Hutong sokaklarında bisiklet'] },
+          { id:'sanghay', name:'Şanghay', emoji:'🌃', tag:'gelecek şimdiden burada', best:'Mart–Mayıs, Eylül–Kasım',
+            paras:[
+              'Bund\'da nehrin bir yakası 1920\'ler Avrupa\'sı, karşı yakası bilim kurgu filmi seti. Gece ışıklar açılınca inanması zor.',
+              'Yu Bahçesi\'nin göletleri, Fransız Mahallesi\'nin platanlı sokakları ve dünyanın en hızlı trenlerinden biri. Kontrast şehri.'
+            ],
+            todo:['Bund\'da gece silüeti','Yu Bahçesi','Fransız Mahallesi yürüyüşü','Maglev trenine binmek'] },
+          { id:'chengdu', name:'Chengdu', emoji:'🐼', tag:'pandalar!! (ve hotpot)', best:'Mart–Haziran, Eylül–Kasım',
+            paras:[
+              'Panda araştırma merkezinde sabah erken saat: bambu çiğneyen, yuvarlanan, hiçbir şeyi umursamayan pandalar. Gezinin duygusal zirvesi burası olabilir.',
+              'Akşam Sichuan hotpot — "az acılı" bile ciddiye alınacak seviyede. Yanına soğuk bir şeyler şart.'
+            ],
+            todo:['Panda merkezi (sabah erken!)','Sichuan hotpot deneyimi','Jinli antik sokağı','Halk parkında çay bahçesi'] }
+        ]}
+      ];
+
+      const lock = $('travelLock'), guide = $('travelGuide');
+      const tPin = $('travelPin'), tMsg = $('travelPinMsg');
+      const countryGrid = $('countryGrid'), cityWrap = $('cityWrap'), cityGrid = $('cityGrid'), cityHead = $('cityHead');
+      const reader = $('cityReader');
+      let travelUnlocked = false, travelInited = false, travelData = {}, fb2 = null;
+      let curCountry = null, curCity = null;
+
+      /* ---- PIN gate (asked on every visit to the tab) ---- */
+      function tryTravelPin(){
+        const v = (tPin.value || '').replace(/\D/g, '');
+        if (v.length < TRAVEL_PIN.length) return;
+        if (v === TRAVEL_PIN){
+          travelUnlocked = true;
+          lock.style.display = 'none';
+          guide.style.display = '';
+          initTravel();
+        } else {
+          tMsg.textContent = 'Yanlış anahtar 🥲 tekrar dene';
+          tPin.value = '';
+          tPin.classList.remove('pin-shake'); void tPin.offsetWidth; tPin.classList.add('pin-shake');
+          tPin.focus();
+        }
+      }
+      tPin.addEventListener('input', () => {
+        tPin.value = tPin.value.replace(/\D/g, '').slice(0, TRAVEL_PIN.length);
+        tMsg.textContent = '';
+        if (tPin.value.length === TRAVEL_PIN.length) tryTravelPin();
+      });
+      tPin.addEventListener('keydown', e => { if (e.key === 'Enter') tryTravelPin(); });
+      $('travelPinBtn').addEventListener('click', tryTravelPin);
+
+      function relockTravel(){
+        travelUnlocked = false;
+        lock.style.display = '';
+        guide.style.display = 'none';
+        tPin.value = ''; tMsg.textContent = '';
+        closeReader();
+        showCountries();
+      }
+
+      /* hook into the existing tab switcher + close handler */
+      const origShow = window.showBirthdaySection;
+      window.showBirthdaySection = function(id){
+        origShow(id);
+        if (id !== 'seyahat') relockTravel();
+        else if (!travelUnlocked) setTimeout(() => tPin.focus(), 80);
+        if (id === 'geriSayim') renderCountdown();
+      };
+      const prevClose = window.onBirthdayClose;
+      window.onBirthdayClose = function(){
+        if (prevClose) prevClose();
+        relockTravel();
+        lbClose();
+      };
+
+      /* ---- data: travel/{cityId} = { visited, notes:{...} } ---- */
+      function initTravel(){
+        showCountries();
+        if (travelInited) return; travelInited = true;
+        const hook = _fb => {
+          fb2 = _fb;
+          fb2.onValue(fb2.ref(fb2.db, 'travel'), s => { travelData = s.val() || {}; refreshTravelUI(); });
+        };
+        if (window.fb) hook(window.fb);
+        else window.addEventListener('fb-ready', () => hook(window.fb), { once:true });
+      }
+      const me = () => (window.fb && window.fb.auth) ? window.fb.auth.currentUser : null;
+      const totalCities = () => TRAVEL.reduce((a, c) => a + c.cities.length, 0);
+      function visitedCount(){
+        let n = 0;
+        TRAVEL.forEach(c => c.cities.forEach(ct => { if ((travelData[ct.id] || {}).visited) n++; }));
+        return n;
+      }
+      function renderProgress(){
+        $('travelProgress').textContent = '✔ ' + visitedCount() + ' / ' + totalCities() + ' şehir gezildi';
+      }
+
+      /* ---- views: countries → cities → reader ---- */
+      function showCountries(){
+        curCountry = null;
+        cityWrap.style.display = 'none';
+        countryGrid.style.display = '';
+        renderProgress();
+        countryGrid.innerHTML = TRAVEL.map(c => `
+          <button class="t-country" data-c="${c.id}" style="background:linear-gradient(135deg,${c.grad[0]},${c.grad[1]})">
+            <div class="fl">${c.flag}</div>
+            <div class="nm">${esc(c.name)}</div>
+            <div class="tg">${esc(c.tag)}</div>
+            <div class="ct">${c.cities.length} şehir</div>
+          </button>`).join('');
+      }
+      function showCities(cid){
+        const c = TRAVEL.find(x => x.id === cid); if (!c) return;
+        curCountry = c;
+        countryGrid.style.display = 'none';
+        cityWrap.style.display = '';
+        cityHead.textContent = c.flag + ' ' + c.name;
+        cityGrid.innerHTML = c.cities.map(ct => {
+          const v = (travelData[ct.id] || {}).visited;
+          return `<button class="t-city" data-city="${ct.id}">
+            <div class="hero" style="background:linear-gradient(135deg,${c.grad[0]},${c.grad[1]})">${ct.emoji}</div>
+            <div class="b">
+              <div class="nm">${esc(ct.name)}${v ? ' <span style="color:#1c8a44">✔</span>' : ''}</div>
+              <div class="tg">${esc(ct.tag)}</div>
+            </div>
+          </button>`;
+        }).join('');
+      }
+      function refreshTravelUI(){
+        if (!travelUnlocked) return;
+        renderProgress();
+        if (curCountry) showCities(curCountry.id);
+        if (reader.classList.contains('open') && curCity) renderReaderLive();
+      }
+      countryGrid.addEventListener('click', e => {
+        const b = e.target.closest('.t-country'); if (b) showCities(b.getAttribute('data-c'));
+      });
+      $('cityBack').addEventListener('click', showCountries);
+      cityGrid.addEventListener('click', e => {
+        const b = e.target.closest('.t-city'); if (b) openReader(b.getAttribute('data-city'));
+      });
+
+      /* ---- clean reader ---- */
+      function findCity(id){
+        for (const c of TRAVEL) for (const ct of c.cities) if (ct.id === id) return { c, ct };
+        return null;
+      }
+      function openReader(id){
+        const f = findCity(id); if (!f) return;
+        curCity = f;
+        $('crHero').style.background = `linear-gradient(135deg,${f.c.grad[0]},${f.c.grad[1]})`;
+        $('crEmoji').textContent = f.ct.emoji;
+        $('crName').textContent = f.ct.name;
+        $('crMeta').textContent = f.c.flag + ' ' + f.c.name + '  ·  en iyi zaman: ' + f.ct.best;
+        $('crParas').innerHTML = f.ct.paras.map(p => '<p>' + esc(p) + '</p>').join('');
+        $('crTodo').innerHTML = f.ct.todo.map(t => '<li>✈️ ' + esc(t) + '</li>').join('');
+        renderReaderLive();
+        reader.classList.add('open');
+        reader.setAttribute('aria-hidden', 'false');
+        reader.scrollTop = 0;
+      }
+      function closeReader(){
+        reader.classList.remove('open');
+        reader.setAttribute('aria-hidden', 'true');
+        curCity = null;
+      }
+      $('crClose').addEventListener('click', closeReader);
+      function renderReaderLive(){
+        if (!curCity) return;
+        const d = travelData[curCity.ct.id] || {};
+        const btn = $('crVisit');
+        btn.textContent = d.visited ? '✔ Gittik!' : '🧳 Henüz gitmedik — işaretle';
+        btn.classList.toggle('on', !!d.visited);
+        const notes = Object.entries(d.notes || {})
+          .map(([k, v]) => Object.assign({ k }, v))
+          .sort((a, b) => (a.at || 0) - (b.at || 0));
+        $('crNotes').innerHTML = notes.length
+          ? notes.map(n => '<div class="n">' + esc(n.text) + '<div class="m">' + esc(n.by || 'Biri') + ' · ' + new Date(n.at || 0).toLocaleDateString('tr-TR') + '</div></div>').join('')
+          : '<div style="color:#c98aa0;font-size:.9rem;margin-top:8px">Henüz not yok — ilkini sen bırak 💌</div>';
+        $('crNoteHint').textContent = me() ? '' : 'Not bırakmak ve ✔ işaretlemek için Çalışma Odası girişi gerekli';
+      }
+      $('crVisit').addEventListener('click', async () => {
+        if (!curCity) return;
+        if (!me() || !fb2){ $('crNoteHint').textContent = 'Önce Çalışma Odası\'na giriş yapmalısın 💗'; return; }
+        const id = curCity.ct.id;
+        const cur = !!((travelData[id] || {}).visited);
+        try { await fb2.update(fb2.ref(fb2.db, 'travel/' + id), { visited: !cur }); }
+        catch(e){ alert('Kaydedilemedi: ' + e.message); }
+      });
+      $('crNoteBtn').addEventListener('click', async () => {
+        const u = me();
+        if (!u || !fb2){ $('crNoteHint').textContent = 'Önce Çalışma Odası\'na giriş yapmalısın 💗'; return; }
+        const t = ($('crNoteInput').value || '').trim().slice(0, 200);
+        if (!t || !curCity) return;
+        const key = Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+        try {
+          await fb2.update(fb2.ref(fb2.db, 'travel/' + curCity.ct.id + '/notes/' + key), { text: t, by: u.displayName || u.email, at: Date.now() });
+          $('crNoteInput').value = '';
+        } catch(e){ alert('Kaydedilemedi: ' + e.message); }
+      });
+      $('crNoteInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('crNoteBtn').click(); });
+
+      /* ---- keyboard: capture phase so Esc closes overlays first,
+             without also closing the whole birthday view ---- */
+      document.addEventListener('keydown', e => {
+        if (lb.classList.contains('open')){
+          if (e.key === 'Escape'){ lbClose(); e.stopImmediatePropagation(); }
+          else if (e.key === 'ArrowRight') lbShow(lbIdx + 1);
+          else if (e.key === 'ArrowLeft') lbShow(lbIdx - 1);
+        } else if (reader.classList.contains('open') && e.key === 'Escape'){
+          closeReader(); e.stopImmediatePropagation();
+        }
+      }, true);
     })();
   </script>
 </body>
