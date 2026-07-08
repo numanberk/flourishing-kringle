@@ -649,6 +649,53 @@
     #cityReader .cr-note-row{ display:flex; gap:8px; margin-top:12px; }
     #cityReader .cr-note-row input{ flex:1; }
 
+    /* ---- travel: editing UI ---- */
+    #birthdayView .t-add{
+      cursor:pointer; border:2px dashed #f2a5bc; border-radius:18px; background:#fff8fa;
+      color:#c25e7a; font-weight:700; font-family:inherit; font-size:1rem;
+      display:flex; align-items:center; justify-content:center; min-height:110px; padding:14px;
+      transition:transform .15s;
+    }
+    #birthdayView .t-add:hover{ transform:translateY(-3px); background:#fff2f6; box-shadow:none; }
+    #birthdayView .t-mini{ display:flex; gap:6px; justify-content:center; margin-top:10px; }
+    #birthdayView .t-mini button{
+      background:rgba(255,255,255,.9); color:#c01540; border:1px solid #ffd0dc;
+      border-radius:999px; padding:4px 10px; font-size:.8rem; cursor:pointer; font-family:inherit;
+    }
+    #birthdayView .t-mini button:hover{ background:#fff; transform:none; box-shadow:none; }
+    #birthdayView .t-city .t-mini{ margin:0 0 12px; }
+    #tgModal{
+      position:fixed; inset:0; z-index:11800; display:none;
+      align-items:flex-start; justify-content:center; overflow-y:auto;
+      background:rgba(90,20,45,.45); backdrop-filter:blur(5px); padding:20px;
+    }
+    #tgModal.open{ display:flex; }
+    #tgModal .tg-card{
+      width:100%; max-width:460px; margin:auto; background:#fff; color:#333;
+      border:1px solid #ffd0dc; border-radius:20px; padding:22px;
+      box-shadow:0 20px 60px rgba(120,10,50,.35); text-align:left; font-family:'Open Sans',sans-serif;
+    }
+    #tgModal h3{ margin:0 0 14px; color:crimson; }
+    #tgModal .tg-field{ margin-top:12px; }
+    #tgModal .tg-field label{ display:block; font-size:.8rem; font-weight:700; color:#b3567a; margin-bottom:5px; }
+    #tgModal .tg-field input[type="text"], #tgModal .tg-field textarea{
+      width:100%; box-sizing:border-box; padding:10px 12px; border:1px solid #ffd0dc; border-radius:10px;
+      background:#fff; color:#333; font-family:inherit; font-size:.95rem; resize:vertical;
+    }
+    #tgModal .tg-field input[type="color"]{ width:52px; height:36px; padding:2px; border:1px solid #ffd0dc; border-radius:8px; background:#fff; cursor:pointer; }
+    #tgModal .tg-field .hint{ font-size:.75rem; color:#c98aa0; margin-top:4px; }
+    #tgModal .tg-actions{ display:flex; gap:10px; margin-top:18px; }
+    #tgModal .tg-actions button{ flex:1; }
+    #cityReader .cr-photos{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; margin:20px 0; }
+    #cityReader .cr-ph{ position:relative; }
+    #cityReader .cr-ph img{ width:100%; border-radius:12px; display:block; cursor:zoom-in; box-shadow:0 4px 10px rgba(0,0,0,.10); }
+    #cityReader .cr-ph .ph-del{
+      position:absolute; top:6px; right:6px; border:none; cursor:pointer;
+      background:rgba(0,0,0,.5); color:#fff; width:26px; height:26px; border-radius:50%;
+      font-size:13px; line-height:26px; padding:0; display:none;
+    }
+    #cityReader .cr-ph:hover .ph-del{ display:block; }
+
     @media (max-width:640px){
       #birthdayView .cd-card{ min-width:70px; padding:12px 8px; }
       #birthdayView .cd-num{ font-size:1.7rem; }
@@ -1001,6 +1048,7 @@
         <h2>🌍 Dünya Rehberimiz</h2>
         <p style="max-width:620px;margin:10px auto 0;font-size:1.05rem;">Bir gün hepsi. Şimdilik plan yapıyoruz ✈️ Yazılar şimdilik geçici — zamanla beraber dolduracağız.</p>
         <div class="t-progress" id="travelProgress"></div>
+        <div style="margin-top:14px"><button id="tgEditBtn" class="t-back">✏️ Düzenle</button></div>
         <div id="countryGrid" class="t-countries"></div>
         <div id="cityWrap" style="display:none">
           <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-top:22px;flex-wrap:wrap">
@@ -1023,8 +1071,12 @@
       <div class="cr-body">
         <div class="cr-actions">
           <button id="crVisit">🧳 Henüz gitmedik</button>
+          <button id="crEdit" class="t-back">✏️ Düzenle</button>
+          <button id="crPhotoAdd" class="t-back">📷 Fotoğraf ekle</button>
+          <input type="file" id="tgPhotoFile" accept="image/*" hidden>
         </div>
         <div id="crParas"></div>
+        <div id="crPhotos" class="cr-photos"></div>
         <div class="cr-todo">
           <h3>Yapılacaklar ✨</h3>
           <ul id="crTodo" style="margin:0;padding-left:18px;"></ul>
@@ -1036,6 +1088,18 @@
           <button id="crNoteBtn" class="bday-btn">Ekle</button>
         </div>
         <div id="crNoteHint" class="bday-hint" style="text-align:left"></div>
+      </div>
+    </div>
+
+    <!-- ============ TRAVEL EDIT FORM ============ -->
+    <div id="tgModal" aria-hidden="true">
+      <div class="tg-card">
+        <h3 id="tgTitle">Düzenle</h3>
+        <div id="tgFields"></div>
+        <div class="tg-actions">
+          <button id="tgCancel" class="t-back">Vazgeç</button>
+          <button id="tgSave" class="bday-btn">Kaydet</button>
+        </div>
       </div>
     </div>
 
@@ -2549,10 +2613,12 @@
       /* ================= 1) PHOTO LIGHTBOX ================= */
       const lb = $('lightbox'), lbImg = $('lbImg'), lbCap = $('lbCap'), lbCount = $('lbCount');
       let lbItems = [], lbIdx = 0;
-      function lbCollect(){
-        lbItems = [...document.querySelectorAll('#galleryGrid .photo-card img')].map(img => ({
+      function lbCollect(sel){
+        lbItems = [...document.querySelectorAll(sel)].map(img => ({
           src: img.src,
-          cap: (img.closest('.photo-card').querySelector('.photo-cap') || {}).textContent || ''
+          cap: img.closest('.photo-card')
+            ? ((img.closest('.photo-card').querySelector('.photo-cap') || {}).textContent || '')
+            : (img.getAttribute('alt') || '')
         }));
       }
       function lbShow(i){
@@ -2564,9 +2630,11 @@
       }
       function lbClose(){ lb.classList.remove('open'); lbImg.src = ''; }
       document.addEventListener('click', e => {
-        const img = e.target.closest('#galleryGrid .photo-card img');
+        const g = e.target.closest('#galleryGrid .photo-card img');
+        const t = e.target.closest('#crPhotos .cr-ph img');
+        const img = g || t;
         if (!img) return;
-        lbCollect();
+        lbCollect(g ? '#galleryGrid .photo-card img' : '#crPhotos .cr-ph img');
         const idx = lbItems.findIndex(it => it.src === img.src);
         lbShow(idx < 0 ? 0 : idx);
         lb.classList.add('open');
@@ -2625,140 +2693,92 @@
       }
       setInterval(renderCountdown, 1000);
 
-      /* ================= 3) TRAVEL GUIDE (own PIN) ================= */
+      /* ================= 3) TRAVEL GUIDE (own PIN, fully editable) ================= */
       /* ====== CHANGE THE TRAVEL PIN HERE ====== */
       const TRAVEL_PIN = '12345677';
       /* ======================================== */
 
-      const TRAVEL = [
-        { id:'ingiltere', name:'İngiltere', flag:'🇬🇧', tag:'çay, yağmur, kırmızı otobüsler', grad:['#5b79e3','#23368f'], cities:[
+      /* İçerik artık veritabanında (travelGuide/). Aşağıdaki SEED sadece ilk
+         açılışta bir kere yüklenir; sonrasında her şey siteden düzenlenir. */
+      const TRAVEL_SEED = [
+        { id:'ingiltere', name:'İngiltere', flag:'🇬🇧', tag:'çay, yağmur, kırmızı otobüsler', grad1:'#5b79e3', grad2:'#23368f', cities:[
           { id:'londra', name:'Londra', emoji:'🎡', tag:'iki kişilik bir şehir masalı', best:'Nisan–Haziran',
-            paras:[
-              'Big Ben\'in önünde klasik turist fotoğrafı, sonra Thames kenarında amaçsız yürüyüş. Kırmızı telefon kulübesinde saçma pozlar zorunlu.',
-              'Camden Market\'te dünya mutfağından atıştırıp Notting Hill\'in renkli kapılarını sayacağız. British Museum bedava — yağmurlu güne birebir.'
-            ],
-            todo:['Westminster\'dan Tower Bridge\'e nehir yürüyüşü','Çift katlı otobüsün üst katında en ön koltuk','Camden Market\'te bir şeyler atıştırmak','Notting Hill\'de en güzel kapıyı seçme yarışması'] },
+            paras:'Big Ben\'in önünde klasik turist fotoğrafı, sonra Thames kenarında amaçsız yürüyüş. Kırmızı telefon kulübesinde saçma pozlar zorunlu.\n\nCamden Market\'te dünya mutfağından atıştırıp Notting Hill\'in renkli kapılarını sayacağız. British Museum bedava — yağmurlu güne birebir.',
+            todo:'Westminster\'dan Tower Bridge\'e nehir yürüyüşü\nÇift katlı otobüsün üst katında en ön koltuk\nCamden Market\'te bir şeyler atıştırmak\nNotting Hill\'de en güzel kapıyı seçme yarışması' },
           { id:'oxford', name:'Oxford', emoji:'📚', tag:'kitap kokulu sokaklar', best:'Mayıs–Eylül',
-            paras:[
-              'Dünyanın en eski üniversite şehirlerinden birinde, taş avlular ve bisikletli öğrenciler arasında bir gün.',
-              'Christ Church\'ün yemekhanesi Harry Potter\'daki büyük salonun ilhamı — girip "birinci sınıflar buraya" diye fısıldaşacağız.'
-            ],
-            todo:['Bodleian Kütüphanesi turu','Christ Church yemekhanesi','Covered Market\'te cookie molası','Nehirde punting (sandal) denemesi'] },
+            paras:'Dünyanın en eski üniversite şehirlerinden birinde, taş avlular ve bisikletli öğrenciler arasında bir gün.\n\nChrist Church\'ün yemekhanesi Harry Potter\'daki büyük salonun ilhamı — girip "birinci sınıflar buraya" diye fısıldaşacağız.',
+            todo:'Bodleian Kütüphanesi turu\nChrist Church yemekhanesi\nCovered Market\'te cookie molası\nNehirde punting (sandal) denemesi' },
           { id:'bath', name:'Bath', emoji:'🛁', tag:'bal rengi taştan bir şehir', best:'Nisan–Ekim',
-            paras:[
-              'Romalılardan kalma hamamların etrafına kurulmuş, tamamı bal rengi taştan minicik bir şehir. Her sokağı kartpostal.',
-              'Jane Austen buralıymış; biz de Pulteney Köprüsü\'nde durup 200 yıl öncesini hayal edeceğiz.'
-            ],
-            todo:['Roma Hamamları','Royal Crescent önünde piknik','Sally Lunn\'s\'ta meşhur çörek','Termal çatı havuzunda gün batımı'] }
+            paras:'Romalılardan kalma hamamların etrafına kurulmuş, tamamı bal rengi taştan minicik bir şehir. Her sokağı kartpostal.\n\nJane Austen buralıymış; biz de Pulteney Köprüsü\'nde durup 200 yıl öncesini hayal edeceğiz.',
+            todo:'Roma Hamamları\nRoyal Crescent önünde piknik\nSally Lunn\'s\'ta meşhur çörek\nTermal çatı havuzunda gün batımı' }
         ]},
-        { id:'turkiye', name:'Türkiye', flag:'🇹🇷', tag:'bizim evimiz, baştan keşif', grad:['#e34d4d','#8f1d1d'], cities:[
+        { id:'turkiye', name:'Türkiye', flag:'🇹🇷', tag:'bizim evimiz, baştan keşif', grad1:'#e34d4d', grad2:'#8f1d1d', cities:[
           { id:'istanbul', name:'İstanbul', emoji:'🌉', tag:'iki kıta, bir biz', best:'Nisan–Mayıs, Eylül–Ekim',
-            paras:[
-              'Karaköy\'den vapura binip martılara simit atarak Kadıköy\'e geçmek — dünyanın en ucuz ve en güzel "cruise"u.',
-              'Balat\'ın renkli merdivenleri, Kapalıçarşı\'nın labirenti, gece Galata\'nın ışıkları. Aynı şehirde yüz farklı şehir var.'
-            ],
-            todo:['Boğaz vapurunda çay + simit','Balat\'ta fotoğraf turu','Kadıköy\'de sokak lezzetleri','Gece Galata Kulesi çevresinde yürüyüş'] },
+            paras:'Karaköy\'den vapura binip martılara simit atarak Kadıköy\'e geçmek — dünyanın en ucuz ve en güzel "cruise"u.\n\nBalat\'ın renkli merdivenleri, Kapalıçarşı\'nın labirenti, gece Galata\'nın ışıkları. Aynı şehirde yüz farklı şehir var.',
+            todo:'Boğaz vapurunda çay + simit\nBalat\'ta fotoğraf turu\nKadıköy\'de sokak lezzetleri\nGece Galata Kulesi çevresinde yürüyüş' },
           { id:'kapadokya', name:'Kapadokya', emoji:'🎈', tag:'gün doğumunda yüzlerce balon', best:'Nisan–Haziran, Eylül–Kasım',
-            paras:[
-              'Sabah 5\'te kalkmaya değecek tek şey: vadinin üzerinde aynı anda yükselen yüzlerce sıcak hava balonu.',
-              'Peri bacalarının arasında yürüyüş, mağara otelde kalma deneyimi ve testi kebabı. Başka gezegen gibi ama iki saat uçuş mesafesinde.'
-            ],
-            todo:['Balon turu (ya da en azından izleme terası)','Mağara otelde bir gece','Güvercinlik Vadisi yürüyüşü','Testi kebabı seremonisi'] },
+            paras:'Sabah 5\'te kalkmaya değecek tek şey: vadinin üzerinde aynı anda yükselen yüzlerce sıcak hava balonu.\n\nPeri bacalarının arasında yürüyüş, mağara otelde kalma deneyimi ve testi kebabı. Başka gezegen gibi ama iki saat uçuş mesafesinde.',
+            todo:'Balon turu (ya da en azından izleme terası)\nMağara otelde bir gece\nGüvercinlik Vadisi yürüyüşü\nTesti kebabı seremonisi' },
           { id:'izmir', name:'İzmir', emoji:'🌊', tag:'gün batımı Kordon\'da güzel', best:'Mayıs–Ekim',
-            paras:[
-              'Kordon\'da çimlere oturup denize karşı gün batımı — İzmir\'in en meşhur aktivitesi ve tamamen bedava.',
-              'Sabah boyoz + çay, öğlen Alaçatı\'nın taş sokakları, akşam Urla\'da sakin bir yemek. Ege modunda yavaşlamak serbest.'
-            ],
-            todo:['Kordon\'da gün batımı','Boyoz + kumru turu','Alaçatı gezisi','Tarihi Asansör\'den manzara'] }
+            paras:'Kordon\'da çimlere oturup denize karşı gün batımı — İzmir\'in en meşhur aktivitesi ve tamamen bedava.\n\nSabah boyoz + çay, öğlen Alaçatı\'nın taş sokakları, akşam Urla\'da sakin bir yemek. Ege modunda yavaşlamak serbest.',
+            todo:'Kordon\'da gün batımı\nBoyoz + kumru turu\nAlaçatı gezisi\nTarihi Asansör\'den manzara' }
         ]},
-        { id:'avusturya', name:'Avusturya', flag:'🇦🇹', tag:'valsler ve dağ kasabaları', grad:['#c94f6d','#5e1c33'], cities:[
+        { id:'avusturya', name:'Avusturya', flag:'🇦🇹', tag:'valsler ve dağ kasabaları', grad1:'#c94f6d', grad2:'#5e1c33', cities:[
           { id:'viyana', name:'Viyana', emoji:'🎻', tag:'kahvehanelerin başkenti', best:'Nisan–Haziran, Aralık',
-            paras:[
-              'Viyana kahvehanesi bir mekân değil, bir yaşam biçimi: bir sacher torte, bir melange ve saatlerce oturma hakkı.',
-              'Schönbrunn Sarayı\'nın bahçelerinde imparator gibi yürüyüp akşam bir konser salonuna sızacağız. Aralıkta gelirsek Noel pazarları ekstra büyü.'
-            ],
-            todo:['Café Central\'de sacher torte','Schönbrunn bahçeleri','Bir klasik müzik konseri','Noel pazarı (kış planı)'] },
+            paras:'Viyana kahvehanesi bir mekân değil, bir yaşam biçimi: bir sacher torte, bir melange ve saatlerce oturma hakkı.\n\nSchönbrunn Sarayı\'nın bahçelerinde imparator gibi yürüyüp akşam bir konser salonuna sızacağız. Aralıkta gelirsek Noel pazarları ekstra büyü.',
+            todo:'Café Central\'de sacher torte\nSchönbrunn bahçeleri\nBir klasik müzik konseri\nNoel pazarı (kış planı)' },
           { id:'salzburg', name:'Salzburg', emoji:'🏰', tag:'Mozart\'ın şehri', best:'Mayıs–Eylül',
-            paras:[
-              'Alplerin eteğinde, nehrin ikiye böldüğü minyatür bir barok şehir. Tepedeki kale her sokaktan görünüyor.',
-              'Mozart burada doğmuş; biz de doğduğu evin önünden geçip "yetenek bulaşıcı olsa keşke" diyeceğiz.'
-            ],
-            todo:['Hohensalzburg Kalesi','Getreidegasse\'de vitrin turu','Mirabell bahçeleri','Mozartkugel tadımı'] },
+            paras:'Alplerin eteğinde, nehrin ikiye böldüğü minyatür bir barok şehir. Tepedeki kale her sokaktan görünüyor.\n\nMozart burada doğmuş; biz de doğduğu evin önünden geçip "yetenek bulaşıcı olsa keşke" diyeceğiz.',
+            todo:'Hohensalzburg Kalesi\nGetreidegasse\'de vitrin turu\nMirabell bahçeleri\nMozartkugel tadımı' },
           { id:'hallstatt', name:'Hallstatt', emoji:'🏞️', tag:'göl kenarında bir masal', best:'Mayıs–Ekim',
-            paras:[
-              'Dağla göl arasına sıkışmış, kartpostalların bile abartamadığı bir köy. Nüfusu bin kişilik ama güzelliği bin şehirlik.',
-              'Göl kenarında oturup su sesini dinlemekten başka plan yapmaya gerek yok. Zaten başka yapacak bir şey de yok — olay bu.'
-            ],
-            todo:['Klasik Hallstatt manzara noktası','Gölde kürek teknesi','Skywalk seyir terası','Köy fırınından taze bir şeyler'] }
+            paras:'Dağla göl arasına sıkışmış, kartpostalların bile abartamadığı bir köy. Nüfusu bin kişilik ama güzelliği bin şehirlik.\n\nGöl kenarında oturup su sesini dinlemekten başka plan yapmaya gerek yok. Zaten başka yapacak bir şey de yok — olay bu.',
+            todo:'Klasik Hallstatt manzara noktası\nGölde kürek teknesi\nSkywalk seyir terası\nKöy fırınından taze bir şeyler' }
         ]},
-        { id:'norvec', name:'Norveç', flag:'🇳🇴', tag:'fiyortlar ve kuzey ışıkları', grad:['#3e7ea6','#12324a'], cities:[
+        { id:'norvec', name:'Norveç', flag:'🇳🇴', tag:'fiyortlar ve kuzey ışıkları', grad1:'#3e7ea6', grad2:'#12324a', cities:[
           { id:'oslo', name:'Oslo', emoji:'🛶', tag:'deniz kenarında modern kuzey', best:'Mayıs–Ağustos',
-            paras:[
-              'Opera binasının çatısına yürüyerek çıkılıyor — şehir ayaklarının altında, deniz burnunun dibinde.',
-              'Müze adası Bygdøy\'de viking gemileri, sonra limanda taze bir şeyler. Pahalı ama planlamak bedava.'
-            ],
-            todo:['Opera çatısında yürüyüş','Viking Gemi Müzesi','Aker Brygge limanı','Vigeland heykel parkı'] },
+            paras:'Opera binasının çatısına yürüyerek çıkılıyor — şehir ayaklarının altında, deniz burnunun dibinde.\n\nMüze adası Bygdøy\'de viking gemileri, sonra limanda taze bir şeyler. Pahalı ama planlamak bedava.',
+            todo:'Opera çatısında yürüyüş\nViking Gemi Müzesi\nAker Brygge limanı\nVigeland heykel parkı' },
           { id:'bergen', name:'Bergen', emoji:'🌧️', tag:'yedi dağın ve yağmurun şehri', best:'Haziran–Ağustos',
-            paras:[
-              'Bryggen\'in rengarenk ahşap evleri UNESCO listesinde; her biri yamuk yumuk ve tam da o yüzden mükemmel.',
-              'Fløyen fünikülerine binip yukarıdan fiyortlara bakacağız. Yağmur yağarsa — ki yağacak — şehrin en meşhur ikramı sayılır.'
-            ],
-            todo:['Bryggen rıhtımı','Fløyen tepesine füniküler','Balık pazarı','Fiyort turu başlangıcı'] },
+            paras:'Bryggen\'in rengarenk ahşap evleri UNESCO listesinde; her biri yamuk yumuk ve tam da o yüzden mükemmel.\n\nFløyen fünikülerine binip yukarıdan fiyortlara bakacağız. Yağmur yağarsa — ki yağacak — şehrin en meşhur ikramı sayılır.',
+            todo:'Bryggen rıhtımı\nFløyen tepesine füniküler\nBalık pazarı\nFiyort turu başlangıcı' },
           { id:'tromso', name:'Tromsø', emoji:'🌌', tag:'kuzey ışıklarının kapısı', best:'Eylül–Mart (ışıklar için)',
-            paras:[
-              'Kutup dairesinin üstünde, kışın gökyüzünün yeşile boyandığı yer. Aurora görmek garantili değil — o yüzden gördüğünde efsane.',
-              'Kızak köpekleri, ren geyikleri ve gece yarısı hâlâ aydınlık yazlar. Kışın gidersek termal içlik ciddi bir yatırım.'
-            ],
-            todo:['Kuzey ışıkları avı turu','Fjellheisen teleferiği','Husky kızak deneyimi','Arctic Cathedral'] }
+            paras:'Kutup dairesinin üstünde, kışın gökyüzünün yeşile boyandığı yer. Aurora görmek garantili değil — o yüzden gördüğünde efsane.\n\nKızak köpekleri, ren geyikleri ve gece yarısı hâlâ aydınlık yazlar. Kışın gidersek termal içlik ciddi bir yatırım.',
+            todo:'Kuzey ışıkları avı turu\nFjellheisen teleferiği\nHusky kızak deneyimi\nArctic Cathedral' }
         ]},
-        { id:'japonya', name:'Japonya', flag:'🇯🇵', tag:'neon, tapınak ve ramen', grad:['#e05f7f','#7e1e3c'], cities:[
+        { id:'japonya', name:'Japonya', flag:'🇯🇵', tag:'neon, tapınak ve ramen', grad1:'#e05f7f', grad2:'#7e1e3c', cities:[
           { id:'tokyo', name:'Tokyo', emoji:'🗼', tag:'geleceğe kısa bir gezi', best:'Mart–Nisan (sakura), Ekim–Kasım',
-            paras:[
-              'Shibuya kavşağında bir anda binlerce kişiyle karşıdan karşıya geçmek — kaosun bu kadar düzenli olabildiği tek yer.',
-              'Sabah huzurlu bir tapınak, öğlen Akihabara\'da oyun makineleri, gece bir ramen tezgâhında sessiz mutluluk. Hepsi aynı gün.'
-            ],
-            todo:['Shibuya kavşağı + Hachiko','Senso-ji Tapınağı','Akihabara arcade turu','Gerçek bir ramen dükkânı'] },
+            paras:'Shibuya kavşağında bir anda binlerce kişiyle karşıdan karşıya geçmek — kaosun bu kadar düzenli olabildiği tek yer.\n\nSabah huzurlu bir tapınak, öğlen Akihabara\'da oyun makineleri, gece bir ramen tezgâhında sessiz mutluluk. Hepsi aynı gün.',
+            todo:'Shibuya kavşağı + Hachiko\nSenso-ji Tapınağı\nAkihabara arcade turu\nGerçek bir ramen dükkânı' },
           { id:'kyoto', name:'Kyoto', emoji:'⛩️', tag:'bin kapının şehri', best:'Mart–Nisan, Kasım',
-            paras:[
-              'Fushimi Inari\'nin binlerce turuncu kapısının altından tepeye yürüyüş — sabah erken gidersek yol sadece bizim.',
-              'Arashiyama bambu ormanında rüzgârın sesi, Gion\'da eski ahşap sokaklar. Kyoto acele edilmeyecek bir şehir.'
-            ],
-            todo:['Fushimi Inari torii yolu','Arashiyama bambu ormanı','Gion\'da akşam yürüyüşü','Bir çay seremonisi'] },
+            paras:'Fushimi Inari\'nin binlerce turuncu kapısının altından tepeye yürüyüş — sabah erken gidersek yol sadece bizim.\n\nArashiyama bambu ormanında rüzgârın sesi, Gion\'da eski ahşap sokaklar. Kyoto acele edilmeyecek bir şehir.',
+            todo:'Fushimi Inari torii yolu\nArashiyama bambu ormanı\nGion\'da akşam yürüyüşü\nBir çay seremonisi' },
           { id:'osaka', name:'Osaka', emoji:'🐙', tag:'Japonya\'nın mutfağı', best:'Mart–Mayıs, Ekim–Kasım',
-            paras:[
-              'Şehrin sloganı "kuidaore": yemekten iflas etmek. Dotonbori\'nin neonları altında takoyaki, okonomiyaki, tekrar takoyaki.',
-              'İnsanları Tokyo\'dan daha gürültücü, daha şakacı. Sokak yemeği turu burada olimpik spor sayılır.'
-            ],
-            todo:['Dotonbori gece turu','Takoyaki tadımı','Osaka Kalesi','Kuromon pazarı kahvaltısı'] }
+            paras:'Şehrin sloganı "kuidaore": yemekten iflas etmek. Dotonbori\'nin neonları altında takoyaki, okonomiyaki, tekrar takoyaki.\n\nİnsanları Tokyo\'dan daha gürültücü, daha şakacı. Sokak yemeği turu burada olimpik spor sayılır.',
+            todo:'Dotonbori gece turu\nTakoyaki tadımı\nOsaka Kalesi\nKuromon pazarı kahvaltısı' }
         ]},
-        { id:'cin', name:'Çin', flag:'🇨🇳', tag:'sur, panda ve neon', grad:['#d1483b','#6e150d'], cities:[
+        { id:'cin', name:'Çin', flag:'🇨🇳', tag:'sur, panda ve neon', grad1:'#d1483b', grad2:'#6e150d', cities:[
           { id:'pekin', name:'Pekin', emoji:'🏮', tag:'imparatorların başkenti', best:'Nisan–Mayıs, Eylül–Ekim',
-            paras:[
-              'Çin Seddi\'nin Mutianyu bölümünde kalabalıktan uzak yürüyüş — uzaydan görünmüyormuş ama tepesinden dünya görünüyor.',
-              'Yasak Şehir\'in avlularında yarım gün kaybolmak serbest. Akşam Pekin ördeği ile taçlandırma zorunlu.'
-            ],
-            todo:['Çin Seddi (Mutianyu)','Yasak Şehir','Pekin ördeği yemeği','Hutong sokaklarında bisiklet'] },
+            paras:'Çin Seddi\'nin Mutianyu bölümünde kalabalıktan uzak yürüyüş — uzaydan görünmüyormuş ama tepesinden dünya görünüyor.\n\nYasak Şehir\'in avlularında yarım gün kaybolmak serbest. Akşam Pekin ördeği ile taçlandırma zorunlu.',
+            todo:'Çin Seddi (Mutianyu)\nYasak Şehir\nPekin ördeği yemeği\nHutong sokaklarında bisiklet' },
           { id:'sanghay', name:'Şanghay', emoji:'🌃', tag:'gelecek şimdiden burada', best:'Mart–Mayıs, Eylül–Kasım',
-            paras:[
-              'Bund\'da nehrin bir yakası 1920\'ler Avrupa\'sı, karşı yakası bilim kurgu filmi seti. Gece ışıklar açılınca inanması zor.',
-              'Yu Bahçesi\'nin göletleri, Fransız Mahallesi\'nin platanlı sokakları ve dünyanın en hızlı trenlerinden biri. Kontrast şehri.'
-            ],
-            todo:['Bund\'da gece silüeti','Yu Bahçesi','Fransız Mahallesi yürüyüşü','Maglev trenine binmek'] },
+            paras:'Bund\'da nehrin bir yakası 1920\'ler Avrupa\'sı, karşı yakası bilim kurgu filmi seti. Gece ışıklar açılınca inanması zor.\n\nYu Bahçesi\'nin göletleri, Fransız Mahallesi\'nin platanlı sokakları ve dünyanın en hızlı trenlerinden biri. Kontrast şehri.',
+            todo:'Bund\'da gece silüeti\nYu Bahçesi\nFransız Mahallesi yürüyüşü\nMaglev trenine binmek' },
           { id:'chengdu', name:'Chengdu', emoji:'🐼', tag:'pandalar!! (ve hotpot)', best:'Mart–Haziran, Eylül–Kasım',
-            paras:[
-              'Panda araştırma merkezinde sabah erken saat: bambu çiğneyen, yuvarlanan, hiçbir şeyi umursamayan pandalar. Gezinin duygusal zirvesi burası olabilir.',
-              'Akşam Sichuan hotpot — "az acılı" bile ciddiye alınacak seviyede. Yanına soğuk bir şeyler şart.'
-            ],
-            todo:['Panda merkezi (sabah erken!)','Sichuan hotpot deneyimi','Jinli antik sokağı','Halk parkında çay bahçesi'] }
+            paras:'Panda araştırma merkezinde sabah erken saat: bambu çiğneyen, yuvarlanan, hiçbir şeyi umursamayan pandalar. Gezinin duygusal zirvesi burası olabilir.\n\nAkşam Sichuan hotpot — "az acılı" bile ciddiye alınacak seviyede. Yanına soğuk bir şeyler şart.',
+            todo:'Panda merkezi (sabah erken!)\nSichuan hotpot deneyimi\nJinli antik sokağı\nHalk parkında çay bahçesi' }
         ]}
       ];
 
-      const lock = $('travelLock'), guide = $('travelGuide');
+      const lock = $('travelLock'), guideEl = $('travelGuide');
       const tPin = $('travelPin'), tMsg = $('travelPinMsg');
       const countryGrid = $('countryGrid'), cityWrap = $('cityWrap'), cityGrid = $('cityGrid'), cityHead = $('cityHead');
       const reader = $('cityReader');
+      const tgModal = $('tgModal'), tgFields = $('tgFields'), tgTitle = $('tgTitle');
       let travelUnlocked = false, travelInited = false, travelData = {}, fb2 = null;
-      let curCountry = null, curCity = null;
+      let guideRaw = null;           // travelGuide/ snapshot (null = henüz gelmedi)
+      let seedTried = false;
+      let editMode = false;
+      let curCountryId = null, curCityId = null;
 
       /* ---- PIN gate (asked on every visit to the tab) ---- */
       function tryTravelPin(){
@@ -2767,7 +2787,7 @@
         if (v === TRAVEL_PIN){
           travelUnlocked = true;
           lock.style.display = 'none';
-          guide.style.display = '';
+          guideEl.style.display = '';
           initTravel();
         } else {
           tMsg.textContent = 'Yanlış anahtar 🥲 tekrar dene';
@@ -2785,10 +2805,11 @@
       $('travelPinBtn').addEventListener('click', tryTravelPin);
 
       function relockTravel(){
-        travelUnlocked = false;
+        travelUnlocked = false; editMode = false;
         lock.style.display = '';
-        guide.style.display = 'none';
+        guideEl.style.display = 'none';
         tPin.value = ''; tMsg.textContent = '';
+        closeTgModal();
         closeReader();
         showCountries();
       }
@@ -2808,101 +2829,274 @@
         lbClose();
       };
 
-      /* ---- data: travel/{cityId} = { visited, notes:{...} } ---- */
+      /* ---- data ----
+         travelGuide/countries/{cid} = { name, flag, tag, grad1, grad2, order,
+             cities/{ctid} = { name, emoji, tag, best, paras, todo, order, photos/{k}:{img,by,at} } }
+         travel/{ctid} = { visited, notes } (eski yapı, aynen korunur)          */
+      const me = () => (window.fb && window.fb.auth) ? window.fb.auth.currentUser : null;
+
       function initTravel(){
         showCountries();
         if (travelInited) return; travelInited = true;
         const hook = _fb => {
           fb2 = _fb;
           fb2.onValue(fb2.ref(fb2.db, 'travel'), s => { travelData = s.val() || {}; refreshTravelUI(); });
+          fb2.onValue(fb2.ref(fb2.db, 'travelGuide'), s => {
+            guideRaw = s.val() || {};
+            maybeSeed();
+            refreshTravelUI();
+          });
         };
         if (window.fb) hook(window.fb);
         else window.addEventListener('fb-ready', () => hook(window.fb), { once:true });
       }
-      const me = () => (window.fb && window.fb.auth) ? window.fb.auth.currentUser : null;
-      const totalCities = () => TRAVEL.reduce((a, c) => a + c.cities.length, 0);
+
+      function maybeSeed(){
+        if (seedTried || !fb2 || !me()) return;
+        if (guideRaw && Object.keys(guideRaw.countries || {}).length) return;
+        seedTried = true;
+        const writes = {};
+        TRAVEL_SEED.forEach((c, ci) => {
+          const cities = {};
+          c.cities.forEach((ct, cti) => {
+            cities[ct.id] = { name: ct.name, emoji: ct.emoji, tag: ct.tag, best: ct.best, paras: ct.paras, todo: ct.todo, order: cti };
+          });
+          writes['travelGuide/countries/' + c.id] = { name: c.name, flag: c.flag, tag: c.tag, grad1: c.grad1, grad2: c.grad2, order: ci, cities };
+        });
+        fb2.update(fb2.ref(fb2.db), writes).catch(e => console.error('travel seed failed:', e && e.message));
+      }
+
+      /* normalized views over the data (falls back to SEED until DB loads) */
+      function countryList(){
+        const src = (guideRaw && Object.keys(guideRaw.countries || {}).length) ? guideRaw.countries : null;
+        if (!src){
+          return TRAVEL_SEED.map((c, i) => Object.assign({ id: c.id, order: i }, c));
+        }
+        return Object.entries(src).map(([id, c]) => Object.assign({ id }, c))
+          .sort((a, b) => (a.order ?? 999) - (b.order ?? 999) || String(a.name).localeCompare(String(b.name), 'tr'));
+      }
+      function cityList(c){
+        if (Array.isArray(c.cities)) return c.cities.map((ct, i) => Object.assign({ id: ct.id, order: i }, ct)); // seed fallback
+        return Object.entries(c.cities || {}).map(([id, ct]) => Object.assign({ id }, ct))
+          .sort((a, b) => (a.order ?? 999) - (b.order ?? 999) || String(a.name).localeCompare(String(b.name), 'tr'));
+      }
+      function findCountry(cid){ return countryList().find(c => c.id === cid) || null; }
+      function findCity(cid, ctid){
+        const c = findCountry(cid); if (!c) return null;
+        const ct = cityList(c).find(x => x.id === ctid);
+        return ct ? { c, ct } : null;
+      }
+      const parasArr = ct => String(ct.paras || '').split(/\n\s*\n/).map(s => s.trim()).filter(Boolean);
+      const todoArr = ct => String(ct.todo || '').split(/\n/).map(s => s.trim()).filter(Boolean);
+      const gradOf = c => 'linear-gradient(135deg,' + (c.grad1 || '#c94f6d') + ',' + (c.grad2 || '#5e1c33') + ')';
+
+      function totalCities(){ return countryList().reduce((a, c) => a + cityList(c).length, 0); }
       function visitedCount(){
         let n = 0;
-        TRAVEL.forEach(c => c.cities.forEach(ct => { if ((travelData[ct.id] || {}).visited) n++; }));
+        countryList().forEach(c => cityList(c).forEach(ct => { if ((travelData[ct.id] || {}).visited) n++; }));
         return n;
       }
       function renderProgress(){
         $('travelProgress').textContent = '✔ ' + visitedCount() + ' / ' + totalCities() + ' şehir gezildi';
       }
 
+      /* ---- edit mode ---- */
+      $('tgEditBtn').addEventListener('click', () => {
+        if (!me()){ alert('Düzenlemek için önce Çalışma Odası\u2019na giriş yapmalısın 💗'); return; }
+        editMode = !editMode;
+        $('tgEditBtn').textContent = editMode ? '✔ Düzenleme bitti' : '✏️ Düzenle';
+        refreshTravelUI(true);
+      });
+
       /* ---- views: countries → cities → reader ---- */
       function showCountries(){
-        curCountry = null;
+        curCountryId = null;
         cityWrap.style.display = 'none';
         countryGrid.style.display = '';
         renderProgress();
-        countryGrid.innerHTML = TRAVEL.map(c => `
-          <button class="t-country" data-c="${c.id}" style="background:linear-gradient(135deg,${c.grad[0]},${c.grad[1]})">
-            <div class="fl">${c.flag}</div>
+        countryGrid.innerHTML = countryList().map(c => `
+          <div class="t-country" role="button" tabindex="0" data-c="${c.id}" style="background:${gradOf(c)}">
+            <div class="fl">${esc(c.flag || '🌍')}</div>
             <div class="nm">${esc(c.name)}</div>
-            <div class="tg">${esc(c.tag)}</div>
-            <div class="ct">${c.cities.length} şehir</div>
-          </button>`).join('');
+            <div class="tg">${esc(c.tag || '')}</div>
+            <div class="ct">${cityList(c).length} şehir</div>
+            ${editMode ? `<div class="t-mini"><button data-act="editc" data-c="${c.id}">✏️</button><button data-act="delc" data-c="${c.id}">🗑</button></div>` : ''}
+          </div>`).join('')
+          + (editMode ? '<div class="t-add" role="button" tabindex="0" data-act="addc">＋ Ülke ekle</div>' : '');
       }
       function showCities(cid){
-        const c = TRAVEL.find(x => x.id === cid); if (!c) return;
-        curCountry = c;
+        const c = findCountry(cid); if (!c){ showCountries(); return; }
+        curCountryId = cid;
         countryGrid.style.display = 'none';
         cityWrap.style.display = '';
-        cityHead.textContent = c.flag + ' ' + c.name;
-        cityGrid.innerHTML = c.cities.map(ct => {
+        cityHead.textContent = (c.flag || '🌍') + ' ' + c.name;
+        cityGrid.innerHTML = cityList(c).map(ct => {
           const v = (travelData[ct.id] || {}).visited;
-          return `<button class="t-city" data-city="${ct.id}">
-            <div class="hero" style="background:linear-gradient(135deg,${c.grad[0]},${c.grad[1]})">${ct.emoji}</div>
+          return `<div class="t-city" role="button" tabindex="0" data-city="${ct.id}">
+            <div class="hero" style="background:${gradOf(c)}">${esc(ct.emoji || '📍')}</div>
             <div class="b">
               <div class="nm">${esc(ct.name)}${v ? ' <span style="color:#1c8a44">✔</span>' : ''}</div>
-              <div class="tg">${esc(ct.tag)}</div>
+              <div class="tg">${esc(ct.tag || '')}</div>
             </div>
-          </button>`;
-        }).join('');
+            ${editMode ? `<div class="t-mini"><button data-act="editct" data-city="${ct.id}">✏️</button><button data-act="delct" data-city="${ct.id}">🗑</button></div>` : ''}
+          </div>`;
+        }).join('')
+          + (editMode ? '<div class="t-add" role="button" tabindex="0" data-act="addct">＋ Şehir ekle</div>' : '');
       }
-      function refreshTravelUI(){
+      function refreshTravelUI(force){
         if (!travelUnlocked) return;
         renderProgress();
-        if (curCountry) showCities(curCountry.id);
-        if (reader.classList.contains('open') && curCity) renderReaderLive();
+        if (curCountryId && cityWrap.style.display !== 'none') showCities(curCountryId);
+        else if (force || countryGrid.style.display !== 'none') showCountries();
+        if (reader.classList.contains('open') && curCityId){
+          const f = findCity(curCountryId, curCityId);
+          if (f){ renderReaderContent(f); renderReaderLive(); }
+          else closeReader();  // şehir silindi
+        }
       }
-      countryGrid.addEventListener('click', e => {
-        const b = e.target.closest('.t-country'); if (b) showCities(b.getAttribute('data-c'));
+
+      countryGrid.addEventListener('click', async e => {
+        const act = e.target.closest('[data-act]');
+        if (act){
+          const a = act.getAttribute('data-act');
+          if (a === 'addc') return openCountryForm(null);
+          if (a === 'editc') return openCountryForm(act.getAttribute('data-c'));
+          if (a === 'delc') return deleteCountry(act.getAttribute('data-c'));
+        }
+        const b = e.target.closest('.t-country');
+        if (b) showCities(b.getAttribute('data-c'));
       });
       $('cityBack').addEventListener('click', showCountries);
       cityGrid.addEventListener('click', e => {
-        const b = e.target.closest('.t-city'); if (b) openReader(b.getAttribute('data-city'));
+        const act = e.target.closest('[data-act]');
+        if (act){
+          const a = act.getAttribute('data-act');
+          if (a === 'addct') return openCityForm(curCountryId, null);
+          if (a === 'editct') return openCityForm(curCountryId, act.getAttribute('data-city'));
+          if (a === 'delct') return deleteCity(curCountryId, act.getAttribute('data-city'));
+        }
+        const b = e.target.closest('.t-city');
+        if (b) openReader(curCountryId, b.getAttribute('data-city'));
       });
 
-      /* ---- clean reader ---- */
-      function findCity(id){
-        for (const c of TRAVEL) for (const ct of c.cities) if (ct.id === id) return { c, ct };
-        return null;
+      /* ---- edit forms ---- */
+      function openTgModal(){ tgModal.classList.add('open'); tgModal.setAttribute('aria-hidden', 'false'); }
+      function closeTgModal(){ tgModal.classList.remove('open'); tgModal.setAttribute('aria-hidden', 'true'); tgFields.innerHTML = ''; tgSaveFn = null; }
+      let tgSaveFn = null;
+      $('tgCancel').addEventListener('click', closeTgModal);
+      tgModal.addEventListener('click', e => { if (e.target === tgModal) closeTgModal(); });
+      $('tgSave').addEventListener('click', async () => {
+        if (!tgSaveFn) return;
+        if (!me() || !fb2){ alert('Önce Çalışma Odası\u2019na giriş yapmalısın 💗'); return; }
+        try { await tgSaveFn(); closeTgModal(); }
+        catch(e){ alert('Kaydedilemedi: ' + e.message); }
+      });
+      const fld = (id, label, val, hint) =>
+        `<div class="tg-field"><label>${label}</label><input type="text" id="${id}" value="${esc(val || '')}">${hint ? '<div class="hint">' + hint + '</div>' : ''}</div>`;
+      const fldArea = (id, label, val, rows, hint) =>
+        `<div class="tg-field"><label>${label}</label><textarea id="${id}" rows="${rows}">${esc(val || '')}</textarea>${hint ? '<div class="hint">' + hint + '</div>' : ''}</div>`;
+
+      function openCountryForm(cid){
+        const c = cid ? findCountry(cid) : null;
+        tgTitle.textContent = c ? 'Ülkeyi düzenle' : 'Yeni ülke';
+        tgFields.innerHTML =
+          fld('tgfName', 'Ülke adı', c ? c.name : '') +
+          fld('tgfFlag', 'Bayrak (emoji)', c ? c.flag : '🌍') +
+          fld('tgfTag', 'Kısa slogan', c ? c.tag : '') +
+          `<div class="tg-field"><label>Kart renkleri</label>
+            <input type="color" id="tgfG1" value="${(c && c.grad1) || '#c94f6d'}">
+            <input type="color" id="tgfG2" value="${(c && c.grad2) || '#5e1c33'}">
+          </div>`;
+        tgSaveFn = async () => {
+          const name = $('tgfName').value.trim(); if (!name) throw new Error('İsim boş olamaz');
+          const id = cid || ('c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
+          await fb2.update(fb2.ref(fb2.db, 'travelGuide/countries/' + id), {
+            name, flag: $('tgfFlag').value.trim() || '🌍', tag: $('tgfTag').value.trim(),
+            grad1: $('tgfG1').value, grad2: $('tgfG2').value,
+            order: c ? (c.order ?? 0) : Date.now()
+          });
+        };
+        openTgModal();
       }
-      function openReader(id){
-        const f = findCity(id); if (!f) return;
-        curCity = f;
-        $('crHero').style.background = `linear-gradient(135deg,${f.c.grad[0]},${f.c.grad[1]})`;
-        $('crEmoji').textContent = f.ct.emoji;
-        $('crName').textContent = f.ct.name;
-        $('crMeta').textContent = f.c.flag + ' ' + f.c.name + '  ·  en iyi zaman: ' + f.ct.best;
-        $('crParas').innerHTML = f.ct.paras.map(p => '<p>' + esc(p) + '</p>').join('');
-        $('crTodo').innerHTML = f.ct.todo.map(t => '<li>✈️ ' + esc(t) + '</li>').join('');
+      function openCityForm(cid, ctid){
+        if (!cid) return;
+        const f = ctid ? findCity(cid, ctid) : null;
+        const ct = f ? f.ct : null;
+        tgTitle.textContent = ct ? 'Şehri düzenle' : 'Yeni şehir';
+        tgFields.innerHTML =
+          fld('tgfName', 'Şehir adı', ct ? ct.name : '') +
+          fld('tgfEmoji', 'Emoji', ct ? ct.emoji : '📍') +
+          fld('tgfTag', 'Kısa slogan', ct ? ct.tag : '') +
+          fld('tgfBest', 'En iyi zaman', ct ? ct.best : '') +
+          fldArea('tgfParas', 'Yazılar', ct ? ct.paras : '', 7, 'Paragrafları arada boş satır bırakarak ayır') +
+          fldArea('tgfTodo', 'Yapılacaklar', ct ? ct.todo : '', 5, 'Her satır bir madde');
+        tgSaveFn = async () => {
+          const name = $('tgfName').value.trim(); if (!name) throw new Error('İsim boş olamaz');
+          const id = ctid || ('ct' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
+          await fb2.update(fb2.ref(fb2.db, 'travelGuide/countries/' + cid + '/cities/' + id), {
+            name, emoji: $('tgfEmoji').value.trim() || '📍', tag: $('tgfTag').value.trim(),
+            best: $('tgfBest').value.trim(), paras: $('tgfParas').value, todo: $('tgfTodo').value,
+            order: ct ? (ct.order ?? 0) : Date.now()
+          });
+        };
+        openTgModal();
+      }
+      async function deleteCountry(cid){
+        if (!me() || !fb2){ alert('Önce giriş yapmalısın 💗'); return; }
+        const c = findCountry(cid); if (!c) return;
+        if (!confirm('"' + c.name + '" ülkesini TÜM şehirleriyle silmek istediğine emin misin?')) return;
+        const writes = { ['travelGuide/countries/' + cid]: null };
+        cityList(c).forEach(ct => { writes['travel/' + ct.id] = null; });
+        try { await fb2.update(fb2.ref(fb2.db), writes); }
+        catch(e){ alert('Silinemedi: ' + e.message); }
+      }
+      async function deleteCity(cid, ctid){
+        if (!me() || !fb2){ alert('Önce giriş yapmalısın 💗'); return; }
+        const f = findCity(cid, ctid); if (!f) return;
+        if (!confirm('"' + f.ct.name + '" şehrini silmek istediğine emin misin?')) return;
+        try {
+          await fb2.update(fb2.ref(fb2.db), {
+            ['travelGuide/countries/' + cid + '/cities/' + ctid]: null,
+            ['travel/' + ctid]: null
+          });
+        } catch(e){ alert('Silinemedi: ' + e.message); }
+      }
+
+      /* ---- clean reader ---- */
+      function openReader(cid, ctid){
+        const f = findCity(cid, ctid); if (!f) return;
+        curCountryId = cid; curCityId = ctid;
+        renderReaderContent(f);
         renderReaderLive();
         reader.classList.add('open');
         reader.setAttribute('aria-hidden', 'false');
         reader.scrollTop = 0;
       }
+      function renderReaderContent(f){
+        $('crHero').style.background = gradOf(f.c);
+        $('crEmoji').textContent = f.ct.emoji || '📍';
+        $('crName').textContent = f.ct.name;
+        $('crMeta').textContent = (f.c.flag || '🌍') + ' ' + f.c.name + (f.ct.best ? '  ·  en iyi zaman: ' + f.ct.best : '');
+        const ps = parasArr(f.ct);
+        $('crParas').innerHTML = ps.length ? ps.map(p => '<p>' + esc(p) + '</p>').join('') : '<p style="color:#c98aa0">Henüz yazı yok — ✏️ Düzenle ile ekleyin.</p>';
+        const ts = todoArr(f.ct);
+        $('crTodo').innerHTML = ts.map(t => '<li>✈️ ' + esc(t) + '</li>').join('') || '<li style="color:#c98aa0">Henüz madde yok.</li>';
+        const photos = Object.entries(f.ct.photos || {}).map(([k, v]) => Object.assign({ k }, v)).sort((a, b) => (a.at || 0) - (b.at || 0));
+        $('crPhotos').innerHTML = photos.map(p =>
+          (p.img && /^data:image\//.test(p.img))
+            ? `<div class="cr-ph"><button class="ph-del" data-k="${p.k}" title="Sil">✕</button><img src="${p.img}" alt="${esc(f.ct.name)}"></div>`
+            : ''
+        ).join('');
+      }
       function closeReader(){
         reader.classList.remove('open');
         reader.setAttribute('aria-hidden', 'true');
-        curCity = null;
+        curCityId = null;
       }
       $('crClose').addEventListener('click', closeReader);
       function renderReaderLive(){
-        if (!curCity) return;
-        const d = travelData[curCity.ct.id] || {};
+        if (!curCityId) return;
+        const d = travelData[curCityId] || {};
         const btn = $('crVisit');
         btn.textContent = d.visited ? '✔ Gittik!' : '🧳 Henüz gitmedik — işaretle';
         btn.classList.toggle('on', !!d.visited);
@@ -2912,28 +3106,81 @@
         $('crNotes').innerHTML = notes.length
           ? notes.map(n => '<div class="n">' + esc(n.text) + '<div class="m">' + esc(n.by || 'Biri') + ' · ' + new Date(n.at || 0).toLocaleDateString('tr-TR') + '</div></div>').join('')
           : '<div style="color:#c98aa0;font-size:.9rem;margin-top:8px">Henüz not yok — ilkini sen bırak 💌</div>';
-        $('crNoteHint').textContent = me() ? '' : 'Not bırakmak ve ✔ işaretlemek için Çalışma Odası girişi gerekli';
+        $('crNoteHint').textContent = me() ? '' : 'Not bırakmak, düzenlemek ve ✔ işaretlemek için Çalışma Odası girişi gerekli';
       }
       $('crVisit').addEventListener('click', async () => {
-        if (!curCity) return;
-        if (!me() || !fb2){ $('crNoteHint').textContent = 'Önce Çalışma Odası\'na giriş yapmalısın 💗'; return; }
-        const id = curCity.ct.id;
-        const cur = !!((travelData[id] || {}).visited);
-        try { await fb2.update(fb2.ref(fb2.db, 'travel/' + id), { visited: !cur }); }
+        if (!curCityId) return;
+        if (!me() || !fb2){ $('crNoteHint').textContent = 'Önce Çalışma Odası\u2019na giriş yapmalısın 💗'; return; }
+        const cur = !!((travelData[curCityId] || {}).visited);
+        try { await fb2.update(fb2.ref(fb2.db, 'travel/' + curCityId), { visited: !cur }); }
         catch(e){ alert('Kaydedilemedi: ' + e.message); }
+      });
+      $('crEdit').addEventListener('click', () => {
+        if (!curCityId) return;
+        if (!me()){ $('crNoteHint').textContent = 'Önce Çalışma Odası\u2019na giriş yapmalısın 💗'; return; }
+        openCityForm(curCountryId, curCityId);
       });
       $('crNoteBtn').addEventListener('click', async () => {
         const u = me();
-        if (!u || !fb2){ $('crNoteHint').textContent = 'Önce Çalışma Odası\'na giriş yapmalısın 💗'; return; }
+        if (!u || !fb2){ $('crNoteHint').textContent = 'Önce Çalışma Odası\u2019na giriş yapmalısın 💗'; return; }
         const t = ($('crNoteInput').value || '').trim().slice(0, 200);
-        if (!t || !curCity) return;
+        if (!t || !curCityId) return;
         const key = Date.now() + '-' + Math.random().toString(36).slice(2, 7);
         try {
-          await fb2.update(fb2.ref(fb2.db, 'travel/' + curCity.ct.id + '/notes/' + key), { text: t, by: u.displayName || u.email, at: Date.now() });
+          await fb2.update(fb2.ref(fb2.db, 'travel/' + curCityId + '/notes/' + key), { text: t, by: u.displayName || u.email, at: Date.now() });
           $('crNoteInput').value = '';
         } catch(e){ alert('Kaydedilemedi: ' + e.message); }
       });
       $('crNoteInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('crNoteBtn').click(); });
+
+      /* ---- city photos (compressed, stored with the city) ---- */
+      function tgCompress(file, maxDim, quality){
+        return new Promise((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = e => {
+            const img = new Image();
+            img.onload = () => {
+              let w = img.width, h = img.height;
+              if (w > h && w > maxDim){ h = Math.round(h * maxDim / w); w = maxDim; }
+              else if (h > maxDim){ w = Math.round(w * maxDim / h); h = maxDim; }
+              const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+              cv.getContext('2d').drawImage(img, 0, 0, w, h);
+              resolve(cv.toDataURL('image/jpeg', quality));
+            };
+            img.onerror = reject; img.src = e.target.result;
+          };
+          r.onerror = reject; r.readAsDataURL(file);
+        });
+      }
+      $('crPhotoAdd').addEventListener('click', () => {
+        if (!curCityId) return;
+        if (!me()){ $('crNoteHint').textContent = 'Önce Çalışma Odası\u2019na giriş yapmalısın 💗'; return; }
+        $('tgPhotoFile').click();
+      });
+      $('tgPhotoFile').addEventListener('change', async () => {
+        const file = $('tgPhotoFile').files && $('tgPhotoFile').files[0];
+        $('tgPhotoFile').value = '';
+        const u = me();
+        if (!file || !u || !fb2 || !curCityId) return;
+        const btn = $('crPhotoAdd'); const old = btn.textContent;
+        btn.textContent = '⏳ Yükleniyor…'; btn.disabled = true;
+        try {
+          const img = await tgCompress(file, 1280, 0.82);
+          const key = Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+          await fb2.update(fb2.ref(fb2.db, 'travelGuide/countries/' + curCountryId + '/cities/' + curCityId + '/photos/' + key),
+            { img, by: u.displayName || u.email, at: Date.now() });
+        } catch(e){ alert('Yüklenemedi: ' + e.message); }
+        btn.textContent = old; btn.disabled = false;
+      });
+      $('crPhotos').addEventListener('click', async e => {
+        const del = e.target.closest('.ph-del');
+        if (!del) return;
+        if (!me() || !fb2){ $('crNoteHint').textContent = 'Önce giriş yapmalısın 💗'; return; }
+        if (!confirm('Bu fotoğrafı silmek istediğine emin misin?')) return;
+        try {
+          await fb2.update(fb2.ref(fb2.db, 'travelGuide/countries/' + curCountryId + '/cities/' + curCityId + '/photos'), { [del.getAttribute('data-k')]: null });
+        } catch(err){ alert('Silinemedi: ' + err.message); }
+      });
 
       /* ---- keyboard: capture phase so Esc closes overlays first,
              without also closing the whole birthday view ---- */
@@ -2942,6 +3189,8 @@
           if (e.key === 'Escape'){ lbClose(); e.stopImmediatePropagation(); }
           else if (e.key === 'ArrowRight') lbShow(lbIdx + 1);
           else if (e.key === 'ArrowLeft') lbShow(lbIdx - 1);
+        } else if (tgModal.classList.contains('open') && e.key === 'Escape'){
+          closeTgModal(); e.stopImmediatePropagation();
         } else if (reader.classList.contains('open') && e.key === 'Escape'){
           closeReader(); e.stopImmediatePropagation();
         }
