@@ -502,6 +502,15 @@
       padding:2px 10px; border-radius:999px; white-space:nowrap;
     }
 
+    /* chat: yazıyor... */
+    .chat-typing{ display:flex; align-items:center; gap:8px; margin-top:8px; font-size:12px; color:var(--muted); }
+    .t-dots{ display:inline-flex; gap:3px; align-items:flex-end; }
+    .t-dots i{ width:5px; height:5px; border-radius:50%; background:var(--acc); animation:sbTDot 1s ease-in-out infinite; }
+    .t-dots i:nth-child(2){ animation-delay:.15s; }
+    .t-dots i:nth-child(3){ animation-delay:.3s; }
+    @keyframes sbTDot{ 0%,100%{ transform:translateY(0); opacity:.5; } 50%{ transform:translateY(-3px); opacity:1; } }
+    @media (prefers-reduced-motion: reduce){ .t-dots i{ animation:none; } }
+
     /* chat extras */
     .chat-badge{
       display:inline-flex; align-items:center; justify-content:center;
@@ -994,6 +1003,10 @@
           <div class="card" id="chatCard" style="margin-top:16px;">
             <h3 style="margin-top:0;color:var(--acc)">Sohbet <span id="chatBadge" class="chat-badge" style="display:none">0</span></h3>
             <div id="chatMessages" class="chat-messages"></div>
+            <div id="chatTyping" class="chat-typing" style="display:none">
+              <span class="t-dots"><i></i><i></i><i></i></span>
+              <span id="chatTypingText"></span>
+            </div>
             <div class="row" style="margin-top:10px;gap:8px;">
               <input id="chatInput" placeholder="Mesaj yaz..." maxlength="500"/>
               <button class="primary" id="chatSend">Gönder</button>
@@ -1223,7 +1236,7 @@
           <div style="font-size:46px">🚧</div>
           <h2 style="font-size:2rem;">inşaat devam ediyor...</h2>
           <p style="color:#b3567a;font-size:.95rem;margin:10px 0 0;">Bu bölümün ayrı bir anahtarı var 🔑</p>
-          <input id="travelPin" type="password" inputmode="numeric" autocomplete="off" maxlength="8" placeholder="••••••••" aria-label="Seyahat şifresi">
+          <input id="travelPin" type="password" inputmode="text" autocomplete="off" maxlength="8" placeholder="••••••••" aria-label="Seyahat şifresi">
           <div id="travelPinMsg" class="t-pin-msg"></div>
           <button id="travelPinBtn" class="bday-btn">Aç</button>
         </div>
@@ -1418,7 +1431,9 @@
       libAddBtn: document.getElementById("libAddBtn"),
       libHint: document.getElementById("libHint"),
       libList: document.getElementById("libList"),
-      libEmpty: document.getElementById("libEmpty")
+      libEmpty: document.getElementById("libEmpty"),
+      chatTyping: document.getElementById("chatTyping"),
+      chatTypingText: document.getElementById("chatTypingText")
     });
 
     /* ---------------- THEME: init + toggle (persist) ---------------- */
@@ -1700,6 +1715,7 @@
       }
 
       refreshSubjects();
+      renderTyping();
 
       // header: collab avatars + status pill + video routing
       updateCollab(studyingList, myUid);
@@ -1972,6 +1988,7 @@
       try {
         await push(ref(db, 'chat'), { uid: u.uid, name: u.displayName || u.email, text: text, at: Date.now() });
         markChatRead();
+        if (typeof setTyping === 'function') setTyping(false);
       }
       catch(e){ alert(e.message); }
     }
@@ -2553,6 +2570,46 @@
     if (els.chatCard) els.chatCard.addEventListener('click', markChatRead);
     if (els.chatInput) els.chatInput.addEventListener('focus', markChatRead);
 
+    /* ---------- typing indicator ("... yazıyor") ---------- */
+    /* Kendi presence kaydımıza typingAt damgası atarız; karşı taraf 4 sn
+       tazelik penceresinde gösterir. Yeni kural gerekmez. */
+    let typingLastSent = 0, typingClearTimer = null;
+    function setTyping(on){
+      const u = auth.currentUser; if (!u) return;
+      update(ref(db, `presence/${u.uid}`), { typingAt: on ? Date.now() : null }).catch(() => {});
+    }
+    if (els.chatInput) els.chatInput.addEventListener('input', () => {
+      if (!auth.currentUser) return;
+      if (!els.chatInput.value){
+        clearTimeout(typingClearTimer);
+        setTyping(false);
+        return;
+      }
+      const now = Date.now();
+      if (now - typingLastSent > 2000){ typingLastSent = now; setTyping(true); }
+      clearTimeout(typingClearTimer);
+      typingClearTimer = setTimeout(() => setTyping(false), 3000);
+    });
+    if (els.chatInput) els.chatInput.addEventListener('blur', () => setTyping(false));
+    function renderTyping(){
+      if (!els.chatTyping) return;
+      const myUid = (auth.currentUser || {}).uid;
+      const now = Date.now();
+      const names = [];
+      Object.entries(latestPresence || {}).forEach(([uid, p]) => {
+        if (uid === myUid) return;
+        if (p && p.typingAt && (now - p.typingAt) < 4000){
+          names.push(((latestUsers || {})[uid] || {}).displayName || 'Biri');
+        }
+      });
+      if (names.length){
+        els.chatTypingText.textContent = names.join(' ve ') + ' yazıyor…';
+        els.chatTyping.style.display = '';
+      } else {
+        els.chatTyping.style.display = 'none';
+      }
+    }
+
     /* ---------- library: PDF → Kindle mails + shared reading list ---------- */
     const LIB_ENDPOINT = '/.netlify/functions/send-to-kindle';
     const LIB_MAX_BYTES = 25 * 1024 * 1024;  // Storage üzerinden gidiyor; e-posta tarafının pratik tavanı ~25MB (Resend eki + Kindle 50MB sınırı)
@@ -3096,7 +3153,7 @@
 
       /* ================= 3) TRAVEL GUIDE (own PIN, fully editable) ================= */
       /* ====== CHANGE THE TRAVEL PIN HERE ====== */
-      const TRAVEL_PIN = '12345677';
+      const TRAVEL_PIN = 'erva1234';
       /* ======================================== */
 
       /* İçerik artık veritabanında (travelGuide/). Aşağıdaki SEED sadece ilk
@@ -3183,9 +3240,9 @@
 
       /* ---- PIN gate (asked on every visit to the tab) ---- */
       function tryTravelPin(){
-        const v = (tPin.value || '').replace(/\D/g, '');
+        const v = (tPin.value || '').trim().toLowerCase();
         if (v.length < TRAVEL_PIN.length) return;
-        if (v === TRAVEL_PIN){
+        if (v === TRAVEL_PIN.toLowerCase()){
           travelUnlocked = true;
           lock.style.display = 'none';
           guideEl.style.display = '';
@@ -3198,7 +3255,7 @@
         }
       }
       tPin.addEventListener('input', () => {
-        tPin.value = tPin.value.replace(/\D/g, '').slice(0, TRAVEL_PIN.length);
+        tPin.value = tPin.value.replace(/[^a-zA-Z0-9]/g, '').slice(0, TRAVEL_PIN.length);
         tMsg.textContent = '';
         if (tPin.value.length === TRAVEL_PIN.length) tryTravelPin();
       });
