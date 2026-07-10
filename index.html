@@ -361,6 +361,16 @@
     #birthdayView nav{ backdrop-filter:blur(8px); background-color:rgba(255,255,255,.82); }
     #birthdayView h1{ text-shadow:0 2px 12px rgba(220,20,60,.12); }
 
+    /* giriş: karşılama + sekme kartları */
+    #birthdayView .greet-tabs{ display:flex; flex-wrap:wrap; gap:12px; justify-content:center; margin-top:36px; }
+    #birthdayView .greet-tabs button{
+      background:#fff; border:1px solid #ffd0dc; color:crimson;
+      border-radius:16px; padding:16px 24px; font-weight:700; font-size:1.02rem;
+      cursor:pointer; font-family:'Open Sans',sans-serif;
+      box-shadow:0 5px 14px rgba(220,20,60,.10); transition:transform .15s;
+    }
+    #birthdayView .greet-tabs button:hover{ transform:translateY(-3px); background:#fff5f8; box-shadow:0 8px 18px rgba(220,20,60,.18); }
+
     /* ===== Study app: focus mode + chat ===== */
     #focusView{ position:fixed; inset:0; z-index:8000; display:none; background:var(--bg); align-items:center; justify-content:center; }
     #focusView.open{ display:flex; }
@@ -695,6 +705,41 @@
       font-size:13px; line-height:26px; padding:0; display:none;
     }
     #cityReader .cr-ph:hover .ph-del{ display:block; }
+    /* expandable places */
+    #cityReader .cr-todo .td-head{ display:flex; justify-content:space-between; align-items:center; gap:10px; }
+    #cityReader .cr-todo .td-head h3{ margin:0; }
+    #cityReader #crPlaceAdd{
+      background:#fff; color:crimson; border:1px solid #ffd0dc; border-radius:999px;
+      padding:6px 12px; font-weight:700; cursor:pointer; font-family:inherit; font-size:.85rem;
+    }
+    #cityReader .pl{ background:#fff; border:1px solid #ffd0dc; border-radius:12px; margin-top:10px; overflow:hidden; }
+    #cityReader .pl-head{
+      display:flex; justify-content:space-between; align-items:center; gap:10px;
+      padding:12px 14px; cursor:pointer; user-select:none;
+    }
+    #cityReader .pl-head:hover{ background:#fff5f8; }
+    #cityReader .pl-nm{ font-weight:700; color:#7a4a57; }
+    #cityReader .pl-arrow{ color:#c98aa0; font-size:.75rem; transition:transform .2s; flex:none; }
+    #cityReader .pl.open .pl-arrow{ transform:rotate(90deg); }
+    #cityReader .pl-body{ display:none; padding:0 14px 14px; border-top:1px dashed #ffe0e9; }
+    #cityReader .pl.open .pl-body{ display:block; }
+    #cityReader .pl-body p{ font-size:.98rem; line-height:1.65; margin:10px 0; }
+    #cityReader .pl-empty{ color:#c98aa0; font-size:.9rem; margin:10px 0; }
+    #cityReader .pl-photos{ display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px; margin:10px 0; }
+    #cityReader .pl-ph{ position:relative; }
+    #cityReader .pl-ph img{ width:100%; border-radius:10px; display:block; cursor:zoom-in; box-shadow:0 3px 8px rgba(0,0,0,.10); }
+    #cityReader .pl-ph .ph-del{
+      position:absolute; top:5px; right:5px; border:none; cursor:pointer;
+      background:rgba(0,0,0,.5); color:#fff; width:24px; height:24px; border-radius:50%;
+      font-size:12px; line-height:24px; padding:0; display:none;
+    }
+    #cityReader .pl-ph:hover .ph-del{ display:block; }
+    #cityReader .pl-actions{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+    #cityReader .pl-actions button{
+      background:#fff8fa; color:#c01540; border:1px solid #ffd0dc; border-radius:999px;
+      padding:5px 12px; font-size:.8rem; cursor:pointer; font-family:inherit;
+    }
+    #cityReader .pl-actions button:hover{ background:#fff; transform:none; box-shadow:none; }
 
     @media (max-width:640px){
       #birthdayView .cd-card{ min-width:70px; padding:12px 8px; }
@@ -953,7 +998,7 @@
     <a id="a4Secret" href="https://www.youtube.com/watch?v=E1rI9Vhp0PQ" target="_blank" rel="noopener" aria-label="?">🎁</a>
 
     <nav>
-      <button onclick="showBirthdaySection('giris')">Giriş</button>
+      <button onclick="showBirthdaySection('giris')" title="Başa dön">🏠</button>
       <button onclick="showBirthdaySection('fotograflar')">📷</button>
       <button onclick="showBirthdaySection('mektup')">bal konuşması</button>
       <button onclick="showBirthdaySection('geriSayim')">⏳</button>
@@ -961,9 +1006,29 @@
     </nav>
 
     <section id="giris" class="active">
-      <h1>Hoşgeldin doğum günü kızı 💖</h1>
-      <img id="bdayIntroImg" src="https://i.pinimg.com/736x/9e/1e/ba/9e1eba2ead22c08f09bef55effa3d3b4.jpg" alt="Aşkım 💖" style="max-width:300px;border-radius:18px;margin-top:24px;box-shadow:0 10px 30px rgba(220,20,60,.18);">
-      <p style="margin-top:22px;font-size:1.3rem;font-weight:700;letter-spacing:.03em;color:#7a4a57;">İYİ Kİ DOĞDUN CANIMIN İÇİ</p>
+      <!-- sadece 1 Temmuz'da görünür -->
+      <div id="girisBday">
+        <h1>Hoşgeldin doğum günü kızı 💖</h1>
+        <img id="bdayIntroImg" src="https://i.pinimg.com/736x/9e/1e/ba/9e1eba2ead22c08f09bef55effa3d3b4.jpg" alt="Aşkım 💖" style="max-width:300px;border-radius:18px;margin-top:24px;box-shadow:0 10px 30px rgba(220,20,60,.18);">
+        <p style="margin-top:22px;font-size:1.3rem;font-weight:700;letter-spacing:.03em;color:#7a4a57;">İYİ Kİ DOĞDUN CANIMIN İÇİ</p>
+        <div class="greet-tabs">
+          <button onclick="showBirthdaySection('fotograflar')">📷</button>
+          <button onclick="showBirthdaySection('mektup')">bal konuşması</button>
+          <button onclick="showBirthdaySection('geriSayim')">⏳</button>
+          <button onclick="showBirthdaySection('seyahat')">🚧</button>
+        </div>
+      </div>
+      <!-- diğer tüm günlerde görünür -->
+      <div id="girisGreet" style="display:none">
+        <h1 id="greetLine">Merhaba balım 💖</h1>
+        <p id="greetQ" style="margin-top:14px;font-size:1.2rem;color:#7a4a57;">neye bakmıştık?</p>
+        <div class="greet-tabs">
+          <button onclick="showBirthdaySection('fotograflar')">📷</button>
+          <button onclick="showBirthdaySection('mektup')">bal konuşması</button>
+          <button onclick="showBirthdaySection('geriSayim')">⏳</button>
+          <button onclick="showBirthdaySection('seyahat')">🚧</button>
+        </div>
+      </div>
     </section>
 
     <section id="fotograflar">
@@ -1078,8 +1143,11 @@
         <div id="crParas"></div>
         <div id="crPhotos" class="cr-photos"></div>
         <div class="cr-todo">
-          <h3>Yapılacaklar ✨</h3>
-          <ul id="crTodo" style="margin:0;padding-left:18px;"></ul>
+          <div class="td-head">
+            <h3>Gezilecek Yerler ✨</h3>
+            <button id="crPlaceAdd">＋ Yer ekle</button>
+          </div>
+          <div id="crPlaces"></div>
         </div>
         <h3 style="color:crimson;">Notlarımız 💌</h3>
         <div class="cr-notes" id="crNotes"></div>
@@ -2409,17 +2477,54 @@
       const MUSIC_IFRAME = '<iframe width="0" height="0" src="https://www.youtube.com/embed/sPWfmXBvgz4?autoplay=1&loop=1&playlist=sPWfmXBvgz4" frameborder="0" allow="autoplay" allowfullscreen></iframe>';
       const muteBtn = $('musicMute');
       let musicOn = false;
+
+      /* Türkiye saatine göre gün/saat (cihaz saat dilimi ne olursa olsun) */
+      function nowTR(){
+        try { return new Date(new Date().toLocaleString('en-US', { timeZone:'Europe/Istanbul' })); }
+        catch(e){ return new Date(); }
+      }
+      function isBdayToday(){
+        const d = nowTR();
+        return d.getMonth() === 6 && d.getDate() === 1;   // 1 Temmuz
+      }
+
       function renderMusic(){
+        if (!isBdayToday()) musicOn = false;              // müzik sadece 1 Temmuz'da
         if (musicOn){ if (!bdayAudio.innerHTML) bdayAudio.innerHTML = MUSIC_IFRAME; }
         else { bdayAudio.innerHTML = ''; }
-        if (muteBtn) muteBtn.textContent = musicOn ? '🔊' : '🔇';
+        if (muteBtn){
+          muteBtn.style.display = isBdayToday() ? '' : 'none';
+          muteBtn.textContent = musicOn ? '🔊' : '🔇';
+        }
       }
       function startMusic(){          // called within the unlock tap so browsers allow autoplay
+        if (!isBdayToday()) { renderMusic(); return; }
         musicOn = true; renderMusic();
       }
       if (muteBtn) muteBtn.addEventListener('click', () => { musicOn = !musicOn; renderMusic(); });
+
+      /* giriş sayfası: 1 Temmuz'da doğum günü, diğer günler karşılama */
+      function applyGirisMode(){
+        const bd = $('girisBday'), gr = $('girisGreet');
+        if (isBdayToday()){
+          if (bd) bd.style.display = '';
+          if (gr) gr.style.display = 'none';
+        } else {
+          if (bd) bd.style.display = 'none';
+          if (gr) gr.style.display = '';
+          const h = nowTR().getHours();
+          const greets = ['Merhaba balım'];
+          if (h >= 5 && h < 12){ greets.push('Günaydın balım', 'Günaydın balım'); }
+          else if (h >= 18 || h < 5){ greets.push('İyi akşamlar balım', 'İyi akşamlar balım'); }
+          const qs = ['neye bakmıştık?', 'ne arıyoruz?', 'napmak isteriz şuan?', 'nasıl yardımcı olabilirim acaba?', 'emirleriniz?'];
+          const gl = $('greetLine'), gq = $('greetQ');
+          if (gl) gl.textContent = greets[Math.floor(Math.random() * greets.length)] + ' 💖';
+          if (gq) gq.textContent = qs[Math.floor(Math.random() * qs.length)];
+        }
+      }
       function openBirthday(){
         startMusic();
+        applyGirisMode();
         bday.classList.add('open');
         bday.setAttribute('aria-hidden', 'false');
         document.body.style.overflow = 'hidden';
@@ -2444,6 +2549,9 @@
         bday.querySelectorAll('section').forEach(s => s.classList.remove('active'));
         const t = bday.querySelector('#' + id);
         if (t) t.classList.add('active');
+        const nav = bday.querySelector('nav');
+        if (nav) nav.style.display = (id === 'giris') ? 'none' : 'flex';
+        if (id === 'giris') applyGirisMode();
         bday.scrollTop = 0;
       };
 
@@ -2632,9 +2740,10 @@
       document.addEventListener('click', e => {
         const g = e.target.closest('#galleryGrid .photo-card img');
         const t = e.target.closest('#crPhotos .cr-ph img');
-        const img = g || t;
+        const p = e.target.closest('#crPlaces .pl-ph img');
+        const img = g || t || p;
         if (!img) return;
-        lbCollect(g ? '#galleryGrid .photo-card img' : '#crPhotos .cr-ph img');
+        lbCollect(g ? '#galleryGrid .photo-card img' : (t ? '#crPhotos .cr-ph img' : '#crPlaces .pl-ph img'));
         const idx = lbItems.findIndex(it => it.src === img.src);
         lbShow(idx < 0 ? 0 : idx);
         lb.classList.add('open');
@@ -3028,14 +3137,13 @@
           fld('tgfEmoji', 'Emoji', ct ? ct.emoji : '📍') +
           fld('tgfTag', 'Kısa slogan', ct ? ct.tag : '') +
           fld('tgfBest', 'En iyi zaman', ct ? ct.best : '') +
-          fldArea('tgfParas', 'Yazılar', ct ? ct.paras : '', 7, 'Paragrafları arada boş satır bırakarak ayır') +
-          fldArea('tgfTodo', 'Yapılacaklar', ct ? ct.todo : '', 5, 'Her satır bir madde');
+          fldArea('tgfParas', 'Yazılar', ct ? ct.paras : '', 7, 'Paragrafları arada boş satır bırakarak ayır. Gezilecek yerler şehir sayfasındaki "＋ Yer ekle" ile eklenir.');
         tgSaveFn = async () => {
           const name = $('tgfName').value.trim(); if (!name) throw new Error('İsim boş olamaz');
           const id = ctid || ('ct' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
           await fb2.update(fb2.ref(fb2.db, 'travelGuide/countries/' + cid + '/cities/' + id), {
             name, emoji: $('tgfEmoji').value.trim() || '📍', tag: $('tgfTag').value.trim(),
-            best: $('tgfBest').value.trim(), paras: $('tgfParas').value, todo: $('tgfTodo').value,
+            best: $('tgfBest').value.trim(), paras: $('tgfParas').value,
             order: ct ? (ct.order ?? 0) : Date.now()
           });
         };
@@ -3063,14 +3171,71 @@
       }
 
       /* ---- clean reader ---- */
+      const openPlaces = new Set();          // hangi yerler açık (yeniden çizimde korunur)
+      const migratedCities = new Set();
+      let photoTarget = { type:'city', pid:null };
+
+      function placesList(ct){
+        if (ct.places && Object.keys(ct.places).length){
+          return Object.entries(ct.places).map(([id, p]) => Object.assign({ id }, p))
+            .sort((a, b) => (a.order ?? 999) - (b.order ?? 999) || String(a.name).localeCompare(String(b.name), 'tr'));
+        }
+        // eski todo satırları (henüz taşınmadıysa) sadece görüntülemek için
+        return todoArr(ct).map((t, i) => ({ id: 'p' + i, name: t, _virtual: true, order: i }));
+      }
+      function migratePlaces(f){
+        // eski "todo" satırlarını kalıcı yerlere çevir (bir kere, giriş yapılmışsa)
+        if (!me() || !fb2 || !f || migratedCities.has(f.ct.id)) return;
+        if (f.ct.places && Object.keys(f.ct.places).length) return;
+        const lines = todoArr(f.ct);
+        if (!lines.length) return;
+        migratedCities.add(f.ct.id);
+        const base = 'travelGuide/countries/' + curCountryId + '/cities/' + f.ct.id;
+        const writes = { [base + '/todo']: null };
+        lines.forEach((t, i) => { writes[base + '/places/p' + i] = { name: t, order: i }; });
+        fb2.update(fb2.ref(fb2.db), writes).catch(e => console.error('place migration failed:', e && e.message));
+      }
       function openReader(cid, ctid){
         const f = findCity(cid, ctid); if (!f) return;
         curCountryId = cid; curCityId = ctid;
+        openPlaces.clear();
+        migratePlaces(f);
         renderReaderContent(f);
         renderReaderLive();
         reader.classList.add('open');
         reader.setAttribute('aria-hidden', 'false');
         reader.scrollTop = 0;
+      }
+      function placePhotosHTML(p){
+        const photos = Object.entries(p.photos || {}).map(([k, v]) => Object.assign({ k }, v)).sort((a, b) => (a.at || 0) - (b.at || 0));
+        const imgs = photos.map(ph =>
+          (ph.img && /^data:image\//.test(ph.img))
+            ? `<div class="pl-ph"><button class="ph-del" data-p="${p.id}" data-k="${ph.k}" title="Sil">✕</button><img src="${ph.img}" alt="${esc(p.name)}"></div>`
+            : ''
+        ).join('');
+        return imgs ? '<div class="pl-photos">' + imgs + '</div>' : '';
+      }
+      function renderPlaces(f){
+        const list = placesList(f.ct);
+        const logged = !!me();
+        $('crPlaces').innerHTML = list.length ? list.map(p => {
+          const descPs = String(p.desc || '').split(/\n\s*\n/).map(s => s.trim()).filter(Boolean);
+          return `<div class="pl ${openPlaces.has(p.id) ? 'open' : ''}" data-p="${p.id}">
+            <div class="pl-head" data-toggle="${p.id}">
+              <span class="pl-nm">${esc(p.emoji || '📍')} ${esc(p.name)}</span>
+              <span class="pl-arrow">▶</span>
+            </div>
+            <div class="pl-body">
+              ${descPs.length ? descPs.map(d => '<p>' + esc(d) + '</p>').join('') : '<div class="pl-empty">Henüz detay yok' + (logged ? ' — ✏️ ile ekle' : '') + '.</div>'}
+              ${placePhotosHTML(p)}
+              ${logged && !p._virtual ? `<div class="pl-actions">
+                <button data-pact="edit" data-p="${p.id}">✏️ Düzenle</button>
+                <button data-pact="photo" data-p="${p.id}">📷 Fotoğraf</button>
+                <button data-pact="del" data-p="${p.id}">🗑 Sil</button>
+              </div>` : ''}
+            </div>
+          </div>`;
+        }).join('') : '<div class="pl-empty">Henüz yer eklenmemiş — "＋ Yer ekle" ile başlayın.</div>';
       }
       function renderReaderContent(f){
         $('crHero').style.background = gradOf(f.c);
@@ -3079,8 +3244,7 @@
         $('crMeta').textContent = (f.c.flag || '🌍') + ' ' + f.c.name + (f.ct.best ? '  ·  en iyi zaman: ' + f.ct.best : '');
         const ps = parasArr(f.ct);
         $('crParas').innerHTML = ps.length ? ps.map(p => '<p>' + esc(p) + '</p>').join('') : '<p style="color:#c98aa0">Henüz yazı yok — ✏️ Düzenle ile ekleyin.</p>';
-        const ts = todoArr(f.ct);
-        $('crTodo').innerHTML = ts.map(t => '<li>✈️ ' + esc(t) + '</li>').join('') || '<li style="color:#c98aa0">Henüz madde yok.</li>';
+        renderPlaces(f);
         const photos = Object.entries(f.ct.photos || {}).map(([k, v]) => Object.assign({ k }, v)).sort((a, b) => (a.at || 0) - (b.at || 0));
         $('crPhotos').innerHTML = photos.map(p =>
           (p.img && /^data:image\//.test(p.img))
@@ -3155,6 +3319,7 @@
       $('crPhotoAdd').addEventListener('click', () => {
         if (!curCityId) return;
         if (!me()){ $('crNoteHint').textContent = 'Önce Çalışma Odası\u2019na giriş yapmalısın 💗'; return; }
+        photoTarget = { type:'city', pid:null };
         $('tgPhotoFile').click();
       });
       $('tgPhotoFile').addEventListener('change', async () => {
@@ -3162,15 +3327,19 @@
         $('tgPhotoFile').value = '';
         const u = me();
         if (!file || !u || !fb2 || !curCityId) return;
+        const cityBase = 'travelGuide/countries/' + curCountryId + '/cities/' + curCityId;
+        const path = photoTarget.type === 'place'
+          ? cityBase + '/places/' + photoTarget.pid + '/photos/'
+          : cityBase + '/photos/';
         const btn = $('crPhotoAdd'); const old = btn.textContent;
         btn.textContent = '⏳ Yükleniyor…'; btn.disabled = true;
         try {
           const img = await tgCompress(file, 1280, 0.82);
           const key = Date.now() + '-' + Math.random().toString(36).slice(2, 7);
-          await fb2.update(fb2.ref(fb2.db, 'travelGuide/countries/' + curCountryId + '/cities/' + curCityId + '/photos/' + key),
-            { img, by: u.displayName || u.email, at: Date.now() });
+          await fb2.update(fb2.ref(fb2.db, path + key), { img, by: u.displayName || u.email, at: Date.now() });
         } catch(e){ alert('Yüklenemedi: ' + e.message); }
         btn.textContent = old; btn.disabled = false;
+        photoTarget = { type:'city', pid:null };
       });
       $('crPhotos').addEventListener('click', async e => {
         const del = e.target.closest('.ph-del');
@@ -3180,6 +3349,72 @@
         try {
           await fb2.update(fb2.ref(fb2.db, 'travelGuide/countries/' + curCountryId + '/cities/' + curCityId + '/photos'), { [del.getAttribute('data-k')]: null });
         } catch(err){ alert('Silinemedi: ' + err.message); }
+      });
+
+      /* ---- places: add / edit / delete / expand / photos ---- */
+      function openPlaceForm(pid){
+        if (!curCityId) return;
+        const f = findCity(curCountryId, curCityId); if (!f) return;
+        const p = pid ? ((f.ct.places || {})[pid] || null) : null;
+        tgTitle.textContent = p ? 'Yeri düzenle' : 'Yeni yer';
+        tgFields.innerHTML =
+          fld('tgfName', 'Yer adı', p ? p.name : '') +
+          fld('tgfEmoji', 'Emoji', p ? (p.emoji || '📍') : '📍') +
+          fldArea('tgfDesc', 'Detaylar', p ? p.desc : '', 6, 'Paragrafları arada boş satır bırakarak ayır');
+        tgSaveFn = async () => {
+          const name = $('tgfName').value.trim(); if (!name) throw new Error('İsim boş olamaz');
+          const id = pid || ('pl' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
+          await fb2.update(fb2.ref(fb2.db, 'travelGuide/countries/' + curCountryId + '/cities/' + curCityId + '/places/' + id), {
+            name, emoji: $('tgfEmoji').value.trim() || '📍', desc: $('tgfDesc').value,
+            order: p ? (p.order ?? 0) : Date.now()
+          });
+          openPlaces.add(id);
+        };
+        openTgModal();
+      }
+      $('crPlaceAdd').addEventListener('click', () => {
+        if (!curCityId) return;
+        if (!me()){ $('crNoteHint').textContent = 'Önce Çalışma Odası\u2019na giriş yapmalısın 💗'; return; }
+        openPlaceForm(null);
+      });
+      $('crPlaces').addEventListener('click', async e => {
+        // fotoğraf sil
+        const phDel = e.target.closest('.ph-del');
+        if (phDel){
+          if (!me() || !fb2) return;
+          if (!confirm('Bu fotoğrafı silmek istediğine emin misin?')) return;
+          try {
+            await fb2.update(fb2.ref(fb2.db, 'travelGuide/countries/' + curCountryId + '/cities/' + curCityId + '/places/' + phDel.getAttribute('data-p') + '/photos'), { [phDel.getAttribute('data-k')]: null });
+          } catch(err){ alert('Silinemedi: ' + err.message); }
+          return;
+        }
+        // aksiyon butonları
+        const act = e.target.closest('[data-pact]');
+        if (act){
+          const pid = act.getAttribute('data-p');
+          const a = act.getAttribute('data-pact');
+          if (!me() || !fb2){ $('crNoteHint').textContent = 'Önce giriş yapmalısın 💗'; return; }
+          if (a === 'edit') return openPlaceForm(pid);
+          if (a === 'photo'){ photoTarget = { type:'place', pid }; $('tgPhotoFile').click(); return; }
+          if (a === 'del'){
+            const f = findCity(curCountryId, curCityId);
+            const p = f && (f.ct.places || {})[pid];
+            if (!confirm('"' + ((p && p.name) || 'Bu yeri') + '" silmek istediğine emin misin?')) return;
+            try {
+              await fb2.update(fb2.ref(fb2.db, 'travelGuide/countries/' + curCountryId + '/cities/' + curCityId + '/places'), { [pid]: null });
+              openPlaces.delete(pid);
+            } catch(err){ alert('Silinemedi: ' + err.message); }
+            return;
+          }
+        }
+        // aç / kapat
+        const head = e.target.closest('.pl-head');
+        if (head){
+          const pid = head.getAttribute('data-toggle');
+          if (openPlaces.has(pid)) openPlaces.delete(pid); else openPlaces.add(pid);
+          const f = findCity(curCountryId, curCityId);
+          if (f) renderPlaces(f);
+        }
       });
 
       /* ---- keyboard: capture phase so Esc closes overlays first,
