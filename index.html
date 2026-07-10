@@ -867,9 +867,36 @@
       to{ transform:translate(calc(var(--dx) * 140px), 108vh) rotate(720deg); opacity:.85; }
     }
 
+    /* tepkide uçan emoji */
+    .sb-float{
+      position:fixed; z-index:13000; pointer-events:none; font-size:22px;
+      transform:translate(-50%,-50%); animation:sbFloatUp .9s ease-out forwards;
+    }
+    @keyframes sbFloatUp{
+      from{ opacity:1; transform:translate(-50%,-50%) scale(.8); }
+      to{ opacity:0; transform:translate(-50%,-140px) scale(1.5); }
+    }
+
+    /* çevrimiçi noktası nabız gibi atsın */
+    .dot-on{ position:relative; }
+    .dot-on::after{
+      content:""; position:absolute; inset:-3px; border-radius:50%;
+      border:2px solid var(--ok); opacity:0;
+      animation:sbPing 2.4s ease-out infinite;
+    }
+    @keyframes sbPing{
+      0%{ transform:scale(.6); opacity:.7; }
+      70%{ transform:scale(1.7); opacity:0; }
+      100%{ opacity:0; }
+    }
+
+    /* pomodoro'nun son 10 saniyesi */
+    .pill.urgent{ animation:sbUrgent .5s ease-in-out infinite; }
+    @keyframes sbUrgent{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.1); } }
+
     @media (prefers-reduced-motion: reduce){
-      .sb-ripple, .sb-confetti{ display:none; }
-      .pill.study, .nudge-btn:hover, .video-card.active,
+      .sb-ripple, .sb-confetti, .sb-float{ display:none; }
+      .pill.study, .pill.urgent, .nudge-btn:hover, .video-card.active, .dot-on::after,
       .sb-modal.open .sb-modal-card, #tgModal.open .tg-card, .pomo-panel{ animation:none; }
       .user-card, .lib-item, .react-chip, .react-add, .badge, .theme-toggle{ transition:none; }
       button:not(:disabled):active{ transform:none; }
@@ -1557,6 +1584,8 @@
 
     /* ---------------- Render from latest snapshots ---------------- */
     let prevStudyingMap = null;
+    let prevOnlineMap = null;
+    const onlineToastAt = {};
     function draw(){
       const users = latestUsers || {};
       const presence = latestPresence || {};
@@ -1640,6 +1669,23 @@
       }
       prevStudyingMap = nowMap;
 
+      // partner came online → little pop (60 sn'de en fazla bir kez)
+      const onMap = {};
+      Object.keys(users).forEach(uid => onMap[uid] = !!(presence[uid] && presence[uid].online));
+      if (prevOnlineMap){
+        Object.keys(onMap).forEach(uid => {
+          if (uid !== myUid && onMap[uid] && !prevOnlineMap[uid]){
+            const nowT = Date.now();
+            if (!onlineToastAt[uid] || nowT - onlineToastAt[uid] > 60000){
+              onlineToastAt[uid] = nowT;
+              toast((users[uid].displayName || 'Arkadaşın') + ' çevrimiçi 👋');
+              popSound();
+            }
+          }
+        });
+      }
+      prevOnlineMap = onMap;
+
       // daily goal reached (celebrate once per day)
       if (myUid && users[myUid]){
         const t = (users[myUid].dailyTargetMin || 120) * 60000;
@@ -1649,6 +1695,7 @@
           notifyMe('Hedef tamam! 🎉', 'Bugünkü çalışma hedefine ulaştın.');
           chime();
           confetti();
+          try { navigator.vibrate && navigator.vibrate([80, 40, 80, 40, 160]); } catch(e){}
         }
       }
 
@@ -2004,6 +2051,30 @@
         setTimeout(() => p.remove(), 3400);
       }
     }
+    function popSound(){
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(520, ctx.currentTime);
+        o.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + .09);
+        o.connect(g); g.connect(ctx.destination);
+        g.gain.setValueAtTime(.001, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(.14, ctx.currentTime + .02);
+        g.gain.exponentialRampToValueAtTime(.001, ctx.currentTime + .14);
+        o.start(); o.stop(ctx.currentTime + .16);
+      } catch(e){}
+    }
+    function floatEmoji(x, y, emoji){
+      if (reducedMotion()) return;
+      const s = document.createElement('span');
+      s.className = 'sb-float';
+      s.textContent = emoji;
+      s.style.left = x + 'px';
+      s.style.top = y + 'px';
+      document.body.appendChild(s);
+      setTimeout(() => s.remove(), 950);
+    }
 
     /* ---------- user-card helpers (used inside draw) ---------- */
     function ringHTML(pct){
@@ -2129,7 +2200,7 @@
       const mm = String(Math.floor(left / 60000)).padStart(2, '0');
       const ss = String(Math.floor(left / 1000) % 60).padStart(2, '0');
       els.pomoPill.style.display = '';
-      els.pomoPill.className = 'pill ' + (pomo.phase === 'work' ? 'study' : 'idle');
+      els.pomoPill.className = 'pill ' + (pomo.phase === 'work' ? 'study' : 'idle') + (left < 10000 && left > 0 ? ' urgent' : '');
       els.pomoPill.textContent = (pomo.phase === 'work' ? '🍅 ' : '☕ ') + mm + ':' + ss;
       els.pomoBtn.textContent = '⏹ Pomodoro bitir';
       updateFocus();
@@ -2190,6 +2261,7 @@
           toast((n.from || 'Biri') + ' seni dürttü 👉 Hadi çalışmaya!');
           notifyMe((n.from || 'Biri') + ' seni dürttü 👉', 'Hadi çalışmaya!');
           chime();
+          try { navigator.vibrate && navigator.vibrate([120, 60, 120]); } catch(e){}
           update(ref(db, `nudges/${uid}`), { [k]: null }).catch(() => {});
         });
       }, err => console.error('nudges read failed:', err && err.message));
@@ -2206,12 +2278,24 @@
 
     /* ---------- stats & session log modal ---------- */
     let statsOpen = false, chartDays = 7, subjMode = 'today';
+    let statsOpenedAt = 0;
+    const easeOut = t => 1 - Math.pow(1 - t, 3);
+    function statsAnimFactor(){
+      const el = Date.now() - statsOpenedAt;
+      return el >= 750 ? 1 : easeOut(Math.max(0, el) / 750);
+    }
     function openStats(){
       statsOpen = true;
+      statsOpenedAt = Date.now();
       els.statsModal.classList.add('open');
       const me = (latestUsers || {})[(auth.currentUser || {}).uid] || {};
       document.getElementById('targetInput').value = me.dailyTargetMin || 120;
       renderStats();
+      (function loop(){        // sayılar 0'dan sayarak gelsin
+        if (!statsOpen) return;
+        renderTarget();
+        if (statsAnimFactor() < 1) requestAnimationFrame(loop);
+      })();
     }
     function closeStats(){
       statsOpen = false;
@@ -2221,7 +2305,7 @@
       if (!statsOpen) return;
       renderTarget();
       renderBadgeRow();
-      drawChart(chartDays);
+      animateChart(chartDays);
       renderSubjBreakdown();
       renderSessionLog();
       renderSubjManage();
@@ -2235,12 +2319,14 @@
       const me = (latestUsers || {})[(auth.currentUser || {}).uid] || {};
       const targetMin = me.dailyTargetMin || 120;
       const cur = myTodayMs();
-      const pct = Math.min(100, Math.round(cur / (targetMin * 60000) * 100));
+      const f = statsAnimFactor();
+      const pctFull = Math.min(100, Math.round(cur / (targetMin * 60000) * 100));
+      const pct = Math.round(pctFull * f);
       const bar = document.getElementById('targetBar');
       bar.style.width = pct + '%';
-      bar.style.background = pct >= 100 ? 'var(--ok)' : 'var(--acc)';
+      bar.style.background = pctFull >= 100 ? 'var(--ok)' : 'var(--acc)';
       document.getElementById('targetText').textContent =
-        msToHHMMSS(cur) + ' / ' + targetMin + ' dk' + (pct >= 100 ? ' — tamamlandı! 🎉' : ' (%' + pct + ')');
+        msToHHMMSS(Math.round(cur * f)) + ' / ' + targetMin + ' dk' + (pctFull >= 100 && f === 1 ? ' — tamamlandı! 🎉' : ' (%' + pct + ')');
     }
     function renderBadgeRow(){
       const me = (latestUsers || {})[(auth.currentUser || {}).uid] || {};
@@ -2248,7 +2334,16 @@
       document.getElementById('badgeRow').innerHTML =
         html || '<div class="muted small" style="margin-top:6px">Rozetler seri günlerle gelir: 3✨ · 7🥇 · 14🚀 · 30🌟 · 50🏆 · 100💎</div>';
     }
-    function drawChart(days){
+    function animateChart(days){
+      const t0 = Date.now();
+      (function loop(){
+        if (!statsOpen) return;
+        const f = Math.min(1, (Date.now() - t0) / 450);
+        drawChart(days, easeOut(f));
+        if (f < 1) requestAnimationFrame(loop);
+      })();
+    }
+    function drawChart(days, grow = 1){
       const cv = document.getElementById('statChart');
       if (!cv) return;
       const cssW = cv.clientWidth || (cv.parentElement ? cv.parentElement.clientWidth : 600) || 600;
@@ -2298,7 +2393,7 @@
       dayKeys.forEach((k, di) => {
         series.forEach((s, si) => {
           const v = s.data[di];
-          const bh = (v / maxV) * plotH;
+          const bh = (v / maxV) * plotH * grow;
           const x = padL + di * groupW + (groupW - series.length * barW) / 2 + si * barW;
           ctx.fillStyle = s.color;
           ctx.fillRect(x, padT + plotH - bh, barW - 1, bh);
@@ -2406,8 +2501,8 @@
       document.getElementById(onId).classList.add('on');
       document.getElementById(offId).classList.remove('on');
     }
-    document.getElementById('chart7').onclick = () => { chartDays = 7; setChip('chart7','chart30'); drawChart(7); };
-    document.getElementById('chart30').onclick = () => { chartDays = 30; setChip('chart30','chart7'); drawChart(30); };
+    document.getElementById('chart7').onclick = () => { chartDays = 7; setChip('chart7','chart30'); animateChart(7); };
+    document.getElementById('chart30').onclick = () => { chartDays = 30; setChip('chart30','chart7'); animateChart(30); };
     document.getElementById('subjToday').onclick = () => { subjMode = 'today'; setChip('subjToday','subjWeek'); renderSubjBreakdown(); };
     document.getElementById('subjWeek').onclick = () => { subjMode = 'week'; setChip('subjWeek','subjToday'); renderSubjBreakdown(); };
     document.getElementById('statsClose').onclick = closeStats;
@@ -2445,6 +2540,7 @@
         const emoji = chip.getAttribute('data-emoji');
         const me = auth.currentUser; if (!me) return;
         const cur = (((latestChat || {})[key] || {}).reactions || {})[me.uid];
+        if (cur !== emoji) floatEmoji(e.clientX, e.clientY, emoji);
         try { await update(ref(db, `chat/${key}/reactions`), { [me.uid]: cur === emoji ? null : emoji }); }
         catch(err){ alert(err.message); }
       }
@@ -2597,7 +2693,10 @@
       if (fin){
         const key = fin.getAttribute('data-key');
         const cur = (((latestLibrary[key] || {}).finished) || {})[uid];
-        try { await update(ref(db, `library/${key}/finished`), { [uid]: cur ? null : { at: Date.now() } }); }
+        try {
+          await update(ref(db, `library/${key}/finished`), { [uid]: cur ? null : { at: Date.now() } });
+          if (!cur){ confetti(); toast('Kitap bitti, tebrikler! 📖✨'); }
+        }
         catch(err){ alert(err.message); }
         return;
       }
