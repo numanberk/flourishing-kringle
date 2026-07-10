@@ -470,16 +470,37 @@
       border:1px solid var(--border); border-radius:20px;
       box-shadow:0 20px 60px rgba(0,0,0,.45); padding:20px;
     }
-    .stat-block{ margin-top:18px; padding-top:14px; border-top:1px dashed var(--border); }
-    .stat-block.first{ margin-top:10px; border-top:0; padding-top:0; }
-    #statChart{ width:100%; height:180px; display:block; margin-top:8px; }
-    .subj-row{ margin-top:8px; }
-    .session-log{ max-height:300px; overflow-y:auto; margin-top:8px; padding-right:4px; }
-    .log-day{ margin-bottom:12px; }
-    .log-row{ display:flex; justify-content:space-between; gap:10px; padding:5px 0; border-bottom:1px dashed var(--border); font-size:13px; }
-    .log-row:last-child{ border-bottom:0; }
-    .log-subj{ color:var(--acc); flex:1; text-align:center; }
-    .chip-btn.on{ border-color:var(--acc); box-shadow:0 0 0 1px color-mix(in srgb, var(--acc) 45%, transparent); }
+    .stat-block{
+      margin-top:14px; padding:16px;
+      background:var(--input-bg); border:1px solid var(--border); border-radius:14px;
+    }
+    .stat-block.first{ margin-top:14px; }
+    .stat-title{ font-size:15px; color:var(--acc); }
+    #statChart{ width:100%; height:180px; display:block; margin-top:12px; }
+    .subj-row{ margin-top:12px; }
+    .session-log{ max-height:340px; overflow-y:auto; margin-top:12px; padding-right:4px; }
+    .log-day{
+      margin-bottom:12px; padding:12px;
+      background:var(--card); border:1px solid var(--border); border-radius:12px;
+    }
+    .log-day > .spaced{ padding-bottom:8px; border-bottom:1px solid var(--border); margin-bottom:4px; }
+    .log-day > .spaced b{ color:var(--acc); font-size:13.5px; }
+    .log-row{ display:flex; justify-content:space-between; gap:10px; padding:7px 0; border-bottom:1px dashed var(--border); font-size:13px; }
+    .log-row:last-child{ border-bottom:0; padding-bottom:0; }
+    .log-row span:first-child{ color:var(--muted); font-variant-numeric:tabular-nums; }
+    .log-row span:last-child{ font-weight:700; font-variant-numeric:tabular-nums; }
+    .log-subj{ color:var(--acc); flex:1; text-align:center; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .chip-btn{ padding:6px 14px; border-radius:999px; font-size:12px; }
+    .chip-btn.on{ background:var(--acc); color:#fff; border-color:var(--acc); box-shadow:none; font-weight:700; }
+
+    /* chat: gün ayracı */
+    .chat-day{ display:flex; align-items:center; gap:8px; margin:8px 0 2px; }
+    .chat-day::before, .chat-day::after{ content:""; flex:1; height:1px; background:var(--border); }
+    .chat-day span{
+      flex:none; font-size:11px; color:var(--muted);
+      background:var(--tag-bg); border:1px solid var(--border);
+      padding:2px 10px; border-radius:999px; white-space:nowrap;
+    }
 
     /* chat extras */
     .chat-badge{
@@ -930,7 +951,7 @@
 
       <div class="stat-block first">
         <div class="spaced" style="flex-wrap:wrap">
-          <b>Günlük hedef</b>
+          <b class="stat-title">🎯 Günlük hedef</b>
           <span class="inline-form">
             <input id="targetInput" type="number" min="5" max="960" style="width:80px"> dk
             <button class="primary small" id="targetSave">Kaydet</button>
@@ -943,7 +964,7 @@
 
       <div class="stat-block">
         <div class="spaced">
-          <b>Çalışma grafiği</b>
+          <b class="stat-title">📈 Çalışma grafiği</b>
           <span>
             <button class="small chip-btn on" id="chart7">7 gün</button>
             <button class="small chip-btn" id="chart30">30 gün</button>
@@ -955,7 +976,7 @@
 
       <div class="stat-block">
         <div class="spaced">
-          <b>Ders dağılımı</b>
+          <b class="stat-title">📚 Ders dağılımı</b>
           <span>
             <button class="small chip-btn on" id="subjToday">Bugün</button>
             <button class="small chip-btn" id="subjWeek">Son 7 gün</button>
@@ -966,7 +987,7 @@
       </div>
 
       <div class="stat-block">
-        <b>Oturum günlüğü</b>
+        <b class="stat-title">🗓 Oturum günlüğü</b>
         <div id="sessionLog" class="session-log"></div>
       </div>
     </div>
@@ -1778,6 +1799,19 @@
     let chatAttached = false;
     const chatEsc = s => (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     function chatTime(ms){ try { return new Date(ms).toLocaleTimeString('tr-TR', { hour:'2-digit', minute:'2-digit' }); } catch(e){ return ''; } }
+    function chatDayLabel(ms){
+      try {
+        const d = new Date(ms || 0);
+        const today = new Date(); today.setHours(0,0,0,0);
+        const that = new Date(d); that.setHours(0,0,0,0);
+        const diff = Math.round((today - that) / 86400000);
+        if (diff === 0) return 'Bugün';
+        if (diff === 1) return 'Dün';
+        const opts = { day:'numeric', month:'long', weekday:'long' };
+        if (d.getFullYear() !== new Date().getFullYear()) opts.year = 'numeric';
+        return d.toLocaleDateString('tr-TR', opts);
+      } catch(e){ return ''; }
+    }
     let latestChat = {};
     function renderChat(val){
       if (!els.chatMessages) return;
@@ -1794,13 +1828,21 @@
 
       if (!items.length){ els.chatMessages.innerHTML = '<div class="chat-empty">Henüz mesaj yok. İlk mesajı sen yaz! ✍️</div>'; return; }
       const nearBottom = els.chatMessages.scrollHeight - els.chatMessages.scrollTop - els.chatMessages.clientHeight < 60;
-      els.chatMessages.innerHTML = items.map(m =>
-        '<div class="chat-msg">'
+      let lastDay = '';
+      els.chatMessages.innerHTML = items.map(m => {
+        const dayKey = new Date(m.at || 0).toDateString();
+        let divider = '';
+        if (dayKey !== lastDay){
+          lastDay = dayKey;
+          divider = '<div class="chat-day"><span>' + chatDayLabel(m.at) + '</span></div>';
+        }
+        return divider
+        + '<div class="chat-msg">'
         + '<div class="who"><span>' + (chatEsc(m.name) || 'Biri') + '</span><span class="when">' + chatTime(m.at) + '</span></div>'
         + '<div class="body">' + chatEsc(m.text) + '</div>'
         + reactionsHTML(m)
-        + '</div>'
-      ).join('');
+        + '</div>';
+      }).join('');
       if (nearBottom) els.chatMessages.scrollTop = els.chatMessages.scrollHeight;
     }
     async function sendChat(){
@@ -2196,6 +2238,18 @@
         </div>`;
       }).join('') : '<div class="muted small" style="margin-top:6px">Bu aralıkta kayıt yok.</div>';
     }
+    function fmtLogDay(dstr){
+      try {
+        const d = new Date(dstr + 'T00:00:00');
+        const today = new Date(); today.setHours(0,0,0,0);
+        const diff = Math.round((today - d) / 86400000);
+        if (diff === 0) return 'Bugün';
+        if (diff === 1) return 'Dün';
+        const opts = { day:'numeric', month:'long', weekday:'long' };
+        if (d.getFullYear() !== new Date().getFullYear()) opts.year = 'numeric';
+        return d.toLocaleDateString('tr-TR', opts);
+      } catch(e){ return dstr; }
+    }
     function renderSessionLog(){
       const box = document.getElementById('sessionLog');
       if (!box) return;
@@ -2210,7 +2264,7 @@
       box.innerHTML = Object.entries(byDay).map(([d, ss]) => {
         const tot = ss.reduce((a, s) => a + (s.ms || 0), 0);
         return `<div class="log-day">
-          <div class="spaced"><b>${d}</b><span class="muted small">${ss.length} oturum · ${msToHHMMSS(tot)}</span></div>` +
+          <div class="spaced"><b>${fmtLogDay(d)}</b><span class="muted small">${ss.length} oturum · ${msToHHMMSS(tot)}</span></div>` +
           ss.map(s => `<div class="log-row">
             <span>${fmtT(s.startAt)}–${fmtT(s.endAt)}</span>
             <span class="log-subj">${escapeHtml(s.subject || '—')}</span>
