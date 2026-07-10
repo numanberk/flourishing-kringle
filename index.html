@@ -1592,10 +1592,53 @@
     }
 
     /* ---------------- Video routing logic ---------------- */
+    let collabList = null;        // keşfedilen collab listesi (null = henüz bakılmadı)
+    let collabDiscovering = false;
+    let collabIdx = 0;
+    let collabPlaying = false;
+
+    async function discoverCollabs(){
+      if (collabList !== null || collabDiscovering) return;
+      collabDiscovering = true;
+      const found = [];
+      for (let i = 1; i <= 50; i++){
+        try {
+          const r = await fetch('/videos/collab' + i + '.mp4', { method: 'HEAD' });
+          if (!r.ok) break;
+          found.push('/videos/collab' + i + '.mp4');
+        } catch(e){ break; }
+      }
+      // numaralı dosya yoksa eski tek collab.mp4'e geri düş
+      if (!found.length && els.collabVideo) found.push(els.collabVideo.dataset.srcCollab);
+      collabList = found;
+      collabDiscovering = false;
+    }
+
+    function swapVideoTo(src){
+      const v = els.collabVideo;
+      v.pause();
+      v.src = src;
+      v.load();
+      v.play().then(() => {
+        els.videoOverlay.classList.remove('show');
+      }).catch(() => {
+        els.videoOverlay.classList.add('show'); // needs user gesture
+      });
+      els.videoPlayPause.textContent = 'Durdur';
+      els.videoMuteUnmute.textContent = v.muted ? 'Sesi Aç' : 'Sesi Kapat';
+    }
+
     function initVideoDefaults(){
       const v = els.collabVideo;
       v.loop = true;
       v.muted = true;
+      discoverCollabs();
+      v.addEventListener('ended', () => {
+        // playlist modu: sıradaki collab videosuna geç (sonuncudan sonra başa döner)
+        if (!collabPlaying || !collabList || collabList.length < 2) return;
+        collabIdx = (collabIdx + 1) % collabList.length;
+        swapVideoTo(collabList[collabIdx]);
+      });
       els.overlayPlay.onclick = () => {
         v.play().then(()=> els.videoOverlay.classList.remove('show')).catch(()=>{});
       };
@@ -1622,34 +1665,25 @@
         card.classList.remove('active');
         v.pause();
         els.videoOverlay.classList.remove('show');
+        collabPlaying = false;
         return;
       }
 
-      // Choose source from data-* (served by Netlify under /videos/)
-      const srcNuman = v.dataset.srcNumanSolo;
-      const srcOthers = v.dataset.srcOthersSolo;
-      const srcCollab = v.dataset.srcCollab;
-
-      let nextSrc = '';
       if (collab){
-        nextSrc = srcCollab;
+        const list = (collabList && collabList.length) ? collabList : [v.dataset.srcCollab];
+        const absList = list.map(s => new URL(s, location.origin).href);
+        v.loop = list.length === 1;   // tek video ise eskisi gibi döngü; birden çoksa 'ended' sıradakine geçer
+        if (!collabPlaying || !absList.includes(v.currentSrc)){
+          collabPlaying = true;
+          collabIdx = 0;
+          swapVideoTo(list[0]);
+        }
       } else {
-        nextSrc = (myEmail.toLowerCase() === SPECIAL_EMAIL) ? srcNuman : srcOthers;
-      }
-
-      // Swap only if changed
-      const absoluteNext = new URL(nextSrc, location.origin).href;
-      if (v.currentSrc !== absoluteNext){
-        v.pause();
-        v.src = nextSrc;
-        v.load();
-        v.play().then(()=>{
-          els.videoOverlay.classList.remove('show');
-        }).catch(()=>{
-          els.videoOverlay.classList.add('show'); // needs user gesture
-        });
-        els.videoPlayPause.textContent = 'Durdur';
-        els.videoMuteUnmute.textContent = v.muted ? 'Sesi Aç' : 'Sesi Kapat';
+        collabPlaying = false;
+        v.loop = true;
+        const nextSrc = (myEmail.toLowerCase() === SPECIAL_EMAIL) ? v.dataset.srcNumanSolo : v.dataset.srcOthersSolo;
+        const absoluteNext = new URL(nextSrc, location.origin).href;
+        if (v.currentSrc !== absoluteNext) swapVideoTo(nextSrc);
       }
 
       card.classList.add('active');
