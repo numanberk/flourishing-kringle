@@ -7,6 +7,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#7a5af8">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Çalışma Odası">
   <style>
     /* ---------- Light theme (default) ---------- */
     :root {
@@ -1698,6 +1704,7 @@
         attachNudges(user.uid);
         attachWatch();
         renderNotifBtn();
+        if (pushOn() && 'Notification' in window && Notification.permission === 'granted') subscribePush();
         initVideoDefaults();
         startUITicker();   // live timers independent of DB changes
       } else {
@@ -2005,6 +2012,7 @@
       if (!u.studying){
         const subj = (els.subjectSelect && els.subjectSelect.value) || '';
         await update(uref, { studying:true, currentStartAt: now, currentSubject: subj || null });
+        sendPush('study');
       } else {
         const startAt = u.currentStartAt || now;
         const elapsed = Math.max(0, now - startAt);
@@ -2393,12 +2401,72 @@
       els.pomoPanel.style.display = 'none';
     });
 
+    /* ---------- push notifications (kilitli ekran, PWA) ---------- */
+    const PUSH_ENDPOINT = '/.netlify/functions/send-push';
+    let swReg = null;
+    if ('serviceWorker' in navigator){
+      navigator.serviceWorker.register('/sw.js').then(r => { swReg = r; }).catch(() => {});
+    }
+    const pushOn = () => localStorage.getItem('sb_push') === '1';
+    function urlB64ToUint8Array(b64){
+      const pad = '='.repeat((4 - b64.length % 4) % 4);
+      const raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+      const arr = new Uint8Array(raw.length);
+      for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+      return arr;
+    }
+    async function subscribePush(){
+      try {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) return false;
+        const reg = swReg || await navigator.serviceWorker.ready;
+        const r = await fetch(PUSH_ENDPOINT);
+        const j = await r.json();
+        if (!j.publicKey) return false;
+        const sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlB64ToUint8Array(j.publicKey)
+        });
+        const uid = (auth.currentUser || {}).uid; if (!uid) return false;
+        const key = btoa(sub.endpoint).replace(/[^a-zA-Z0-9]/g, '').slice(-40);
+        await update(ref(db, `pushSubs/${uid}/${key}`), {
+          sub: JSON.parse(JSON.stringify(sub)),
+          ua: navigator.userAgent.slice(0, 120),
+          at: Date.now()
+        });
+        localStorage.setItem('sb_push', '1');
+        return true;
+      } catch(e){ console.error('push subscribe failed:', e && e.message); return false; }
+    }
+    async function unsubscribePush(){
+      try {
+        localStorage.setItem('sb_push', '0');
+        if (!('serviceWorker' in navigator)) return;
+        const reg = swReg || await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        if (sub){
+          const uid = (auth.currentUser || {}).uid;
+          const key = btoa(sub.endpoint).replace(/[^a-zA-Z0-9]/g, '').slice(-40);
+          if (uid) await update(ref(db, `pushSubs/${uid}`), { [key]: null });
+          await sub.unsubscribe();
+        }
+      } catch(e){}
+    }
+    function sendPush(type, toUid){
+      const u = auth.currentUser; if (!u) return;
+      fetch(PUSH_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, from: u.displayName || u.email, fromUid: u.uid, toUid: toUid || null })
+      }).catch(() => {});
+    }
+
     /* ---------- browser notifications ---------- */
     function notifOn(){
       return localStorage.getItem('sb_notif') === '1' && 'Notification' in window && Notification.permission === 'granted';
     }
     function notifyMe(title, body){
       if (!notifOn()) return;
+      if (pushOn()) return;   // push aboneliği varsa bildirimi servis işçisi halleder
       try { new Notification(title, { body }); } catch(e){}
     }
     function renderNotifBtn(){
@@ -2407,11 +2475,23 @@
     if (els.notifBtn) els.notifBtn.onclick = async () => {
       if (notifOn()){
         localStorage.setItem('sb_notif', '0');
+        await unsubscribePush();
         toast('Bildirimler kapalı 🔕');
       } else {
-        if (!('Notification' in window)){ toast('Tarayıcın bildirim desteklemiyor'); return; }
+        if (!('Notification' in window)){
+          const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+          const standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone;
+          toast(ios && !standalone
+            ? 'iPhone: Safari\u2019de Paylaş → "Ana Ekrana Ekle" yap, sonra uygulamayı açıp 🔔\u2019a bas'
+            : 'Tarayıcın bildirim desteklemiyor');
+          return;
+        }
         const p = await Notification.requestPermission();
-        if (p === 'granted'){ localStorage.setItem('sb_notif', '1'); toast('Bildirimler açık 🔔'); }
+        if (p === 'granted'){
+          localStorage.setItem('sb_notif', '1');
+          const ok = await subscribePush();
+          toast(ok ? 'Bildirimler açık 🔔 — site kapalıyken de gelir ✅' : 'Bildirimler açık 🔔 (yalnızca site açıkken)');
+        }
         else toast('Bildirim izni verilmedi');
       }
       renderNotifBtn();
@@ -2444,6 +2524,7 @@
       const me = auth.currentUser; if (!me || !to) return;
       try {
         await push(ref(db, `nudges/${to}`), { from: me.displayName || me.email, at: Date.now() });
+        sendPush('nudge', to);
         toast('Dürttün 👉');
       } catch(err){ alert(err.message); }
     });
@@ -2992,6 +3073,7 @@
       try {
         for (const to of others){
           await push(ref(db, `nudges/${to}`), { from: me.displayName || me.email, at: Date.now(), type: 'watch' });
+          sendPush('watch', to);
         }
         toast('Gönderildi 🎬🍿');
       } catch(e){ alert(e.message); }
@@ -3055,6 +3137,7 @@
             by: me.displayName || me.email, byUid: me.uid, at: Date.now()
           });
           meetPasting = false;
+          sendPush('meet');
           toast('Paylaşıldı — karşı tarafa haber gitti 🎥');
         } catch(err){ alert(err.message); }
       } else if (act === 'join'){
