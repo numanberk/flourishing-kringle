@@ -814,6 +814,66 @@
   </style>
   <style>
     /* ============================================================
+       MOVIE NIGHT — izlenecekler notları + meet + izleyelim çağrısı
+       ============================================================ */
+    #watchView{
+      position:fixed; inset:0; z-index:8000; display:none;
+      background:var(--bg); overflow-y:auto; -webkit-overflow-scrolling:touch;
+    }
+    #watchView.open{ display:block; }
+    #watchView textarea, #wnModal textarea{
+      background:var(--input-bg); border:1px solid var(--border); color:var(--text);
+      padding:10px 12px; border-radius:10px; font-size:14px; outline:none; font-family:inherit;
+      transition:border-color .2s ease;
+    }
+    .wn-add{ display:flex; flex-direction:column; gap:8px; margin-top:12px; }
+    .wn-add input, .wn-add textarea{ width:100%; box-sizing:border-box; resize:vertical; }
+    .wn-colors{ display:flex; gap:7px; align-items:center; }
+    .wn-dot{
+      width:24px; height:24px; border-radius:50%; padding:0; flex:none;
+      border:2px solid transparent; cursor:pointer;
+    }
+    .wn-dot.on{ border-color:var(--text); transform:scale(1.12); }
+    .wn-grid{ columns:2 220px; column-gap:12px; margin-top:14px; }
+    .wn-card{
+      break-inside:avoid; margin-bottom:12px; padding:12px 14px;
+      border:1px solid var(--border); border-radius:12px; cursor:pointer;
+      background:var(--card); transition:transform .15s ease, box-shadow .15s ease;
+    }
+    .wn-card:hover{ transform:translateY(-2px); box-shadow:var(--hover-shadow); }
+    .wn-card h4{ margin:0 0 6px; font-size:14px; color:var(--text); overflow-wrap:anywhere; }
+    .wn-card .txt{ font-size:13px; color:var(--text); white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.5; }
+    .wn-card .meta{
+      margin-top:10px; font-size:11px; color:var(--muted);
+      display:flex; justify-content:space-between; align-items:center; gap:8px;
+    }
+    .wn-del{ flex:none; border-radius:999px; padding:2px 8px; font-size:11px; }
+    .wn-c0{ background:color-mix(in srgb, #7a5af8 13%, var(--card)); border-color:color-mix(in srgb, #7a5af8 40%, var(--border)); }
+    .wn-c1{ background:color-mix(in srgb, #ff5db1 13%, var(--card)); border-color:color-mix(in srgb, #ff5db1 40%, var(--border)); }
+    .wn-c2{ background:color-mix(in srgb, #4cd676 13%, var(--card)); border-color:color-mix(in srgb, #4cd676 40%, var(--border)); }
+    .wn-c3{ background:color-mix(in srgb, #ffb167 15%, var(--card)); border-color:color-mix(in srgb, #ffb167 45%, var(--border)); }
+    .wn-c4{ background:color-mix(in srgb, #6ec1ff 15%, var(--card)); border-color:color-mix(in srgb, #6ec1ff 45%, var(--border)); }
+    .wn-c5{ background:color-mix(in srgb, #f8d55a 16%, var(--card)); border-color:color-mix(in srgb, #f8d55a 48%, var(--border)); }
+    .meet-actions{ display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+    .meet-live-dot{
+      display:inline-block; width:8px; height:8px; border-radius:50%;
+      background:var(--ok); box-shadow:0 0 8px var(--ok); margin-right:6px;
+      animation:sbPing2 1.6s ease-in-out infinite;
+    }
+    @keyframes sbPing2{ 0%,100%{ opacity:1; } 50%{ opacity:.35; } }
+    #meetInput{ width:100%; box-sizing:border-box; margin-top:10px; }
+    @media (max-width:640px){
+      #watchView .lib-inner{ padding-top:64px; }
+      .wn-grid{ columns:1; }
+    }
+    @media (prefers-reduced-motion: reduce){
+      .wn-card{ transition:none; }
+      .meet-live-dot{ animation:none; }
+      .wn-dot.on{ transform:none; }
+    }
+  </style>
+  <style>
+    /* ============================================================
        MICRO-INTERACTIONS — press, ripple, glow, lift, confetti
        ============================================================ */
     button{ position:relative; overflow:hidden; }
@@ -923,6 +983,7 @@
         <button id="pomoBtn" class="theme-toggle" title="Pomodoro" style="display:none">🍅 Pomodoro</button>
         <button id="statsBtn" class="theme-toggle" title="İstatistik ve günlük" style="display:none">📊</button>
         <button id="libBtn" class="theme-toggle" title="Kütüphane" style="display:none">📚</button>
+        <button id="watchBtn" class="theme-toggle" title="Film gecesi" style="display:none">🎬</button>
         <button id="notifBtn" class="theme-toggle" title="Bildirimleri aç/kapat" style="display:none">🔕</button>
 
         <div id="pomoPanel" class="pomo-panel" style="display:none">
@@ -1050,6 +1111,56 @@
       </div>
       <div id="libList"></div>
       <div id="libEmpty" class="muted" style="margin-top:18px">Kütüphane henüz boş — ilk kitabı sen gönder 📖</div>
+    </div>
+  </div>
+
+  <!-- ============ MOVIE NIGHT (izlenecekler + meet) ============ -->
+  <div id="watchView">
+    <button id="watchClose" class="theme-toggle focus-exit">✕ Kapat</button>
+    <div class="lib-inner">
+      <h2 style="color:var(--acc);margin:0 0 6px">🎬 Film Gecesi</h2>
+
+      <div class="stat-block first" id="meetBox"></div>
+
+      <div class="stat-block" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+        <div>
+          <b class="stat-title">📣 Bişeyler izleyelim</b>
+          <div class="muted small" style="margin-top:4px">Karşı tarafa anında bildirim gönderir</div>
+        </div>
+        <button class="primary" id="watchNudgeBtn">Gönder 🎬</button>
+      </div>
+
+      <div class="stat-block">
+        <b class="stat-title">📝 İzlenecekler</b>
+        <div class="wn-add">
+          <input id="wnTitle" placeholder="Başlık (isteğe bağlı)" maxlength="60">
+          <textarea id="wnText" placeholder="Not al… film, dizi, video, her şey 🍿" rows="2" maxlength="1000"></textarea>
+          <div class="spaced" style="flex-wrap:wrap;gap:8px">
+            <div class="wn-colors" id="wnColors"></div>
+            <button class="primary" id="wnAddBtn">＋ Ekle</button>
+          </div>
+        </div>
+        <div id="wnGrid" class="wn-grid"></div>
+        <div id="wnEmpty" class="muted" style="margin-top:10px">Liste boş — ilk izleneceği ekleyin 🍿</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- watch note edit modal -->
+  <div id="wnModal" class="sb-modal" role="dialog" aria-modal="true" aria-label="Notu düzenle">
+    <div class="sb-modal-card" style="max-width:480px">
+      <div class="spaced"><h3 style="margin:0;color:var(--acc)">Notu düzenle</h3><button id="wnmClose" title="Kapat">✕</button></div>
+      <div style="margin-top:12px">
+        <input id="wnmTitle" placeholder="Başlık" maxlength="60" style="width:100%;box-sizing:border-box">
+        <textarea id="wnmText" rows="5" maxlength="1000" style="width:100%;box-sizing:border-box;margin-top:8px;resize:vertical"></textarea>
+        <div class="wn-colors" id="wnmColors" style="margin-top:12px"></div>
+        <div class="row" style="margin-top:16px;gap:8px">
+          <button id="wnmDelete" style="color:var(--danger)">🗑 Sil</button>
+          <span style="flex:1"></span>
+          <button id="wnmCancel">Vazgeç</button>
+          <button class="primary" id="wnmSave">Kaydet</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1433,7 +1544,19 @@
       libList: document.getElementById("libList"),
       libEmpty: document.getElementById("libEmpty"),
       chatTyping: document.getElementById("chatTyping"),
-      chatTypingText: document.getElementById("chatTypingText")
+      chatTypingText: document.getElementById("chatTypingText"),
+      watchBtn: document.getElementById("watchBtn"),
+      watchView: document.getElementById("watchView"),
+      watchClose: document.getElementById("watchClose"),
+      meetBox: document.getElementById("meetBox"),
+      watchNudgeBtn: document.getElementById("watchNudgeBtn"),
+      wnTitle: document.getElementById("wnTitle"),
+      wnText: document.getElementById("wnText"),
+      wnColors: document.getElementById("wnColors"),
+      wnAddBtn: document.getElementById("wnAddBtn"),
+      wnGrid: document.getElementById("wnGrid"),
+      wnEmpty: document.getElementById("wnEmpty"),
+      wnModal: document.getElementById("wnModal")
     });
 
     /* ---------------- THEME: init + toggle (persist) ---------------- */
@@ -1528,6 +1651,7 @@
         if (els.pomoBtn) els.pomoBtn.style.display = "";
         if (els.statsBtn) els.statsBtn.style.display = "";
         if (els.libBtn) els.libBtn.style.display = "";
+        if (els.watchBtn) els.watchBtn.style.display = "";
         if (els.notifBtn) els.notifBtn.style.display = "";
         if (els.studyGroup) els.studyGroup.style.display = "";
         if (els.presenceGroup) els.presenceGroup.style.display = "";
@@ -1550,6 +1674,7 @@
         attachGlobalListeners();
         attachSessions(user.uid);
         attachNudges(user.uid);
+        attachWatch();
         renderNotifBtn();
         initVideoDefaults();
         startUITicker();   // live timers independent of DB changes
@@ -1565,8 +1690,11 @@
         if (els.pomoBtn) els.pomoBtn.style.display = "none";
         if (els.statsBtn) els.statsBtn.style.display = "none";
         if (els.libBtn) els.libBtn.style.display = "none";
+        if (els.watchBtn) els.watchBtn.style.display = "none";
         if (els.notifBtn) els.notifBtn.style.display = "none";
         if (els.libView) els.libView.classList.remove("open");
+        if (els.watchView) els.watchView.classList.remove("open");
+        if (els.wnModal) els.wnModal.classList.remove("open");
         if (els.pomoPanel) els.pomoPanel.style.display = "none";
         if (els.studyGroup) els.studyGroup.style.display = "none";
         if (els.presenceGroup) els.presenceGroup.style.display = "none";
@@ -2275,8 +2403,13 @@
       onValue(ref(db, `nudges/${uid}`), s => {
         const v = s.val(); if (!v) return;
         Object.entries(v).forEach(([k, n]) => {
-          toast((n.from || 'Biri') + ' seni dürttü 👉 Hadi çalışmaya!');
-          notifyMe((n.from || 'Biri') + ' seni dürttü 👉', 'Hadi çalışmaya!');
+          if (n.type === 'watch'){
+            toast((n.from || 'Biri') + ' bişeyler izleyelim diyor 🎬🍿');
+            notifyMe('🎬 Bişeyler izleyelim!', (n.from || 'Biri') + ' film gecesi istiyor');
+          } else {
+            toast((n.from || 'Biri') + ' seni dürttü 👉 Hadi çalışmaya!');
+            notifyMe((n.from || 'Biri') + ' seni dürttü 👉', 'Hadi çalışmaya!');
+          }
           chime();
           try { navigator.vibrate && navigator.vibrate([120, 60, 120]); } catch(e){}
           update(ref(db, `nudges/${uid}`), { [k]: null }).catch(() => {});
@@ -2769,6 +2902,217 @@
         catch(err){ alert(err.message); }
       }
     });
+
+    /* ================================================================
+       MOVIE NIGHT — izlenecekler (Keep tarzı), "bişeyler izleyelim"
+       çağrısı ve tek tıkla Google Meet katılımı.
+       ================================================================ */
+    const WN_COLORS = ['#7a5af8', '#ff5db1', '#4cd676', '#ffb167', '#6ec1ff', '#f8d55a'];
+    let latestWatch = {}, latestMeet = null;
+    let watchAttached = false, meetLoaded = false, prevMeetAt = null;
+    let wnColor = 0, wnmColor = 0, wnEditKey = null, meetPasting = false;
+
+    function attachWatch(){
+      if (watchAttached) return; watchAttached = true;
+      onValue(ref(db, 'watchlist'), s => {
+        latestWatch = s.val() || {};
+        renderWatchNotes();
+      }, err => console.error('watchlist read failed:', err && err.message));
+      onValue(ref(db, 'meet'), s => {
+        const m = s.val();
+        const first = !meetLoaded; meetLoaded = true;
+        if (!first && m && m.url && m.at !== prevMeetAt && m.byUid !== (auth.currentUser || {}).uid){
+          toast((m.by || 'Arkadaşın') + ' Meet başlattı 🎥 — 🎬 sekmesinden katıl!');
+          notifyMe('🎥 Meet hazır!', (m.by || 'Arkadaşın') + ' seni bekliyor');
+          popSound();
+        }
+        prevMeetAt = m && m.at;
+        latestMeet = m;
+        renderMeet();
+      }, err => console.error('meet read failed:', err && err.message));
+    }
+    function openWatch(){
+      els.watchView.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      renderMeet(); renderWatchNotes(); renderColorDots(els.wnColors, wnColor);
+    }
+    function closeWatch(){
+      els.watchView.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    if (els.watchBtn) els.watchBtn.onclick = openWatch;
+    if (els.watchClose) els.watchClose.onclick = closeWatch;
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Escape') return;
+      if (els.wnModal && els.wnModal.classList.contains('open')) closeWnModal();
+      else if (els.watchView && els.watchView.classList.contains('open')) closeWatch();
+    });
+
+    /* ---- "bişeyler izleyelim" ---- */
+    if (els.watchNudgeBtn) els.watchNudgeBtn.onclick = async () => {
+      const me = auth.currentUser; if (!me) return;
+      const others = Object.keys(latestUsers || {}).filter(uid => uid !== me.uid);
+      if (!others.length){ toast('Gönderecek kimse yok 🙈'); return; }
+      try {
+        for (const to of others){
+          await push(ref(db, `nudges/${to}`), { from: me.displayName || me.email, at: Date.now(), type: 'watch' });
+        }
+        toast('Gönderildi 🎬🍿');
+      } catch(e){ alert(e.message); }
+    };
+
+    /* ---- Google Meet paylaşımı ---- */
+    function meetCodeFrom(input){
+      const v = (input || '').trim();
+      const m = v.match(/meet\.google\.com\/([a-z0-9-]+)/i) || v.match(/^([a-z]{3}-?[a-z]{4}-?[a-z]{3})$/i);
+      return m ? m[1] : null;
+    }
+    function renderMeet(){
+      if (!els.meetBox) return;
+      if (latestMeet && latestMeet.url){
+        const when = new Date(latestMeet.at || 0).toLocaleTimeString('tr-TR', { hour:'2-digit', minute:'2-digit' });
+        els.meetBox.innerHTML = `
+          <b class="stat-title"><span class="meet-live-dot"></span>🎥 Görüntülü buluşma hazır</b>
+          <div class="muted small" style="margin-top:6px">${escapeHtml(latestMeet.by || 'Biri')} başlattı · ${when}</div>
+          <div class="meet-actions">
+            <button class="primary" data-mact="join">🎥 Katıl</button>
+            <button data-mact="end">Bitir</button>
+          </div>`;
+      } else if (meetPasting){
+        els.meetBox.innerHTML = `
+          <b class="stat-title">🎥 Google Meet</b>
+          <div class="muted small" style="margin-top:6px">Açılan sekmedeki meet linkini kopyala ve buraya yapıştır — karşı tarafa "Katıl" butonu düşer.</div>
+          <input id="meetInput" placeholder="https://meet.google.com/xxx-yyyy-zzz" autocomplete="off">
+          <div class="meet-actions">
+            <button class="primary" data-mact="share">Paylaş</button>
+            <button data-mact="reopen">Sekme açılmadı mı?</button>
+            <button data-mact="cancel">Vazgeç</button>
+          </div>`;
+      } else {
+        els.meetBox.innerHTML = `
+          <b class="stat-title">🎥 Google Meet</b>
+          <div class="muted small" style="margin-top:6px">Yeni bir görüşme başlat, linki paylaş; karşı taraf tek tıkla katılsın.</div>
+          <div class="meet-actions">
+            <button class="primary" data-mact="start">Meet başlat</button>
+          </div>`;
+      }
+    }
+    if (els.meetBox) els.meetBox.addEventListener('click', async e => {
+      const b = e.target.closest('[data-mact]'); if (!b) return;
+      const act = b.getAttribute('data-mact');
+      const me = auth.currentUser;
+      if (act === 'start'){
+        window.open('https://meet.google.com/new', '_blank', 'noopener');
+        meetPasting = true; renderMeet();
+        setTimeout(() => { const i = document.getElementById('meetInput'); if (i) i.focus(); }, 80);
+      } else if (act === 'reopen'){
+        window.open('https://meet.google.com/new', '_blank', 'noopener');
+      } else if (act === 'cancel'){
+        meetPasting = false; renderMeet();
+      } else if (act === 'share'){
+        if (!me) return;
+        const code = meetCodeFrom((document.getElementById('meetInput') || {}).value);
+        if (!code){ toast('Bu bir Meet linkine benzemiyor 🤔'); return; }
+        try {
+          await update(ref(db, 'meet'), {
+            url: 'https://meet.google.com/' + code.toLowerCase(),
+            by: me.displayName || me.email, byUid: me.uid, at: Date.now()
+          });
+          meetPasting = false;
+          toast('Paylaşıldı — karşı tarafa haber gitti 🎥');
+        } catch(err){ alert(err.message); }
+      } else if (act === 'join'){
+        if (latestMeet && latestMeet.url) window.open(latestMeet.url, '_blank', 'noopener');
+      } else if (act === 'end'){
+        if (!confirm('Buluşmayı herkes için kapatmak istediğine emin misin?')) return;
+        try { await update(ref(db), { meet: null }); } catch(err){ alert(err.message); }
+      }
+    });
+
+    /* ---- izlenecekler (Keep tarzı notlar) ---- */
+    function renderColorDots(container, selected){
+      if (!container) return;
+      container.innerHTML = WN_COLORS.map((c, i) =>
+        `<button class="wn-dot ${i === selected ? 'on' : ''}" data-ci="${i}" style="background:${c}" title="Renk"></button>`
+      ).join('');
+    }
+    if (els.wnColors) els.wnColors.addEventListener('click', e => {
+      const d = e.target.closest('.wn-dot'); if (!d) return;
+      wnColor = parseInt(d.getAttribute('data-ci'), 10) || 0;
+      renderColorDots(els.wnColors, wnColor);
+    });
+    if (els.wnAddBtn) els.wnAddBtn.onclick = async () => {
+      const u = auth.currentUser; if (!u) return;
+      const title = (els.wnTitle.value || '').trim();
+      const text = (els.wnText.value || '').trim();
+      if (!title && !text){ toast('Önce bir şeyler yaz 🙂'); return; }
+      try {
+        await push(ref(db, 'watchlist'), {
+          title, text, color: wnColor,
+          by: u.displayName || u.email, byUid: u.uid, at: Date.now()
+        });
+        els.wnTitle.value = ''; els.wnText.value = '';
+      } catch(e){ alert(e.message); }
+    };
+    function renderWatchNotes(){
+      if (!els.wnGrid) return;
+      const items = Object.entries(latestWatch).map(([k, v]) => Object.assign({ k }, v)).sort((a, b) => (b.at || 0) - (a.at || 0));
+      if (els.wnEmpty) els.wnEmpty.style.display = items.length ? 'none' : '';
+      els.wnGrid.innerHTML = items.map(n => `
+        <div class="wn-card wn-c${(n.color || 0) % WN_COLORS.length}" data-key="${n.k}">
+          ${n.title ? '<h4>' + escapeHtml(n.title) + '</h4>' : ''}
+          ${n.text ? '<div class="txt">' + escapeHtml(n.text) + '</div>' : ''}
+          <div class="meta">
+            <span>${escapeHtml(n.by || 'Biri')} · ${new Date(n.at || 0).toLocaleDateString('tr-TR')}${n.updatedAt ? ' · düzenlendi' : ''}</span>
+            <button class="wn-del" data-key="${n.k}" title="Sil">✕</button>
+          </div>
+        </div>`).join('');
+    }
+    if (els.wnGrid) els.wnGrid.addEventListener('click', async e => {
+      const del = e.target.closest('.wn-del');
+      if (del){
+        if (!confirm('Bu notu silmek istediğine emin misin?')) return;
+        try { await update(ref(db, 'watchlist'), { [del.getAttribute('data-key')]: null }); }
+        catch(err){ alert(err.message); }
+        return;
+      }
+      const card = e.target.closest('.wn-card');
+      if (card) openWnModal(card.getAttribute('data-key'));
+    });
+    function openWnModal(key){
+      const n = latestWatch[key]; if (!n) return;
+      wnEditKey = key;
+      wnmColor = (n.color || 0) % WN_COLORS.length;
+      document.getElementById('wnmTitle').value = n.title || '';
+      document.getElementById('wnmText').value = n.text || '';
+      renderColorDots(document.getElementById('wnmColors'), wnmColor);
+      els.wnModal.classList.add('open');
+    }
+    function closeWnModal(){ wnEditKey = null; els.wnModal.classList.remove('open'); }
+    document.getElementById('wnmColors').addEventListener('click', e => {
+      const d = e.target.closest('.wn-dot'); if (!d) return;
+      wnmColor = parseInt(d.getAttribute('data-ci'), 10) || 0;
+      renderColorDots(document.getElementById('wnmColors'), wnmColor);
+    });
+    document.getElementById('wnmSave').onclick = async () => {
+      if (!wnEditKey || !auth.currentUser) return;
+      const title = (document.getElementById('wnmTitle').value || '').trim();
+      const text = (document.getElementById('wnmText').value || '').trim();
+      if (!title && !text){ toast('Not boş olamaz — silmek istersen 🗑 kullan'); return; }
+      try {
+        await update(ref(db, `watchlist/${wnEditKey}`), { title, text, color: wnmColor, updatedAt: Date.now() });
+        closeWnModal();
+      } catch(e){ alert(e.message); }
+    };
+    document.getElementById('wnmDelete').onclick = async () => {
+      if (!wnEditKey) return;
+      if (!confirm('Bu notu silmek istediğine emin misin?')) return;
+      try { await update(ref(db, 'watchlist'), { [wnEditKey]: null }); closeWnModal(); }
+      catch(e){ alert(e.message); }
+    };
+    document.getElementById('wnmCancel').onclick = closeWnModal;
+    document.getElementById('wnmClose').onclick = closeWnModal;
+    if (els.wnModal) els.wnModal.addEventListener('click', e => { if (e.target === els.wnModal) closeWnModal(); });
 
   </script>
   <script>
