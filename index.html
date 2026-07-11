@@ -854,6 +854,13 @@
     .wn-c3{ background:color-mix(in srgb, #ffb167 15%, var(--card)); border-color:color-mix(in srgb, #ffb167 45%, var(--border)); }
     .wn-c4{ background:color-mix(in srgb, #6ec1ff 15%, var(--card)); border-color:color-mix(in srgb, #6ec1ff 45%, var(--border)); }
     .wn-c5{ background:color-mix(in srgb, #f8d55a 16%, var(--card)); border-color:color-mix(in srgb, #f8d55a 48%, var(--border)); }
+    .wn-open{
+      display:flex; justify-content:space-between; align-items:center; gap:10px;
+      width:100%; text-align:left; cursor:pointer; font-size:14px;
+      transition:transform .15s ease, box-shadow .15s ease;
+    }
+    .wn-open:hover{ transform:translateY(-2px); box-shadow:var(--hover-shadow); }
+    .wn-arrow{ font-size:26px; color:var(--muted); line-height:1; flex:none; }
     .meet-actions{ display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
     .meet-live-dot{
       display:inline-block; width:8px; height:8px; border-radius:50%;
@@ -1120,24 +1127,39 @@
     <div class="lib-inner">
       <h2 style="color:var(--acc);margin:0 0 6px">🎬 Film Gecesi</h2>
 
-      <div class="stat-block first" id="meetBox"></div>
+      <div id="watchHome">
+        <div class="stat-block first" id="meetBox"></div>
 
-      <div class="stat-block" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-        <div>
-          <b class="stat-title">📣 Bişeyler izleyelim</b>
-          <div class="muted small" style="margin-top:4px">Karşı tarafa anında bildirim gönderir</div>
+        <div class="stat-block" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+          <div>
+            <b class="stat-title">📣 Bişeyler izleyelim</b>
+            <div class="muted small" style="margin-top:4px">Karşı tarafa anında bildirim gönderir</div>
+          </div>
+          <button class="primary" id="watchNudgeBtn">Gönder 🎬</button>
         </div>
-        <button class="primary" id="watchNudgeBtn">Gönder 🎬</button>
+
+        <button class="stat-block wn-open" id="wnOpenCard">
+          <span>
+            <b class="stat-title">📝 İzlenecekler</b>
+            <span class="muted small" style="display:block;margin-top:4px"><span id="wnCount">0</span> not · açmak için dokun</span>
+          </span>
+          <span class="wn-arrow">›</span>
+        </button>
       </div>
 
-      <div class="stat-block">
-        <b class="stat-title">📝 İzlenecekler</b>
-        <div class="wn-add">
-          <input id="wnTitle" placeholder="Başlık (isteğe bağlı)" maxlength="60">
-          <textarea id="wnText" placeholder="Not al… film, dizi, video, her şey 🍿" rows="2" maxlength="1000"></textarea>
-          <div class="spaced" style="flex-wrap:wrap;gap:8px">
-            <div class="wn-colors" id="wnColors"></div>
-            <button class="primary" id="wnAddBtn">＋ Ekle</button>
+      <div id="wnPage" style="display:none">
+        <div class="row" style="align-items:center;gap:10px;margin-top:4px">
+          <button id="wnBack">← Geri</button>
+          <b class="stat-title" style="font-size:16px">📝 İzlenecekler</b>
+        </div>
+        <div class="stat-block">
+          <div class="wn-add" style="margin-top:0">
+            <input id="wnTitle" placeholder="Başlık (isteğe bağlı)" maxlength="60">
+            <textarea id="wnText" placeholder="Not al… film, dizi, video, her şey 🍿" rows="2" maxlength="1000"></textarea>
+            <div class="spaced" style="flex-wrap:wrap;gap:8px">
+              <div class="wn-colors" id="wnColors"></div>
+              <button class="primary" id="wnAddBtn">＋ Ekle</button>
+            </div>
           </div>
         </div>
         <div id="wnGrid" class="wn-grid"></div>
@@ -2931,10 +2953,18 @@
         renderMeet();
       }, err => console.error('meet read failed:', err && err.message));
     }
+    function showWnPage(on){
+      const h = document.getElementById('watchHome'), p = document.getElementById('wnPage');
+      if (h) h.style.display = on ? 'none' : '';
+      if (p) p.style.display = on ? '' : 'none';
+      if (on){ renderWatchNotes(); renderColorDots(els.wnColors, wnColor); }
+      if (els.watchView) els.watchView.scrollTop = 0;
+    }
     function openWatch(){
       els.watchView.classList.add('open');
       document.body.style.overflow = 'hidden';
-      renderMeet(); renderWatchNotes(); renderColorDots(els.wnColors, wnColor);
+      showWnPage(false);
+      renderMeet(); renderWatchNotes();
     }
     function closeWatch(){
       els.watchView.classList.remove('open');
@@ -2945,8 +2975,14 @@
     document.addEventListener('keydown', e => {
       if (e.key !== 'Escape') return;
       if (els.wnModal && els.wnModal.classList.contains('open')) closeWnModal();
-      else if (els.watchView && els.watchView.classList.contains('open')) closeWatch();
+      else if (els.watchView && els.watchView.classList.contains('open')){
+        const p = document.getElementById('wnPage');
+        if (p && p.style.display !== 'none') showWnPage(false);
+        else closeWatch();
+      }
     });
+    document.getElementById('wnOpenCard').addEventListener('click', () => showWnPage(true));
+    document.getElementById('wnBack').addEventListener('click', () => showWnPage(false));
 
     /* ---- "bişeyler izleyelim" ---- */
     if (els.watchNudgeBtn) els.watchNudgeBtn.onclick = async () => {
@@ -3057,6 +3093,8 @@
     function renderWatchNotes(){
       if (!els.wnGrid) return;
       const items = Object.entries(latestWatch).map(([k, v]) => Object.assign({ k }, v)).sort((a, b) => (b.at || 0) - (a.at || 0));
+      const cnt = document.getElementById('wnCount');
+      if (cnt) cnt.textContent = items.length;
       if (els.wnEmpty) els.wnEmpty.style.display = items.length ? 'none' : '';
       els.wnGrid.innerHTML = items.map(n => `
         <div class="wn-card wn-c${(n.color || 0) % WN_COLORS.length}" data-key="${n.k}">
