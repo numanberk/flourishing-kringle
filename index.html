@@ -1272,9 +1272,9 @@
     <nav>
       <button onclick="showBirthdaySection('giris')" title="Başa dön">🏠</button>
       <button onclick="showBirthdaySection('fotograflar')">📷</button>
-      <button onclick="showBirthdaySection('mektup')">bal konuşması</button>
+      <button onclick="showBirthdaySection('mektup')" title="bal konuşması">💌</button>
       <button onclick="showBirthdaySection('geriSayim')">⏳</button>
-      <button onclick="showBirthdaySection('seyahat')">🚧</button>
+      <button onclick="showBirthdaySection('seyahat')">✈️</button>
     </nav>
 
     <section id="giris" class="active">
@@ -1285,9 +1285,9 @@
         <p style="margin-top:22px;font-size:1.3rem;font-weight:700;letter-spacing:.03em;color:#7a4a57;">İYİ Kİ DOĞDUN CANIMIN İÇİ</p>
         <div class="greet-tabs">
           <button onclick="showBirthdaySection('fotograflar')">📷</button>
-          <button onclick="showBirthdaySection('mektup')">bal konuşması</button>
+          <button onclick="showBirthdaySection('mektup')" title="bal konuşması">💌</button>
           <button onclick="showBirthdaySection('geriSayim')">⏳</button>
-          <button onclick="showBirthdaySection('seyahat')">🚧</button>
+          <button onclick="showBirthdaySection('seyahat')">✈️</button>
         </div>
       </div>
       <!-- diğer tüm günlerde görünür -->
@@ -1296,9 +1296,9 @@
         <p id="greetQ" style="margin-top:14px;font-size:1.2rem;color:#7a4a57;">neye bakmıştık?</p>
         <div class="greet-tabs">
           <button onclick="showBirthdaySection('fotograflar')">📷</button>
-          <button onclick="showBirthdaySection('mektup')">bal konuşması</button>
+          <button onclick="showBirthdaySection('mektup')" title="bal konuşması">💌</button>
           <button onclick="showBirthdaySection('geriSayim')">⏳</button>
-          <button onclick="showBirthdaySection('seyahat')">🚧</button>
+          <button onclick="showBirthdaySection('seyahat')">✈️</button>
         </div>
       </div>
     </section>
@@ -1368,20 +1368,15 @@
       </div>
     </section>
 
-    <!-- ============ TRAVEL GUIDE (own PIN) ============ -->
+    <!-- ============ TRAVEL GUIDE ============ -->
     <section id="seyahat">
-      <div id="travelLock">
-        <div class="t-lock-card">
-          <div style="font-size:46px">🚧</div>
-          <h2 style="font-size:2rem;">inşaat devam ediyor...</h2>
-          <p style="color:#b3567a;font-size:.95rem;margin:10px 0 0;">Bu bölümün ayrı bir anahtarı var 🔑</p>
-          <input id="travelPin" type="password" inputmode="text" autocomplete="off" maxlength="8" placeholder="••••••••" aria-label="Seyahat şifresi">
-          <div id="travelPinMsg" class="t-pin-msg"></div>
-          <button id="travelPinBtn" class="bday-btn">Aç</button>
-        </div>
+      <div id="travelLock" style="display:none">
+        <input id="travelPin" type="hidden">
+        <div id="travelPinMsg"></div>
+        <button id="travelPinBtn" style="display:none"></button>
       </div>
 
-      <div id="travelGuide" style="display:none">
+      <div id="travelGuide">
         <h2>🌍 Dünya Rehberimiz</h2>
         <p style="max-width:620px;margin:10px auto 0;font-size:1.05rem;">Bir gün hepsi. Şimdilik plan yapıyoruz ✈️ Yazılar şimdilik geçici — zamanla beraber dolduracağız.</p>
         <div class="t-progress" id="travelProgress"></div>
@@ -3697,41 +3692,24 @@
       const countryGrid = $('countryGrid'), cityWrap = $('cityWrap'), cityGrid = $('cityGrid'), cityHead = $('cityHead');
       const reader = $('cityReader');
       const tgModal = $('tgModal'), tgFields = $('tgFields'), tgTitle = $('tgTitle');
-      let travelUnlocked = false, travelInited = false, travelData = {}, fb2 = null;
+      let travelUnlocked = true, travelInited = false, travelData = {}, fb2 = null;
       let guideRaw = null;           // travelGuide/ snapshot (null = henüz gelmedi)
       let seedTried = false;
       let editMode = false;
       let curCountryId = null, curCityId = null;
 
-      /* ---- PIN gate (asked on every visit to the tab) ---- */
-      function tryTravelPin(){
-        const v = (tPin.value || '').trim().toLowerCase();
-        if (v.length < TRAVEL_PIN.length) return;
-        if (v === TRAVEL_PIN.toLowerCase()){
-          travelUnlocked = true;
-          lock.style.display = 'none';
-          guideEl.style.display = '';
-          initTravel();
-        } else {
-          tMsg.textContent = 'Yanlış anahtar 🥲 tekrar dene';
-          tPin.value = '';
-          tPin.classList.remove('pin-shake'); void tPin.offsetWidth; tPin.classList.add('pin-shake');
-          tPin.focus();
-        }
+      /* Artık şifre yok — rehber doğrudan açılır. */
+      function tryTravelPin(){}
+      if (tPin){
+        tPin.addEventListener('input', () => {});
+        tPin.addEventListener('keydown', () => {});
       }
-      tPin.addEventListener('input', () => {
-        tPin.value = tPin.value.replace(/[^a-zA-Z0-9]/g, '').slice(0, TRAVEL_PIN.length);
-        tMsg.textContent = '';
-        if (tPin.value.length === TRAVEL_PIN.length) tryTravelPin();
-      });
-      tPin.addEventListener('keydown', e => { if (e.key === 'Enter') tryTravelPin(); });
-      $('travelPinBtn').addEventListener('click', tryTravelPin);
+      if ($('travelPinBtn')) $('travelPinBtn').addEventListener('click', () => {});
 
       function relockTravel(){
-        travelUnlocked = false; editMode = false;
-        lock.style.display = '';
-        guideEl.style.display = 'none';
-        tPin.value = ''; tMsg.textContent = '';
+        // şifre kaldırıldı; sadece görünümleri başa sar
+        editMode = false;
+        if ($('tgEditBtn')) $('tgEditBtn').textContent = '✏️ Düzenle';
         closeTgModal();
         closeReader();
         showCountries();
@@ -3741,8 +3719,8 @@
       const origShow = window.showBirthdaySection;
       window.showBirthdaySection = function(id){
         origShow(id);
-        if (id !== 'seyahat') relockTravel();
-        else if (!travelUnlocked) setTimeout(() => tPin.focus(), 80);
+        if (id === 'seyahat') initTravel();
+        else relockTravel();
         if (id === 'geriSayim') renderCountdown();
       };
       const prevClose = window.onBirthdayClose;
