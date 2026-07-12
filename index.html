@@ -2397,7 +2397,7 @@
     });
 
     /* ---------- push notifications (kilitli ekran, PWA) ---------- */
-    const PUSH_ENDPOINT = '/.netlify/functions/send-push';
+    const PUSH_ENDPOINT = 'https://iyikibal.netlify.app/.netlify/functions/send-push';
     let swReg = null;
     if ('serviceWorker' in navigator){
       navigator.serviceWorker.register('/sw.js').then(r => { swReg = r; }).catch(() => {});
@@ -2842,7 +2842,7 @@
     }
 
     /* ---------- library: PDF → Kindle mails + shared reading list ---------- */
-    const LIB_ENDPOINT = '/.netlify/functions/send-to-kindle';
+    const LIB_ENDPOINT = 'https://iyikibal.netlify.app/.netlify/functions/send-to-kindle';
     const LIB_MAX_BYTES = 25 * 1024 * 1024;  // Storage üzerinden gidiyor; e-posta tarafının pratik tavanı ~25MB (Resend eki + Kindle 50MB sınırı)
     let latestLibrary = {};
     let libAttached = false;
