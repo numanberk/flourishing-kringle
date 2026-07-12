@@ -2397,7 +2397,10 @@
     });
 
     /* ---------- push notifications (kilitli ekran, PWA) ---------- */
-    const PUSH_ENDPOINT = 'https://iyikibal.netlify.app/.netlify/functions/send-push';
+    // Netlify'dan servis ediliyorsa oradaki fonksiyon, Cloudflare'dan ise /api yolu
+    const PUSH_ENDPOINT = location.hostname.endsWith('netlify.app')
+      ? 'https://iyikibal.netlify.app/.netlify/functions/send-push'
+      : '/api/send-push';
     let swReg = null;
     if ('serviceWorker' in navigator){
       navigator.serviceWorker.register('/sw.js').then(r => { swReg = r; }).catch(() => {});
