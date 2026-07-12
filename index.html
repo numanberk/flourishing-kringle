@@ -832,34 +832,57 @@
       padding:10px 12px; border-radius:10px; font-size:14px; outline:none; font-family:inherit;
       transition:border-color .2s ease;
     }
-    .wn-add{ display:flex; flex-direction:column; gap:8px; margin-top:12px; }
-    .wn-add input, .wn-add textarea{ width:100%; box-sizing:border-box; resize:vertical; }
-    .wn-colors{ display:flex; gap:7px; align-items:center; }
-    .wn-dot{
-      width:24px; height:24px; border-radius:50%; padding:0; flex:none;
-      border:2px solid transparent; cursor:pointer;
+    .wn-board{
+      margin-top:14px; padding:6px 16px 10px;
+      background:var(--input-bg); border:1px solid var(--border); border-radius:16px;
+      transition:background .3s ease;
     }
-    .wn-dot.on{ border-color:var(--text); transform:scale(1.12); }
-    .wn-grid{ columns:2 220px; column-gap:12px; margin-top:14px; }
-    .wn-card{
-      break-inside:avoid; margin-bottom:12px; padding:12px 14px;
-      border:1px solid var(--border); border-radius:12px; cursor:pointer;
-      background:var(--card); transition:transform .15s ease, box-shadow .15s ease;
+    .wn-board.custom{ color:var(--wnfg); border-color:transparent; }
+    .wn-item{ display:flex; align-items:flex-start; gap:12px; padding:10px 2px; border-bottom:1px solid var(--border); }
+    .wn-board.custom .wn-item{ border-bottom-color:color-mix(in srgb, var(--wnfg) 18%, transparent); }
+    .wn-check{
+      appearance:none; -webkit-appearance:none; width:20px; height:20px; flex:none; margin-top:2px;
+      border:2px solid var(--muted); border-radius:5px; background:transparent; cursor:pointer;
+      display:grid; place-items:center; padding:0; overflow:visible;
     }
-    .wn-card:hover{ transform:translateY(-2px); box-shadow:var(--hover-shadow); }
-    .wn-card h4{ margin:0 0 6px; font-size:14px; color:var(--text); overflow-wrap:anywhere; }
-    .wn-card .txt{ font-size:13px; color:var(--text); white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.5; }
-    .wn-card .meta{
-      margin-top:10px; font-size:11px; color:var(--muted);
-      display:flex; justify-content:space-between; align-items:center; gap:8px;
+    .wn-board.custom .wn-check{ border-color:color-mix(in srgb, var(--wnfg) 65%, transparent); }
+    .wn-check:checked::after{ content:'✓'; font-size:14px; font-weight:800; line-height:1; color:var(--acc); }
+    .wn-board.custom .wn-check:checked::after{ color:var(--wnfg); }
+    .wn-item .txt{ flex:1; font-size:15px; line-height:1.45; white-space:pre-wrap; overflow-wrap:anywhere; cursor:text; padding-top:1px; }
+    .wn-item.done .txt{ text-decoration:line-through; opacity:.55; }
+    .wn-item .wn-x{
+      flex:none; background:transparent; border:none; color:inherit; opacity:.35;
+      font-size:13px; padding:2px 6px; cursor:pointer; border-radius:8px;
     }
-    .wn-del{ flex:none; border-radius:999px; padding:2px 8px; font-size:11px; }
-    .wn-c0{ background:color-mix(in srgb, #7a5af8 13%, var(--card)); border-color:color-mix(in srgb, #7a5af8 40%, var(--border)); }
-    .wn-c1{ background:color-mix(in srgb, #ff5db1 13%, var(--card)); border-color:color-mix(in srgb, #ff5db1 40%, var(--border)); }
-    .wn-c2{ background:color-mix(in srgb, #4cd676 13%, var(--card)); border-color:color-mix(in srgb, #4cd676 40%, var(--border)); }
-    .wn-c3{ background:color-mix(in srgb, #ffb167 15%, var(--card)); border-color:color-mix(in srgb, #ffb167 45%, var(--border)); }
-    .wn-c4{ background:color-mix(in srgb, #6ec1ff 15%, var(--card)); border-color:color-mix(in srgb, #6ec1ff 45%, var(--border)); }
-    .wn-c5{ background:color-mix(in srgb, #f8d55a 16%, var(--card)); border-color:color-mix(in srgb, #f8d55a 48%, var(--border)); }
+    .wn-item .wn-x:hover{ opacity:1; box-shadow:none; transform:none; }
+    .wn-edit{
+      flex:1; background:transparent !important; border:none !important;
+      border-bottom:1px dashed currentColor !important; border-radius:0 !important;
+      outline:none; color:inherit !important; font:inherit; padding:0 0 3px !important;
+    }
+    .wn-addrow{ display:flex; align-items:center; gap:12px; padding:8px 2px; }
+    .wn-plus{ width:20px; text-align:center; opacity:.6; flex:none; font-size:18px; }
+    .wn-addrow input{
+      flex:1; background:transparent !important; border:none !important; outline:none;
+      color:inherit !important; font-size:15px; padding:8px 0 !important; border-radius:0 !important;
+    }
+    .wn-addrow input::placeholder{ color:currentColor; opacity:.45; }
+    .wn-donehead{
+      background:transparent; border:none; color:inherit; opacity:.75;
+      padding:12px 2px 6px; font-size:13.5px; cursor:pointer;
+      display:flex; gap:8px; align-items:center; border-top:1px solid var(--border);
+      width:100%; text-align:left; margin-top:4px;
+    }
+    .wn-board.custom .wn-donehead{ border-top-color:color-mix(in srgb, var(--wnfg) 18%, transparent); }
+    .wn-donehead:hover{ box-shadow:none; transform:none; opacity:1; }
+    .wn-hint{ padding:12px 2px; opacity:.6; font-size:14px; }
+    .wn-bgpal{
+      position:absolute; right:0; top:calc(100% + 8px); z-index:40;
+      background:var(--card); border:1px solid var(--border); border-radius:14px;
+      padding:10px; display:grid; grid-template-columns:repeat(4,1fr); gap:8px; box-shadow:var(--shadow);
+    }
+    .wn-bg{ width:42px; height:42px; border-radius:10px; border:1px solid var(--border); cursor:pointer; padding:0; }
+    .wn-bg:hover{ transform:scale(1.1); }
     .wn-open{
       display:flex; justify-content:space-between; align-items:center; gap:10px;
       width:100%; text-align:left; cursor:pointer; font-size:14px;
@@ -1009,13 +1032,8 @@
           <select id="subjectSelect" title="Ders seç"></select>
           <button id="subjectAdd" title="Yeni ders ekle">＋</button>
           <button id="toggleStudyBtn" class="primary">Çalışmaya Başla</button>
-          <span id="myStatusPill" class="pill idle">Boşta</span>
           <span id="pomoPill" class="pill idle" style="display:none"></span>
           <span id="myAnim" class="anim-eq" style="display:none"><i></i><i></i><i></i></span>
-        </div>
-
-        <div class="group" id="presenceGroup" style="display:none">
-          <span class="tag"><span class="status-dot dot-off" id="presenceDot"></span> <span id="presenceText">çevrimdışı</span></span>
         </div>
 
         <div class="group" id="collabWrap"></div>
@@ -1154,39 +1172,26 @@
       </div>
 
       <div id="wnPage" style="display:none">
-        <div class="row" style="align-items:center;gap:10px;margin-top:4px">
-          <button id="wnBack">← Geri</button>
-          <b class="stat-title" style="font-size:16px">📝 İzlenecekler</b>
-        </div>
-        <div class="stat-block">
-          <div class="wn-add" style="margin-top:0">
-            <input id="wnTitle" placeholder="Başlık (isteğe bağlı)" maxlength="60">
-            <textarea id="wnText" placeholder="Not al… film, dizi, video, her şey 🍿" rows="2" maxlength="1000"></textarea>
-            <div class="spaced" style="flex-wrap:wrap;gap:8px">
-              <div class="wn-colors" id="wnColors"></div>
-              <button class="primary" id="wnAddBtn">＋ Ekle</button>
-            </div>
+        <div class="row" style="align-items:center;gap:10px;margin-top:4px;justify-content:space-between">
+          <div class="row" style="align-items:center;gap:10px">
+            <button id="wnBack">← Geri</button>
+            <b class="stat-title" style="font-size:16px">📝 İzlenecekler</b>
+          </div>
+          <div style="position:relative">
+            <button id="wnBgBtn" class="theme-toggle" title="Arka plan">🎨</button>
+            <div id="wnBgPal" class="wn-bgpal" style="display:none"></div>
           </div>
         </div>
-        <div id="wnGrid" class="wn-grid"></div>
-        <div id="wnEmpty" class="muted" style="margin-top:10px">Liste boş — ilk izleneceği ekleyin 🍿</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- watch note edit modal -->
-  <div id="wnModal" class="sb-modal" role="dialog" aria-modal="true" aria-label="Notu düzenle">
-    <div class="sb-modal-card" style="max-width:480px">
-      <div class="spaced"><h3 style="margin:0;color:var(--acc)">Notu düzenle</h3><button id="wnmClose" title="Kapat">✕</button></div>
-      <div style="margin-top:12px">
-        <input id="wnmTitle" placeholder="Başlık" maxlength="60" style="width:100%;box-sizing:border-box">
-        <textarea id="wnmText" rows="5" maxlength="1000" style="width:100%;box-sizing:border-box;margin-top:8px;resize:vertical"></textarea>
-        <div class="wn-colors" id="wnmColors" style="margin-top:12px"></div>
-        <div class="row" style="margin-top:16px;gap:8px">
-          <button id="wnmDelete" style="color:var(--danger)">🗑 Sil</button>
-          <span style="flex:1"></span>
-          <button id="wnmCancel">Vazgeç</button>
-          <button class="primary" id="wnmSave">Kaydet</button>
+        <div id="wnBoard" class="wn-board">
+          <div id="wnListOpen"></div>
+          <div class="wn-addrow">
+            <span class="wn-plus">＋</span>
+            <input id="wnNewInput" placeholder="Liste öğesi" maxlength="200">
+          </div>
+          <div id="wnDoneWrap" style="display:none">
+            <button id="wnDoneToggle" class="wn-donehead"><span id="wnDoneChev">▾</span><span id="wnDoneCount"></span> işaretli öğe</button>
+            <div id="wnListDone"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -1378,7 +1383,6 @@
 
       <div id="travelGuide">
         <h2>🌍 Dünya Rehberimiz</h2>
-        <p style="max-width:620px;margin:10px auto 0;font-size:1.05rem;">Bir gün hepsi. Şimdilik plan yapıyoruz ✈️ Yazılar şimdilik geçici — zamanla beraber dolduracağız.</p>
         <div class="t-progress" id="travelProgress"></div>
         <div style="margin-top:14px"><button id="tgEditBtn" class="t-back">✏️ Düzenle</button></div>
         <div id="countryGrid" class="t-countries"></div>
@@ -1487,7 +1491,11 @@
       const s = String(t % 60).padStart(2, '0');
       return `${h}:${m}:${s}`;
     };
-    const todayKey = (d = new Date()) => d.toISOString().slice(0, 10);
+    const todayKey = (d = new Date()) => {
+      // yerel güne göre (UTC değil) — gece 00:00-03:00 arası çalışmalar artık doğru güne yazılır
+      const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), dd = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${dd}`;
+    };
     const initials = (name='') => {
       const parts = name.trim().split(/\s+/);
       if(!parts[0]) return '?';
@@ -1573,12 +1581,16 @@
       watchClose: document.getElementById("watchClose"),
       meetBox: document.getElementById("meetBox"),
       watchNudgeBtn: document.getElementById("watchNudgeBtn"),
-      wnTitle: document.getElementById("wnTitle"),
-      wnText: document.getElementById("wnText"),
-      wnColors: document.getElementById("wnColors"),
-      wnAddBtn: document.getElementById("wnAddBtn"),
-      wnGrid: document.getElementById("wnGrid"),
-      wnEmpty: document.getElementById("wnEmpty"),
+      wnBoard: document.getElementById("wnBoard"),
+      wnListOpen: document.getElementById("wnListOpen"),
+      wnListDone: document.getElementById("wnListDone"),
+      wnDoneWrap: document.getElementById("wnDoneWrap"),
+      wnDoneToggle: document.getElementById("wnDoneToggle"),
+      wnDoneCount: document.getElementById("wnDoneCount"),
+      wnDoneChev: document.getElementById("wnDoneChev"),
+      wnNewInput: document.getElementById("wnNewInput"),
+      wnBgBtn: document.getElementById("wnBgBtn"),
+      wnBgPal: document.getElementById("wnBgPal"),
       wnModal: document.getElementById("wnModal")
     });
 
@@ -1613,8 +1625,10 @@
 
     /* ---------------- Presence helpers ---------------- */
     function setStatus(study) {
-      els.myStatusPill.textContent = study ? "Çalışıyor" : "Boşta";
-      els.myStatusPill.className = "pill " + (study ? "study" : "idle");
+      if (els.myStatusPill){
+        els.myStatusPill.textContent = study ? "Çalışıyor" : "Boşta";
+        els.myStatusPill.className = "pill " + (study ? "study" : "idle");
+      }
       els.toggleStudyBtn.textContent = study ? "Çalışmayı Bitir" : "Çalışmaya Başla";
       const myAnim = document.getElementById("myAnim");
       if (myAnim) myAnim.style.display = study ? "inline-flex" : "none";
@@ -1624,8 +1638,8 @@
       if (els.subjectAdd) els.subjectAdd.disabled = study;
     }
     function setPresence(on) {
-      els.presenceDot.className = "status-dot " + (on ? "dot-on" : "dot-off");
-      els.presenceText.textContent = on ? "çevrimiçi" : "çevrimdışı";
+      if (els.presenceDot) els.presenceDot.className = "status-dot " + (on ? "dot-on" : "dot-off");
+      if (els.presenceText) els.presenceText.textContent = on ? "çevrimiçi" : "çevrimdışı";
     }
     function installPresence(uid) {
       if (presenceInstalled) return;
@@ -3036,7 +3050,7 @@
       const h = document.getElementById('watchHome'), p = document.getElementById('wnPage');
       if (h) h.style.display = on ? 'none' : '';
       if (p) p.style.display = on ? '' : 'none';
-      if (on){ renderWatchNotes(); renderColorDots(els.wnColors, wnColor); }
+      if (on){ renderWatchNotes(); }
       if (els.watchView) els.watchView.scrollTop = 0;
     }
     function openWatch(){
@@ -3146,92 +3160,163 @@
       }
     });
 
-    /* ---- izlenecekler (Keep tarzı notlar) ---- */
-    function renderColorDots(container, selected){
-      if (!container) return;
-      container.innerHTML = WN_COLORS.map((c, i) =>
-        `<button class="wn-dot ${i === selected ? 'on' : ''}" data-ci="${i}" style="background:${c}" title="Renk"></button>`
-      ).join('');
+    /* ---- izlenecekler (Keep tarzı ortak kontrol listesi) ---- */
+    const WN_BGS = [
+      { id:'tema', name:'Tema', css:'', fg:'' },
+      { id:'gece', name:'Gece',
+        css:'radial-gradient(1.6px 1.6px at 18% 22%, rgba(255,255,255,.85), transparent 55%),' +
+            'radial-gradient(1.2px 1.2px at 68% 12%, rgba(255,255,255,.7), transparent 55%),' +
+            'radial-gradient(1.4px 1.4px at 84% 46%, rgba(255,255,255,.75), transparent 55%),' +
+            'radial-gradient(1.2px 1.2px at 34% 64%, rgba(255,255,255,.6), transparent 55%),' +
+            'radial-gradient(1.5px 1.5px at 56% 86%, rgba(255,255,255,.7), transparent 55%),' +
+            'radial-gradient(1.1px 1.1px at 10% 78%, rgba(255,255,255,.6), transparent 55%),' +
+            'linear-gradient(180deg,#474e73,#2b2f4a)', fg:'#f1f2ff' },
+      { id:'gunbatimi', name:'Gün batımı', css:'linear-gradient(180deg,#ff9a8b,#b06179)', fg:'#fff5f6' },
+      { id:'orman', name:'Orman', css:'linear-gradient(180deg,#31614e,#1d3b30)', fg:'#e9fff3' },
+      { id:'okyanus', name:'Okyanus', css:'linear-gradient(180deg,#2f5f8d,#173350)', fg:'#eaf4ff' },
+      { id:'lila', name:'Lila', css:'linear-gradient(180deg,#b3a1e6,#8a75c6)', fg:'#ffffff' },
+      { id:'pembe', name:'Pembe', css:'linear-gradient(180deg,#ffc0d0,#ef8fae)', fg:'#571e31' },
+      { id:'kum', name:'Kum', css:'linear-gradient(180deg,#f2e0c2,#e0c393)', fg:'#5b4326' }
+    ];
+    let wnDoneCollapsed = false;
+    const wnItemText = n => n.title ? (n.text ? n.title + ' — ' + n.text : n.title) : (n.text || '');
+    const wnItems = () => Object.entries(latestWatch)
+      .filter(([k]) => k !== '_meta')
+      .map(([k, v]) => Object.assign({ k }, v));
+
+    function applyWnBg(){
+      const board = els.wnBoard; if (!board) return;
+      const id = ((latestWatch._meta || {}).bg) || 'tema';
+      const bg = WN_BGS.find(b => b.id === id) || WN_BGS[0];
+      if (bg.css){
+        board.style.background = bg.css;
+        board.style.setProperty('--wnfg', bg.fg);
+        board.classList.add('custom');
+      } else {
+        board.style.background = '';
+        board.style.removeProperty('--wnfg');
+        board.classList.remove('custom');
+      }
     }
-    if (els.wnColors) els.wnColors.addEventListener('click', e => {
-      const d = e.target.closest('.wn-dot'); if (!d) return;
-      wnColor = parseInt(d.getAttribute('data-ci'), 10) || 0;
-      renderColorDots(els.wnColors, wnColor);
-    });
-    if (els.wnAddBtn) els.wnAddBtn.onclick = async () => {
-      const u = auth.currentUser; if (!u) return;
-      const title = (els.wnTitle.value || '').trim();
-      const text = (els.wnText.value || '').trim();
-      if (!title && !text){ toast('Önce bir şeyler yaz 🙂'); return; }
-      try {
-        await push(ref(db, 'watchlist'), {
-          title, text, color: wnColor,
-          by: u.displayName || u.email, byUid: u.uid, at: Date.now()
-        });
-        els.wnTitle.value = ''; els.wnText.value = '';
-      } catch(e){ alert(e.message); }
-    };
     function renderWatchNotes(){
-      if (!els.wnGrid) return;
-      const items = Object.entries(latestWatch).map(([k, v]) => Object.assign({ k }, v)).sort((a, b) => (b.at || 0) - (a.at || 0));
+      if (!els.wnListOpen) return;
+      applyWnBg();
+      const items = wnItems();
+      const open = items.filter(n => !n.done).sort((a, b) => (a.at || 0) - (b.at || 0));
+      const done = items.filter(n => n.done).sort((a, b) => (b.doneAt || b.at || 0) - (a.doneAt || a.at || 0));
       const cnt = document.getElementById('wnCount');
-      if (cnt) cnt.textContent = items.length;
-      if (els.wnEmpty) els.wnEmpty.style.display = items.length ? 'none' : '';
-      els.wnGrid.innerHTML = items.map(n => `
-        <div class="wn-card wn-c${(n.color || 0) % WN_COLORS.length}" data-key="${n.k}">
-          ${n.title ? '<h4>' + escapeHtml(n.title) + '</h4>' : ''}
-          ${n.text ? '<div class="txt">' + escapeHtml(n.text) + '</div>' : ''}
-          <div class="meta">
-            <span>${escapeHtml(n.by || 'Biri')} · ${new Date(n.at || 0).toLocaleDateString('tr-TR')}${n.updatedAt ? ' · düzenlendi' : ''}</span>
-            <button class="wn-del" data-key="${n.k}" title="Sil">✕</button>
-          </div>
-        </div>`).join('');
+      if (cnt) cnt.textContent = open.length;
+      const row = n => `<div class="wn-item ${n.done ? 'done' : ''}" data-key="${n.k}">
+          <input type="checkbox" class="wn-check" ${n.done ? 'checked' : ''} aria-label="İşaretle">
+          <div class="txt">${escapeHtml(wnItemText(n))}</div>
+          <button class="wn-x" title="Sil">✕</button>
+        </div>`;
+      els.wnListOpen.innerHTML = open.map(row).join('') ||
+        '<div class="wn-hint">Liste boş — aşağıdan ekle 🍿</div>';
+      if (done.length){
+        els.wnDoneWrap.style.display = '';
+        els.wnDoneCount.textContent = done.length + ' ';
+        els.wnDoneChev.textContent = wnDoneCollapsed ? '▸ ' : '▾ ';
+        els.wnListDone.style.display = wnDoneCollapsed ? 'none' : '';
+        els.wnListDone.innerHTML = done.map(row).join('');
+      } else {
+        els.wnDoneWrap.style.display = 'none';
+      }
     }
-    if (els.wnGrid) els.wnGrid.addEventListener('click', async e => {
-      const del = e.target.closest('.wn-del');
-      if (del){
-        if (!confirm('Bu notu silmek istediğine emin misin?')) return;
-        try { await update(ref(db, 'watchlist'), { [del.getAttribute('data-key')]: null }); }
-        catch(err){ alert(err.message); }
+    async function wnAdd(text){
+      const u = auth.currentUser; if (!u) return;
+      const t = (text || '').trim(); if (!t) return;
+      try {
+        await push(ref(db, 'watchlist'), { text: t, done: false, by: u.displayName || u.email, byUid: u.uid, at: Date.now() });
+      } catch(e){ alert(e.message); }
+    }
+    if (els.wnNewInput){
+      els.wnNewInput.addEventListener('keydown', e => {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        const v = els.wnNewInput.value;
+        els.wnNewInput.value = '';
+        wnAdd(v);
+      });
+      els.wnNewInput.addEventListener('blur', () => {
+        const v = els.wnNewInput.value;
+        if (v.trim()){ els.wnNewInput.value = ''; wnAdd(v); }
+      });
+    }
+    function wnStartEdit(item){
+      const key = item.getAttribute('data-key');
+      const n = latestWatch[key]; if (!n) return;
+      const txtEl = item.querySelector('.txt');
+      if (!txtEl || item.querySelector('.wn-edit')) return;
+      const inp = document.createElement('input');
+      inp.className = 'wn-edit';
+      inp.maxLength = 200;
+      inp.value = wnItemText(n);
+      txtEl.replaceWith(inp);
+      inp.focus();
+      try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch(e){}
+      let committed = false;
+      const commit = async save => {
+        if (committed) return; committed = true;
+        const v = inp.value.trim();
+        if (save && v && v !== wnItemText(n)){
+          try { await update(ref(db, `watchlist/${key}`), { text: v, title: null, updatedAt: Date.now() }); }
+          catch(e){ alert(e.message); }
+        }
+        renderWatchNotes();
+      };
+      inp.addEventListener('keydown', ev => {
+        if (ev.key === 'Enter'){ ev.preventDefault(); commit(true); }
+        else if (ev.key === 'Escape'){ ev.stopPropagation(); commit(false); }
+      });
+      inp.addEventListener('blur', () => commit(true));
+    }
+    function wnListClick(e){
+      const item = e.target.closest('.wn-item'); if (!item) return;
+      const key = item.getAttribute('data-key');
+      if (e.target.classList.contains('wn-check')){
+        const n = latestWatch[key]; if (!n) return;
+        update(ref(db, `watchlist/${key}`), { done: !n.done, doneAt: !n.done ? Date.now() : null })
+          .catch(err => alert(err.message));
         return;
       }
-      const card = e.target.closest('.wn-card');
-      if (card) openWnModal(card.getAttribute('data-key'));
-    });
-    function openWnModal(key){
-      const n = latestWatch[key]; if (!n) return;
-      wnEditKey = key;
-      wnmColor = (n.color || 0) % WN_COLORS.length;
-      document.getElementById('wnmTitle').value = n.title || '';
-      document.getElementById('wnmText').value = n.text || '';
-      renderColorDots(document.getElementById('wnmColors'), wnmColor);
-      els.wnModal.classList.add('open');
+      if (e.target.closest('.wn-x')){
+        if (!confirm('Bu öğeyi silmek istediğine emin misin?')) return;
+        update(ref(db, 'watchlist'), { [key]: null }).catch(err => alert(err.message));
+        return;
+      }
+      if (e.target.closest('.txt')) wnStartEdit(item);
     }
-    function closeWnModal(){ wnEditKey = null; els.wnModal.classList.remove('open'); }
-    document.getElementById('wnmColors').addEventListener('click', e => {
-      const d = e.target.closest('.wn-dot'); if (!d) return;
-      wnmColor = parseInt(d.getAttribute('data-ci'), 10) || 0;
-      renderColorDots(document.getElementById('wnmColors'), wnmColor);
+    if (els.wnListOpen) els.wnListOpen.addEventListener('click', wnListClick);
+    if (els.wnListDone) els.wnListDone.addEventListener('click', wnListClick);
+    if (els.wnDoneToggle) els.wnDoneToggle.addEventListener('click', () => {
+      wnDoneCollapsed = !wnDoneCollapsed;
+      renderWatchNotes();
     });
-    document.getElementById('wnmSave').onclick = async () => {
-      if (!wnEditKey || !auth.currentUser) return;
-      const title = (document.getElementById('wnmTitle').value || '').trim();
-      const text = (document.getElementById('wnmText').value || '').trim();
-      if (!title && !text){ toast('Not boş olamaz — silmek istersen 🗑 kullan'); return; }
-      try {
-        await update(ref(db, `watchlist/${wnEditKey}`), { title, text, color: wnmColor, updatedAt: Date.now() });
-        closeWnModal();
-      } catch(e){ alert(e.message); }
-    };
-    document.getElementById('wnmDelete').onclick = async () => {
-      if (!wnEditKey) return;
-      if (!confirm('Bu notu silmek istediğine emin misin?')) return;
-      try { await update(ref(db, 'watchlist'), { [wnEditKey]: null }); closeWnModal(); }
-      catch(e){ alert(e.message); }
-    };
-    document.getElementById('wnmCancel').onclick = closeWnModal;
-    document.getElementById('wnmClose').onclick = closeWnModal;
-    if (els.wnModal) els.wnModal.addEventListener('click', e => { if (e.target === els.wnModal) closeWnModal(); });
+
+    /* ---- arka plan seçici ---- */
+    function renderBgPal(){
+      els.wnBgPal.innerHTML = WN_BGS.map(b =>
+        `<button class="wn-bg" data-bg="${b.id}" title="${b.name}" style="background:${b.css || 'var(--card)'}"></button>`
+      ).join('');
+    }
+    if (els.wnBgBtn) els.wnBgBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      const open = els.wnBgPal.style.display !== 'none';
+      if (open){ els.wnBgPal.style.display = 'none'; return; }
+      renderBgPal();
+      els.wnBgPal.style.display = '';
+    });
+    document.addEventListener('click', e => {
+      if (!els.wnBgPal || els.wnBgPal.style.display === 'none') return;
+      const b = e.target.closest('.wn-bg');
+      if (b){
+        update(ref(db, 'watchlist/_meta'), { bg: b.getAttribute('data-bg') }).catch(err => alert(err.message));
+        els.wnBgPal.style.display = 'none';
+        return;
+      }
+      if (!e.target.closest('#wnBgPal') && !e.target.closest('#wnBgBtn')) els.wnBgPal.style.display = 'none';
+    });
 
   </script>
   <script>
