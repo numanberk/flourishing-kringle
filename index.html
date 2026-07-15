@@ -1005,6 +1005,7 @@
     }
     .lib-title{ font-weight:700; color:var(--text); overflow-wrap:anywhere; }
     .lib-del{ flex:none; border-radius:999px; padding:4px 10px; }
+    .lib-pending{ color:var(--acc); }
     .lib-mails{ margin-top:10px; }
     .lib-mails code{
       font-size:11px; background:var(--tag-bg); border:1px solid var(--border);
@@ -1778,7 +1779,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, updateProfile, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
-    import { getDatabase, ref, update, get, onValue, onDisconnect, push, query, limitToLast } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+    import { getDatabase, ref, set, update, get, onValue, onDisconnect, push, query, limitToLast } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
     import { getStorage, ref as sRef, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js";
 
     /* ======= Firebase ======= */
@@ -2916,10 +2917,7 @@
     });
 
     /* ---------- push notifications (kilitli ekran, PWA) ---------- */
-    // Netlify'dan servis ediliyorsa oradaki fonksiyon, Cloudflare'dan ise /api yolu
-    const PUSH_ENDPOINT = location.hostname.endsWith('netlify.app')
-      ? 'https://iyikibal.netlify.app/.netlify/functions/send-push'
-      : '/api/send-push';
+    const PUSH_ENDPOINT = '/api/send-push';   // Cloudflare Pages Function
     let swReg = null;
     if ('serviceWorker' in navigator){
       navigator.serviceWorker.register('/sw.js').then(r => { swReg = r; }).catch(() => {});
@@ -3358,10 +3356,38 @@
     }
 
     /* ---------- library: PDF → Kindle mails + shared reading list ---------- */
-    const LIB_ENDPOINT = 'https://iyikibal.netlify.app/.netlify/functions/send-to-kindle';
+    /* Kindle gönderimi Google Apps Script üzerinden yapılır (Netlify yerine):
+       6 dakika çalışma süresi → büyük PDF'ler sorunsuz gider, kredi/limit yok.
+       ⬇ script.google.com'da dağıttıktan sonra çıkan ".../exec" adresini buraya yapıştır. */
+    const LIB_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyzBMzAzZ1PBiIyl-z_XLNRKfBnPyKtLDSJl_sLAH36t8II5b3CZIhOubQJ0Xqmeg/exec';
+    const LIB_TOKEN = 'co-kindle-2f7a91c4de';   // Kindle.gs içindeki SECRET ile aynı olmalı
     const LIB_MAX_BYTES = 25 * 1024 * 1024;  // Storage üzerinden gidiyor; e-posta tarafının pratik tavanı ~25MB (Resend eki + Kindle 50MB sınırı)
     let latestLibrary = {};
     let libAttached = false;
+
+    /* Arka plan fonksiyonu sonucu tarayıcıya dönemez; durumu Firebase'e yazar.
+       Burada dinleyip kullanıcıya bildiriyor ve iş düğümünü temizliyoruz. */
+    function watchKindleJob(jobId, libKey){
+      const jref = ref(db, `kindleJobs/${jobId}`);
+      const stop = onValue(jref, async s => {
+        const v = s.val();
+        if (!v || !v.status || v.status === 'pending') return;
+        stop();
+        const ok = v.status === 'sent';
+        toast(ok ? 'İki Kindle\u2019a da gönderildi 📚✉️' : ('Kindle\u2019a gitmedi: ' + (v.error || 'bilinmeyen hata')));
+        try { await update(ref(db, `library/${libKey}`), { sent: ok, kindleError: ok ? null : (v.error || 'hata') }); } catch(e){}
+        try { await set(jref, null); } catch(e){}
+      }, () => {});
+      // 7 dk sonra hâlâ ses yoksa (Apps Script tavanı 6 dk) haber ver
+      setTimeout(async () => {
+        try { stop(); } catch(e){}
+        const cur = (latestLibrary[libKey] || {}).sent;
+        if (cur === 'pending'){
+          toast('Kindle gönderimi yanıt vermedi — Apps Script kurulumunu kontrol et 🤔');
+          try { await update(ref(db, `library/${libKey}`), { sent: false, kindleError: 'Betikten yanıt gelmedi' }); } catch(e){}
+        }
+      }, 7 * 60000);
+    }
 
     function attachLibrary(){
       if (libAttached) return; libAttached = true;
@@ -3414,7 +3440,7 @@
           <div class="spaced" style="gap:8px">
             <div style="min-width:0">
               <div class="lib-title">📕 ${escapeHtml(b.title || b.filename || 'Kitap')}</div>
-              <div class="muted small">${escapeHtml(b.by || 'Biri')} ekledi · ${new Date(b.at || 0).toLocaleDateString('tr-TR')} · ${fmtSize(b.sizeKB)}${b.url ? ' · <a href="' + escapeHtml(b.url) + '" target="_blank" rel="noopener">⬇ indir</a>' : ''}${b.sent === false ? ' · <span style="color:var(--danger)">Kindle\u2019a gönderilemedi</span>' : ''}</div>
+              <div class="muted small">${escapeHtml(b.by || 'Biri')} ekledi · ${new Date(b.at || 0).toLocaleDateString('tr-TR')} · ${fmtSize(b.sizeKB)}${b.url ? ' · <a href="' + escapeHtml(b.url) + '" target="_blank" rel="noopener">⬇ indir</a>' : ''}${b.sent === 'pending' ? ' · <span class="lib-pending">✉️ gönderiliyor…</span>' : (b.sent === false ? ' · <span style="color:var(--danger)" title="' + escapeHtml(b.kindleError || '') + '">Kindle\u2019a gönderilemedi</span>' : '')}</div>
             </div>
             <button class="lib-del small" data-key="${b.k}" title="Kaydı sil">✕</button>
           </div>
@@ -3458,22 +3484,27 @@
         return;
       }
 
-      // 2) tell the function to fetch it and mail both Kindles (tiny request, no size limit issue)
+      // 2) arka plan fonksiyonunu tetikle (hemen 202 döner, mail arkada gider)
       libBusy(true, '✉️ Kindle\u2019lara gönderiliyor…');
-      let sent = true, errMsg = '';
-      try {
-        const r = await fetch(LIB_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ filename: f.name, url })
-        });
-        if (!r.ok){
-          sent = false;
-          try { errMsg = (await r.json()).error || ('HTTP ' + r.status); } catch(e){ errMsg = 'HTTP ' + r.status; }
-        }
-      } catch(e){ sent = false; errMsg = e.message; }
+      const jobId = 'j' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+      let queued = true, errMsg = '';
+      if (!/^https:\/\//.test(LIB_ENDPOINT)){
+        queued = false; errMsg = 'Kindle betiği adresi ayarlanmamış (LIB_ENDPOINT)';
+      } else {
+        try {
+          /* Apps Script OPTIONS preflight'ı yanıtlamaz; text/plain + no-cors ile
+             istek "basit istek" sayılır ve sorunsuz gider. Cevabı okuyamayız —
+             gerekmiyor da: sonuç kindleJobs/{jobId} üzerinden Firebase'den gelir. */
+          await fetch(LIB_ENDPOINT, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ filename: f.name, url, jobId, token: LIB_TOKEN })
+          });
+        } catch(e){ queued = false; errMsg = e.message; }
+      }
 
-      if (!sent && !confirm('Kindle\u2019lara gönderilemedi (' + errMsg + ').\nYine de kütüphaneye kaydedilsin mi? (⬇ indir bağlantısı yine de çalışır)')){
+      if (!queued && !confirm('Kindle gönderimi başlatılamadı (' + errMsg + ').\nYine de kütüphaneye kaydedilsin mi? (⬇ indir bağlantısı yine de çalışır)')){
         try { await deleteObject(sRef(storage, storagePath)); } catch(e){}
         libBusy(false); libHintMsg('Gönderilemedi: ' + errMsg);
         return;
@@ -3482,11 +3513,14 @@
         await update(ref(db, `library/${key}`), {
           title, filename: f.name, sizeKB: Math.round(f.size / 1024),
           by: u.displayName || u.email, byUid: u.uid, at: Date.now(),
-          sent, url, storagePath
+          sent: queued ? 'pending' : false, url, storagePath, jobId: queued ? jobId : null
         });
         els.libTitle.value = '';
         libHintMsg('');
-        toast(sent ? 'İki Kindle\u2019a da gönderildi 📚✉️' : 'Kütüphaneye eklendi (mail gönderilemedi)');
+        toast(queued
+          ? 'Kütüphaneye eklendi 📚 — Kindle\u2019lara gönderiliyor, büyük dosyalar birkaç dakika sürebilir ✉️'
+          : 'Kütüphaneye eklendi (mail gönderilemedi)');
+        if (queued) watchKindleJob(jobId, key);
       } catch(e){ alert(e.message); }
       libBusy(false);
     });
