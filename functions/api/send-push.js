@@ -13,7 +13,8 @@ const MSGS = {
   study: f => ({ title: f + " çalışmaya başladı 📚", body: "Sen de katıl!" }),
   nudge: f => ({ title: f + " seni dürttü 👉", body: "Hadi çalışmaya!" }),
   watch: f => ({ title: "🎬 Bişeyler izleyelim!", body: f + " film gecesi istiyor 🍿" }),
-  meet:  f => ({ title: "🎥 Meet hazır!", body: f + " seni bekliyor — 🎬 sekmesinden katıl" })
+  meet:  f => ({ title: "🎥 Meet hazır!", body: f + " seni bekliyor — 🎬 sekmesinden katıl" }),
+  goal:  f => ({ title: f + " hedefini tamamladı 🎉", body: "Tebrik etmeyi unutma!" })
 };
 const cors = {
   "Access-Control-Allow-Origin": "*",
