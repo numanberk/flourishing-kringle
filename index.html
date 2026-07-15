@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Study Buddies — Global Room</title>
+  <title>Çalışma Odası</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -116,6 +116,43 @@
     /* ==== Header study controls ==== */
     .controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
     .controls .group{display:flex;align-items:center;gap:8px}
+
+    /* ==== app dock: tek parça sekme çubuğu ==== */
+    .dock{
+      display:flex; align-items:stretch; gap:2px;
+      background:var(--card); border:1px solid var(--border);
+      border-radius:16px; padding:5px;
+      box-shadow:var(--shadow); position:relative; overflow:hidden;
+    }
+    .dock::before{
+      content:""; position:absolute; top:0; left:14%; right:14%; height:2px;
+      background:linear-gradient(90deg, transparent, var(--acc), transparent);
+      opacity:.75; pointer-events:none;
+    }
+    .dock-btn{
+      display:flex; flex-direction:column; align-items:center; gap:3px;
+      background:transparent; border:none; border-radius:12px;
+      padding:7px 12px 6px; cursor:pointer; min-width:58px;
+    }
+    .dock-btn:hover{ background:var(--tag-bg); box-shadow:none; transform:none; }
+    .dock-btn .di{ font-size:17px; line-height:1; transition:transform .15s ease; }
+    .dock-btn:hover .di{ transform:scale(1.25) rotate(-8deg); }
+    .dock-btn .dl{ font-size:10px; letter-spacing:.05em; color:var(--muted); font-weight:600; }
+    .dock-btn:hover .dl{ color:var(--text); }
+    #toggleStudyBtn{
+      background:linear-gradient(135deg, var(--acc), color-mix(in srgb, var(--acc) 55%, #2b1a6b));
+      color:#fff; border:none; font-weight:700; padding:11px 18px;
+    }
+    #toggleStudyBtn:hover{ filter:brightness(1.1); }
+    @media (max-width:640px){
+      .dock{ padding:4px; }
+      .dock-btn{ min-width:44px; padding:8px 9px; }
+      .dock-btn .dl{ display:none; }
+    }
+    @media (prefers-reduced-motion: reduce){
+      .dock-btn .di{ transition:none; }
+      .dock-btn:hover .di{ transform:none; }
+    }
 
     /* ==== Avatar styles ==== */
     .avatar {
@@ -1014,13 +1051,15 @@
       <div class="title"><span class="dot"></span> Çalışma Odası</div>
 
       <div class="controls" id="topRight">
-        <button id="themeToggle" class="theme-toggle" title="Temayı değiştir">🌙 Koyu</button>
-        <button id="focusBtn" class="theme-toggle" title="Odak modu" style="display:none">🎯 Odak</button>
-        <button id="pomoBtn" class="theme-toggle" title="Pomodoro" style="display:none">🍅 Pomodoro</button>
-        <button id="statsBtn" class="theme-toggle" title="İstatistik ve günlük" style="display:none">📊</button>
-        <button id="libBtn" class="theme-toggle" title="Kütüphane" style="display:none">📚</button>
-        <button id="watchBtn" class="theme-toggle" title="Film gecesi" style="display:none">🎬</button>
-        <button id="notifBtn" class="theme-toggle" title="Bildirimleri aç/kapat" style="display:none">🔕</button>
+        <nav class="dock" aria-label="Uygulama sekmeleri">
+          <button id="themeToggle" class="dock-btn" title="Temayı değiştir"><span class="di">🌙</span><span class="dl">Tema</span></button>
+          <button id="focusBtn" class="dock-btn" title="Odak modu" style="display:none"><span class="di">🎯</span><span class="dl">Odak</span></button>
+          <button id="pomoBtn" class="dock-btn" title="Pomodoro" style="display:none"><span class="di">🍅</span><span class="dl">Pomodoro</span></button>
+          <button id="statsBtn" class="dock-btn" title="İstatistik ve günlük" style="display:none"><span class="di">📊</span><span class="dl">İstatistik</span></button>
+          <button id="libBtn" class="dock-btn" title="Kütüphane" style="display:none"><span class="di">📚</span><span class="dl">Kitaplar</span></button>
+          <button id="watchBtn" class="dock-btn" title="Film gecesi" style="display:none"><span class="di">🎬</span><span class="dl">Film</span></button>
+          <button id="notifBtn" class="dock-btn" title="Bildirimleri aç/kapat" style="display:none"><span class="di">🔕</span><span class="dl">Bildirim</span></button>
+        </nav>
 
         <div id="pomoPanel" class="pomo-panel" style="display:none">
           <label>🍅 Çalışma <input id="pomoWork" type="number" min="1" max="180"> dk</label>
@@ -1594,17 +1633,25 @@
       wnModal: document.getElementById("wnModal")
     });
 
+    /* dock butonlarının ikon/etiketini güncelle (textContent yapıyı bozar) */
+    function setDock(btn, icon, label){
+      if (!btn) return;
+      const i = btn.querySelector('.di'), l = btn.querySelector('.dl');
+      if (i) i.textContent = icon;
+      if (l && label != null) l.textContent = label;
+    }
+
     /* ---------------- THEME: init + toggle (persist) ---------------- */
     const THEME_KEY = "sb_theme";
     function applyTheme(theme){
       const root = document.documentElement;
       if(theme === "dark"){
         root.classList.add("theme-dark");
-        els.themeToggle.textContent = "☀️ Açık";
+        setDock(els.themeToggle, "☀️");
         els.themeToggle.title = "Açık temaya geç";
       }else{
         root.classList.remove("theme-dark");
-        els.themeToggle.textContent = "🌙 Koyu";
+        setDock(els.themeToggle, "🌙");
         els.themeToggle.title = "Koyu temaya geç";
       }
     }
@@ -2376,7 +2423,7 @@
       if (!els.pomoPill || !els.pomoBtn) return;
       if (!pomo.active){
         els.pomoPill.style.display = 'none';
-        els.pomoBtn.textContent = '🍅 Pomodoro';
+        setDock(els.pomoBtn, '🍅', 'Pomodoro');
         updateFocus();
         return;
       }
@@ -2386,7 +2433,7 @@
       els.pomoPill.style.display = '';
       els.pomoPill.className = 'pill ' + (pomo.phase === 'work' ? 'study' : 'idle') + (left < 10000 && left > 0 ? ' urgent' : '');
       els.pomoPill.textContent = (pomo.phase === 'work' ? '🍅 ' : '☕ ') + mm + ':' + ss;
-      els.pomoBtn.textContent = '⏹ Pomodoro bitir';
+      setDock(els.pomoBtn, '⏹', 'Bitir');
       updateFocus();
     }
     function togglePomoPanel(){
@@ -2482,7 +2529,7 @@
       try { new Notification(title, { body }); } catch(e){}
     }
     function renderNotifBtn(){
-      if (els.notifBtn) els.notifBtn.textContent = notifOn() ? '🔔' : '🔕';
+      setDock(els.notifBtn, notifOn() ? '🔔' : '🔕');
     }
     if (els.notifBtn) els.notifBtn.onclick = async () => {
       if (notifOn()){
