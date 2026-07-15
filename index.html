@@ -154,6 +154,55 @@
       .dock-btn:hover .di{ transform:none; }
     }
 
+    /* ==== overlay close (kitaplar/film/profil) ==== */
+    .ov-close{
+      position:fixed; top:14px; right:14px; z-index:30;
+      width:44px; height:44px; border-radius:50%;
+      background:var(--card); border:1px solid var(--border); color:var(--text);
+      font-size:18px; line-height:1; padding:0;
+      display:flex; align-items:center; justify-content:center;
+      box-shadow:var(--shadow); backdrop-filter:blur(6px);
+      transition:transform .2s ease, background .2s ease;
+    }
+    .ov-close:hover{ transform:rotate(90deg) scale(1.06); background:var(--tag-bg); box-shadow:var(--hover-shadow); }
+
+    /* ==== avatar fotoğrafları ==== */
+    .avatar img, .collab .av img{ width:100%; height:100%; object-fit:cover; border-radius:50%; display:block; }
+    .auth-chip{ cursor:pointer; }
+    .auth-chip:hover{ box-shadow:var(--hover-shadow); }
+
+    /* ==== odak videosu küçültme ==== */
+    .video-card .vhead{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px; }
+    .video-card .vhead h3{ margin:0; }
+    .video-card.min .video-wrap, .video-card.min .video-controls, .video-card.min .vhint{ display:none; }
+    #videoMinBtn{ font-size:12px; padding:6px 12px; border-radius:999px; flex:none; }
+
+    /* ==== profil ==== */
+    #profView{
+      position:fixed; inset:0; z-index:8000; display:none;
+      background:var(--bg); overflow-y:auto; -webkit-overflow-scrolling:touch;
+    }
+    #profView.open{ display:block; }
+    .prof-head{ display:flex; gap:20px; align-items:center; margin-top:14px; flex-wrap:wrap; }
+    .prof-av-wrap{ position:relative; flex:none; }
+    .prof-av{
+      width:100px; height:100px; border-radius:50%; overflow:hidden;
+      display:flex; align-items:center; justify-content:center;
+      font-size:36px; font-weight:800; color:#fff;
+      background:linear-gradient(135deg, var(--acc), color-mix(in srgb, var(--acc) 50%, #2b1a6b));
+      box-shadow:var(--shadow);
+    }
+    .prof-av img{ width:100%; height:100%; object-fit:cover; }
+    .prof-cam{
+      position:absolute; right:-4px; bottom:-4px; width:36px; height:36px;
+      border-radius:50%; padding:0; font-size:15px;
+      background:var(--card); border:1px solid var(--border); box-shadow:var(--shadow);
+    }
+    .prof-stats{ display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; margin-top:12px; }
+    .prof-stat{ background:var(--card); border:1px solid var(--border); border-radius:12px; padding:10px 12px; }
+    .prof-stat .v{ font-size:18px; font-weight:800; color:var(--acc); font-variant-numeric:tabular-nums; }
+    .prof-stat .k{ font-size:11px; color:var(--muted); margin-top:3px; letter-spacing:.04em; }
+
     /* ==== Avatar styles ==== */
     .avatar {
       --h: 220;
@@ -1059,6 +1108,7 @@
           <button id="libBtn" class="dock-btn" title="Kütüphane" style="display:none"><span class="di">📚</span><span class="dl">Kitaplar</span></button>
           <button id="watchBtn" class="dock-btn" title="Film gecesi" style="display:none"><span class="di">🎬</span><span class="dl">Film</span></button>
           <button id="notifBtn" class="dock-btn" title="Bildirimleri aç/kapat" style="display:none"><span class="di">🔕</span><span class="dl">Bildirim</span></button>
+          <button id="profBtn" class="dock-btn" title="Profil" style="display:none"><span class="di">👤</span><span class="dl">Profil</span></button>
         </nav>
 
         <div id="pomoPanel" class="pomo-panel" style="display:none">
@@ -1103,7 +1153,10 @@
           </div>
 
           <div class="card video-card" id="collabVideoCard" style="margin-top:16px;">
-            <h3 style="margin-top:0;color:var(--acc)">Odak Videosu</h3>
+            <div class="vhead">
+              <h3 style="color:var(--acc)">Odak Videosu</h3>
+              <button id="videoMinBtn" title="Küçült/Göster">— Küçült</button>
+            </div>
             <div class="video-wrap">
               <video id="collabVideo" playsinline muted loop preload="metadata" poster="/videos/poster.jpg"
                      data-src-numan-solo="/videos/numan-solo.mp4"
@@ -1117,7 +1170,7 @@
               <button id="videoPlayPause">Durdur</button>
               <button id="videoMuteUnmute">Sesi Aç</button>
             </div>
-            <div class="muted small">
+            <div class="muted small vhint">
               • Videolar <code>/videos/</code> klasöründen gelir; kendi MP4'lerinle değiştirebilirsin.
               • Sessiz, satır içi ve döngüde, otomatik oynatmaya uygun.
             </div>
@@ -1161,7 +1214,7 @@
 
   <!-- ============ LIBRARY (PDF → Kindle + okuma listesi) ============ -->
   <div id="libView">
-    <button id="libClose" class="theme-toggle focus-exit">✕ Kapat</button>
+    <button id="libClose" class="ov-close" title="Kapat">✕</button>
     <div class="lib-inner">
       <h2>📚 Kütüphane</h2>
       <div class="muted" style="margin-bottom:14px">
@@ -1186,7 +1239,7 @@
 
   <!-- ============ MOVIE NIGHT (izlenecekler + meet) ============ -->
   <div id="watchView">
-    <button id="watchClose" class="theme-toggle focus-exit">✕ Kapat</button>
+    <button id="watchClose" class="ov-close" title="Kapat">✕</button>
     <div class="lib-inner">
       <h2 style="color:var(--acc);margin:0 0 6px">🎬 Film Gecesi</h2>
 
@@ -1232,6 +1285,40 @@
             <div id="wnListDone"></div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PROFILE ============ -->
+  <div id="profView">
+    <button id="profClose" class="ov-close" title="Kapat">✕</button>
+    <div class="lib-inner" style="max-width:560px">
+      <h2 style="color:var(--acc);margin:0 0 6px">👤 Profil</h2>
+      <div class="prof-head">
+        <div class="prof-av-wrap">
+          <div id="profAvatar" class="prof-av"></div>
+          <button id="profAvatarBtn" class="prof-cam" title="Fotoğrafı değiştir">📷</button>
+          <input type="file" id="profAvatarFile" accept="image/*" hidden>
+        </div>
+        <div style="flex:1;min-width:200px">
+          <div class="row" style="gap:8px;align-items:center">
+            <input id="profName" maxlength="30" placeholder="Görünen ad" style="flex:1;min-width:120px">
+            <button class="primary" id="profNameSave">Kaydet</button>
+          </div>
+          <div class="muted small" id="profEmail" style="margin-top:8px"></div>
+        </div>
+      </div>
+      <div class="stat-block">
+        <b class="stat-title">📈 Özet</b>
+        <div id="profStats" class="prof-stats"></div>
+        <div id="profBadges" style="margin-top:12px"></div>
+      </div>
+      <div class="stat-block" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+        <div>
+          <b class="stat-title">🚪 Oturum</b>
+          <div class="muted small" style="margin-top:4px">Hesabından çıkış yap</div>
+        </div>
+        <button id="profLogout" style="color:var(--danger)">Çıkış yap</button>
       </div>
     </div>
   </div>
@@ -1495,7 +1582,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, updateProfile, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
     import { getDatabase, ref, update, get, onValue, onDisconnect, push, query, limitToLast } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
     import { getStorage, ref as sRef, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js";
 
@@ -1544,9 +1631,10 @@
       let h=0; for(let i=0;i<s.length;i++) h=(h*31 + s.charCodeAt(i))>>>0;
       return h % 360;
     };
-    const avatarHTML = (name, key, size=32, varName='--h') => {
+    const avatarHTML = (name, key, size=32, varName='--h', img=null) => {
       const H = hashHue((key||'') + (name||'')); // deterministic per user
-      return `<span class="avatar" style="${varName}: ${H}; width:${size}px;height:${size}px;">${initials(name)}</span>`;
+      const inner = (img && /^data:image\//.test(img)) ? `<img src="${img}" alt="">` : initials(name);
+      return `<span class="avatar" style="${varName}: ${H}; width:${size}px;height:${size}px;">${inner}</span>`;
     };
 
     /* ---------- App State ---------- */
@@ -1630,7 +1718,18 @@
       wnNewInput: document.getElementById("wnNewInput"),
       wnBgBtn: document.getElementById("wnBgBtn"),
       wnBgPal: document.getElementById("wnBgPal"),
-      wnModal: document.getElementById("wnModal")
+      wnModal: document.getElementById("wnModal"),
+      profBtn: document.getElementById("profBtn"),
+      profView: document.getElementById("profView"),
+      profClose: document.getElementById("profClose"),
+      profAvatar: document.getElementById("profAvatar"),
+      profAvatarBtn: document.getElementById("profAvatarBtn"),
+      profAvatarFile: document.getElementById("profAvatarFile"),
+      profName: document.getElementById("profName"),
+      profNameSave: document.getElementById("profNameSave"),
+      profStats: document.getElementById("profStats"),
+      profBadges: document.getElementById("profBadges"),
+      profLogout: document.getElementById("profLogout")
     });
 
     /* dock butonlarının ikon/etiketini güncelle (textContent yapıyı bozar) */
@@ -1709,21 +1808,13 @@
 
     function renderAuthChip(user) {
       const name = user.displayName || user.email;
-      const chip = `
-        <span class="tag">${avatarHTML(name, user.uid, 18, '--h')} <span class="name">${escapeHtml(name)}</span></span>
-        <form id="nameForm" class="inline-form small">
-          <input id="newName" placeholder="Görünen adını ayarla" value="${escapeHtml(user.displayName || '')}"/>
-          <button class="primary" type="submit">Kaydet</button>
-        </form>`;
-      els.authArea.innerHTML = chip;
-      document.getElementById("nameForm").onsubmit = async e => {
-        e.preventDefault();
-        const val = document.getElementById("newName").value.trim();
-        if (!val) return;
-        await updateProfile(user, { displayName: val });
-        await update(ref(db, `users/${user.uid}`), { displayName: val });
-        renderAuthChip(user);
-      };
+      const av = ((latestUsers || {})[user.uid] || {}).avatar;
+      els.authArea.innerHTML = `
+        <button class="tag auth-chip" id="authChipBtn" title="Profil">
+          ${avatarHTML(name, user.uid, 20, '--h', av)} <span class="name">${escapeHtml(name)}</span>
+        </button>`;
+      const b = document.getElementById('authChipBtn');
+      if (b) b.onclick = () => { if (typeof openProf === 'function') openProf(); };
     }
 
     /* ---------------- App lifecycle ---------------- */
@@ -1737,6 +1828,7 @@
         if (els.libBtn) els.libBtn.style.display = "";
         if (els.watchBtn) els.watchBtn.style.display = "";
         if (els.notifBtn) els.notifBtn.style.display = "";
+        if (els.profBtn) els.profBtn.style.display = "";
         if (els.studyGroup) els.studyGroup.style.display = "";
         if (els.presenceGroup) els.presenceGroup.style.display = "";
         renderAuthChip(user);
@@ -1777,6 +1869,8 @@
         if (els.libBtn) els.libBtn.style.display = "none";
         if (els.watchBtn) els.watchBtn.style.display = "none";
         if (els.notifBtn) els.notifBtn.style.display = "none";
+        if (els.profBtn) els.profBtn.style.display = "none";
+        if (els.profView) els.profView.classList.remove("open");
         if (els.libView) els.libView.classList.remove("open");
         if (els.watchView) els.watchView.classList.remove("open");
         if (els.wnModal) els.wnModal.classList.remove("open");
@@ -1813,7 +1907,39 @@
     /* ---------------- Render from latest snapshots ---------------- */
     let prevStudyingMap = null;
     let prevOnlineMap = null;
+    let lastChipSig = '';
     const onlineToastAt = {};
+    function userCardHTML(d){
+      const safeName = escapeHtml(d.name);
+      return `
+        <div class="user-card ${d.studying ? 'is-studying' : ''}" data-uid="${d.uid}" data-sig="${escapeHtml(d.sig)}">
+          <div class="spaced">
+            <div style="display:flex;align-items:center;gap:8px">
+              ${avatarHTML(d.name, d.uid, 32, '--h', d.avatar)}
+              <h4 style="margin:0">${safeName}
+                ${d.studying ? '<span class="anim-eq" aria-label="studying"><i></i><i></i><i></i></span>' : ''}
+              </h4>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              ${!d.isMe ? `<button class="nudge-btn" data-uid="${d.uid}" title="Dürt">👉 Dürt</button>` : ''}
+              <span class="tag"><span class="status-dot ${d.isOnline ? 'dot-on' : 'dot-off'}"></span> ${d.isOnline ? 'çevrimiçi' : 'çevrimdışı'}</span>
+            </div>
+          </div>
+          <div class="row" style="margin-top:8px; gap:8px; align-items:center;">
+            <span class="pill ${d.studying ? 'study' : 'idle'}">${d.studying ? 'Çalışıyor' : 'Boşta'}</span>
+            ${d.studying && d.subject ? `<span class="tag">📚 ${escapeHtml(d.subject)}</span>` : ''}
+            <span class="muted">Şu an: <span data-f="cur">${msToHHMMSS(d.currentMs)}</span></span>
+          </div>
+          <div class="row" style="margin-top:10px; gap:14px; align-items:center; flex-wrap:nowrap;">
+            ${ringHTML(d.pct)}
+            <div style="min-width:0">
+              <div class="muted">Bugün: <b data-f="today">${msToHHMMSS(d.todayMs)}</b> / ${d.targetMin} dk hedef</div>
+              <div class="muted">Toplam: <b data-f="all">${msToHHMMSS(d.allTimeMs)}</b> · Seri: <b>${d.streak} 🔥</b></div>
+            </div>
+          </div>
+          ${badgesHTML(d.streak)}
+        </div>`;
+    }
     function draw(){
       const users = latestUsers || {};
       const presence = latestPresence || {};
@@ -1821,67 +1947,79 @@
       const myUid = auth.currentUser?.uid;
       const myEmail = (auth.currentUser?.email || '').toLowerCase();
 
-      const cards = [];
       const lb = [];
       const studyingList = [];
+      const uids = Object.keys(users);
+      const cardData = {};
+      const listEl = els.usersList;
+      let structureChanged = listEl.querySelectorAll('.user-card[data-uid]').length !== uids.length;
 
-      Object.keys(users).forEach(uid => {
+      uids.forEach(uid => {
         const u = users[uid];
-        const isOnline = presence[uid]?.online;
+        const isOnline = !!(presence[uid] && presence[uid].online);
         const name = u.displayName || "Kullanıcı";
-        const safeName = escapeHtml(name);
         const studying = !!u.studying;
         const startAt = u.currentStartAt;
         const perDay = u.totals?.perDay || {};
         const todayMsBase = perDay[today] || 0;
         const allTimeMsBase = u.totals?.allTimeMs || 0;
-
         let currentMs = 0;
         if (studying && startAt) currentMs = Math.max(0, Date.now() - startAt);
-
         const todayMs = todayMsBase + (studying ? currentMs : 0);
         const allTimeMs = allTimeMsBase + (studying ? currentMs : 0);
-
         if (studying) studyingList.push({ uid, name });
-
         const targetMin = u.dailyTargetMin || 120;
         const pct = todayMs / (targetMin * 60000);
-        lb.push({ name: safeName, ms: todayMs, done: pct >= 1 });
-
-        cards.push(`
-          <div class="user-card ${studying ? 'is-studying' : ''}">
-            <div class="spaced">
-              <div style="display:flex;align-items:center;gap:8px">
-                ${avatarHTML(name, uid)}
-                <h4 style="margin:0">${safeName}
-                  ${studying ? '<span class="anim-eq" aria-label="studying"><i></i><i></i><i></i></span>' : ''}
-                </h4>
-              </div>
-              <div style="display:flex;align-items:center;gap:8px">
-                ${uid !== myUid ? `<button class="nudge-btn" data-uid="${uid}" title="Dürt">👉 Dürt</button>` : ''}
-                <span class="tag"><span class="status-dot ${isOnline ? 'dot-on':'dot-off'}"></span> ${isOnline?'çevrimiçi':'çevrimdışı'}</span>
-              </div>
-            </div>
-            <div class="row" style="margin-top:8px; gap:8px; align-items:center;">
-              <span class="pill ${studying?'study':'idle'}">${studying?'Çalışıyor':'Boşta'}</span>
-              ${studying && u.currentSubject ? `<span class="tag">📚 ${escapeHtml(u.currentSubject)}</span>` : ''}
-              <span class="muted">Şu an: ${msToHHMMSS(currentMs)}</span>
-            </div>
-            <div class="row" style="margin-top:10px; gap:14px; align-items:center; flex-wrap:nowrap;">
-              ${ringHTML(pct)}
-              <div style="min-width:0">
-                <div class="muted">Bugün: <b>${msToHHMMSS(todayMs)}</b> / ${targetMin} dk hedef</div>
-                <div class="muted">Toplam: <b>${msToHHMMSS(allTimeMs)}</b> · Seri: <b>${u.streak || 0} 🔥</b></div>
-              </div>
-            </div>
-            ${badgesHTML(u.streak || 0)}
-          </div>
-        `);
+        const avatar = (u.avatar && /^data:image\//.test(u.avatar)) ? u.avatar : null;
+        lb.push({ uid, name: escapeHtml(name), ms: todayMs, done: pct >= 1 });
+        // yapısal imza: bunlar değişmedikçe kart YENİDEN ÇİZİLMEZ (hover titremesi çözümü)
+        const sig = [name, studying, isOnline, u.currentSubject || '', u.streak || 0, targetMin, pct >= 1, avatar ? avatar.length : 0, uid !== myUid].join('¦');
+        cardData[uid] = { uid, name, studying, isOnline, currentMs, todayMs, allTimeMs, targetMin, pct, avatar, subject: u.currentSubject, streak: u.streak || 0, sig, isMe: uid === myUid };
+        const cardEl = listEl.querySelector(`.user-card[data-uid="${uid}"]`);
+        if (!cardEl || cardEl.dataset.sig !== sig) structureChanged = true;
       });
 
-      els.usersList.innerHTML = cards.join('');
-      lb.sort((a,b)=>b.ms-a.ms);
-      els.leaderboard.innerHTML = lb.map(item => `<li><span>${item.name}${item.done ? ' 🎯' : ''}</span><span>${msToHHMMSS(item.ms)}</span></li>`).join('');
+      if (structureChanged){
+        listEl.innerHTML = uids.map(uid => userCardHTML(cardData[uid])).join('');
+      } else {
+        // sadece sayıları güncelle — hover animasyonu bozulmadan sürer
+        uids.forEach(uid => {
+          const d = cardData[uid];
+          const cardEl = listEl.querySelector(`.user-card[data-uid="${uid}"]`);
+          if (!cardEl) return;
+          const setF = (f, v) => { const el = cardEl.querySelector(`[data-f="${f}"]`); if (el) el.textContent = v; };
+          setF('cur', msToHHMMSS(d.currentMs));
+          setF('today', msToHHMMSS(d.todayMs));
+          setF('all', msToHHMMSS(d.allTimeMs));
+          const ringTxt = cardEl.querySelector('.ring text');
+          if (ringTxt) ringTxt.textContent = Math.min(999, Math.round(d.pct * 100)) + '%';
+          const arcs = cardEl.querySelectorAll('.ring circle');
+          if (arcs.length > 1){
+            const r = 16, c = 2 * Math.PI * r;
+            arcs[1].setAttribute('stroke-dashoffset', (c * (1 - Math.min(1, d.pct))).toFixed(1));
+          }
+        });
+      }
+
+      lb.sort((a, b) => b.ms - a.ms);
+      const lbSig = lb.map(i => i.uid + '¦' + i.name + '¦' + (i.done ? 1 : 0)).join('||');
+      if (els.leaderboard.dataset.sig !== lbSig || !els.leaderboard.children.length){
+        els.leaderboard.dataset.sig = lbSig;
+        els.leaderboard.innerHTML = lb.map(i => `<li data-uid="${i.uid}"><span>${i.name}${i.done ? ' 🎯' : ''}</span><span data-f="t">${msToHHMMSS(i.ms)}</span></li>`).join('');
+      } else {
+        lb.forEach(i => {
+          const el = els.leaderboard.querySelector(`li[data-uid="${i.uid}"] [data-f="t"]`);
+          if (el) el.textContent = msToHHMMSS(i.ms);
+        });
+      }
+
+      // başlık çipini (avatar/ad) değişince tazele
+      if (auth.currentUser && users[myUid]){
+        const meU = users[myUid];
+        const chipSig = (meU.displayName || '') + '¦' + ((meU.avatar || '').length);
+        if (chipSig !== lastChipSig){ lastChipSig = chipSig; renderAuthChip(auth.currentUser); }
+      }
+      renderProfLive();
 
       // partner started studying → notification + toast
       const nowMap = {};
@@ -1938,6 +2076,10 @@
       renderStatsLive();
     }
 
+    function collabAv(uid, name){
+      const a = ((latestUsers || {})[uid] || {}).avatar;
+      return (a && /^data:image\//.test(a)) ? `<img src="${a}" alt="">` : initials(name);
+    }
     function updateCollab(studyingList, myUid){
       const meIdx = studyingList.findIndex(u => u.uid === myUid);
       const others = studyingList.filter(u => u.uid !== myUid);
@@ -1953,8 +2095,8 @@
                 <path d="M2 8 C 30 2, 90 14, 118 8"></path>
               </svg>
             </div>
-            <div class="av" style="--h1:${meH}">${initials(me.name)}</div>
-            <div class="av partner" style="--h2:${pH}">${initials(partner.name)}</div>
+            <div class="av" style="--h1:${meH}">${collabAv(me.uid, me.name)}</div>
+            <div class="av partner" style="--h2:${pH}">${collabAv(partner.uid, partner.name)}</div>
           </div>`;
       } else {
         els.collabWrap.innerHTML = '';
@@ -1962,6 +2104,7 @@
     }
 
     /* ---------------- Video routing logic ---------------- */
+    let videoMin = localStorage.getItem('sb_vidmin') === '1';
     let collabList = null;        // keşfedilen collab listesi (null = henüz bakılmadı)
     let collabDiscovering = false;
     let collabIdx = 0;
@@ -1991,18 +2134,34 @@
       v.load();
       v.play().then(() => {
         els.videoOverlay.classList.remove('show');
+        if (videoMin) v.pause();
       }).catch(() => {
-        els.videoOverlay.classList.add('show'); // needs user gesture
+        if (!videoMin) els.videoOverlay.classList.add('show'); // needs user gesture
       });
       els.videoPlayPause.textContent = 'Durdur';
       els.videoMuteUnmute.textContent = v.muted ? 'Sesi Aç' : 'Sesi Kapat';
     }
 
+    function applyVideoMin(){
+      const v = els.collabVideo;
+      els.collabVideoCard.classList.toggle('min', videoMin);
+      const b = document.getElementById('videoMinBtn');
+      if (b) b.textContent = videoMin ? '▢ Göster' : '— Küçült';
+      if (videoMin) v.pause();
+      else if (els.collabVideoCard.classList.contains('active')) v.play().catch(() => {});
+    }
     function initVideoDefaults(){
       const v = els.collabVideo;
       v.loop = true;
       v.muted = true;
       discoverCollabs();
+      const minBtn = document.getElementById('videoMinBtn');
+      if (minBtn) minBtn.onclick = () => {
+        videoMin = !videoMin;
+        localStorage.setItem('sb_vidmin', videoMin ? '1' : '0');
+        applyVideoMin();
+      };
+      applyVideoMin();
       v.addEventListener('ended', () => {
         // playlist modu: sıradaki collab videosuna geç (sonuncudan sonra başa döner)
         if (!collabPlaying || !collabList || collabList.length < 2) return;
@@ -2057,6 +2216,7 @@
       }
 
       card.classList.add('active');
+      if (videoMin) v.pause();
     }
 
     /* ---------------- Study toggle handler ---------------- */
@@ -3364,6 +3524,105 @@
       }
       if (!e.target.closest('#wnBgPal') && !e.target.closest('#wnBgBtn')) els.wnBgPal.style.display = 'none';
     });
+
+
+    /* ---------------- profile ---------------- */
+    let profOpen = false;
+    const meData = () => (latestUsers || {})[(auth.currentUser || {}).uid] || {};
+    function pCompress(file){
+      return new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = e => {
+          const img = new Image();
+          img.onload = () => {
+            const S = 256, m = Math.min(img.width, img.height);
+            const c = document.createElement('canvas'); c.width = S; c.height = S;
+            c.getContext('2d').drawImage(img, (img.width - m) / 2, (img.height - m) / 2, m, m, 0, 0, S, S);
+            res(c.toDataURL('image/jpeg', .85));
+          };
+          img.onerror = rej; img.src = e.target.result;
+        };
+        r.onerror = rej; r.readAsDataURL(file);
+      });
+    }
+    function openProf(){
+      const u = auth.currentUser; if (!u) return;
+      profOpen = true;
+      els.profView.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      els.profName.value = u.displayName || '';
+      const em = document.getElementById('profEmail');
+      if (em) em.textContent = u.email || '';
+      attachLibrary();          // kitap istatistiği için
+      renderProfAvatar();
+      renderProfStats();
+    }
+    function closeProf(){
+      profOpen = false;
+      els.profView.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    if (els.profBtn) els.profBtn.onclick = openProf;
+    if (els.profClose) els.profClose.onclick = closeProf;
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && profOpen) closeProf();
+    });
+    function renderProfAvatar(){
+      const u = auth.currentUser; if (!u || !els.profAvatar) return;
+      const av = meData().avatar;
+      els.profAvatar.innerHTML = (av && /^data:image\//.test(av))
+        ? `<img src="${av}" alt="">`
+        : escapeHtml(initials(u.displayName || u.email));
+    }
+    function renderProfStats(){
+      if (!els.profStats || !auth.currentUser) return;
+      const m = meData();
+      const uid = auth.currentUser.uid;
+      const allLive = (m.totals?.allTimeMs || 0) + ((m.studying && m.currentStartAt) ? Math.max(0, Date.now() - m.currentStartAt) : 0);
+      const books = Object.values(latestLibrary || {}).filter(b => b && b.finished && b.finished[uid]).length;
+      const sess = Object.keys(mySessions || {}).length;
+      const chips = [
+        [msToHHMMSS(myTodayMs()), 'Bugün'],
+        [msToHHMMSS(allLive), 'Toplam'],
+        [(m.streak || 0) + ' 🔥', 'Seri'],
+        [(m.dailyTargetMin || 120) + ' dk', 'Günlük hedef'],
+        [sess, 'Kayıtlı oturum'],
+        [books, 'Bitirilen kitap']
+      ];
+      els.profStats.innerHTML = chips.map(([v, k]) =>
+        `<div class="prof-stat"><div class="v">${v}</div><div class="k">${k}</div></div>`).join('');
+      els.profBadges.innerHTML = badgesHTML(m.streak || 0) ||
+        '<span class="muted small">Rozetler seri günlerle gelir: 3✨ 7🥇 14🚀 30🌟 50🏆 100💎</span>';
+    }
+    function renderProfLive(){ if (profOpen) renderProfStats(); }
+    if (els.profAvatarBtn) els.profAvatarBtn.onclick = () => els.profAvatarFile.click();
+    if (els.profAvatarFile) els.profAvatarFile.addEventListener('change', async () => {
+      const f = els.profAvatarFile.files && els.profAvatarFile.files[0];
+      els.profAvatarFile.value = '';
+      const u = auth.currentUser;
+      if (!f || !u) return;
+      try {
+        const img = await pCompress(f);
+        await update(ref(db, `users/${u.uid}`), { avatar: img });
+        renderProfAvatar();
+        toast('Profil fotoğrafın güncellendi 🖼');
+      } catch(e){ alert('Yüklenemedi: ' + e.message); }
+    });
+    if (els.profNameSave) els.profNameSave.onclick = async () => {
+      const u = auth.currentUser; if (!u) return;
+      const val = (els.profName.value || '').trim();
+      if (!val){ toast('İsim boş olamaz 🙂'); return; }
+      try {
+        await updateProfile(u, { displayName: val });
+        await update(ref(db, `users/${u.uid}`), { displayName: val });
+        renderAuthChip(u);
+        toast('Görünen ad güncellendi ✓');
+      } catch(e){ alert(e.message); }
+    };
+    if (els.profLogout) els.profLogout.onclick = async () => {
+      if (!confirm('Çıkış yapmak istediğine emin misin?')) return;
+      try { closeProf(); await signOut(auth); } catch(e){ alert(e.message); }
+    };
 
   </script>
   <script>
