@@ -139,11 +139,73 @@
     .dock-btn:hover .di{ transform:scale(1.25) rotate(-8deg); }
     .dock-btn .dl{ font-size:10px; letter-spacing:.05em; color:var(--muted); font-weight:600; }
     .dock-btn:hover .dl{ color:var(--text); }
+    /* ==== ders seçici (profesyonel alan) ==== */
+    .subj-field{
+      display:inline-flex; align-items:center; gap:0;
+      background:var(--input-bg); border:1px solid var(--border);
+      border-radius:12px; padding:0 0 0 10px; height:42px; position:relative;
+      transition:border-color .2s ease, box-shadow .2s ease;
+    }
+    .subj-field:focus-within{
+      border-color:var(--acc);
+      box-shadow:0 0 0 3px color-mix(in srgb, var(--acc) 18%, transparent);
+    }
+    .subj-field .subj-ico{ font-size:14px; opacity:.75; flex:none; pointer-events:none; }
+    .subj-field select{
+      appearance:none; -webkit-appearance:none;
+      background:transparent; border:none; outline:none;
+      color:var(--text); font-size:13.5px; font-weight:600; font-family:inherit;
+      padding:0 22px 0 8px; height:100%; max-width:132px; cursor:pointer;
+    }
+    .subj-field .subj-chev{
+      position:absolute; right:44px; font-size:10px; color:var(--muted); pointer-events:none;
+    }
+    .subj-field #subjectAdd{
+      height:100%; width:38px; padding:0; flex:none;
+      background:transparent; border:none; border-left:1px solid var(--border);
+      border-radius:0 11px 11px 0; color:var(--muted); font-size:15px;
+    }
+    .subj-field #subjectAdd:hover{ background:var(--tag-bg); color:var(--acc); box-shadow:none; transform:none; }
+    .subj-field select:disabled, .subj-field #subjectAdd:disabled{ opacity:.45; cursor:default; }
+
+    /* ==== başlat düğmesi + seçenek menüsü ==== */
+    .start-wrap{ display:inline-flex; position:relative; }
     #toggleStudyBtn{
       background:linear-gradient(135deg, var(--acc), color-mix(in srgb, var(--acc) 55%, #2b1a6b));
-      color:#fff; border:none; font-weight:700; padding:11px 18px;
+      color:#fff; border:none; font-weight:700; padding:0 16px; height:42px;
+      border-radius:12px 0 0 12px; font-size:13.5px;
     }
     #toggleStudyBtn:hover{ filter:brightness(1.1); }
+    .start-caret{
+      background:linear-gradient(135deg, var(--acc), color-mix(in srgb, var(--acc) 55%, #2b1a6b));
+      color:#fff; border:none; border-left:1px solid rgba(255,255,255,.25);
+      border-radius:0 12px 12px 0; width:32px; height:42px; padding:0; font-size:11px;
+    }
+    .start-caret:hover{ filter:brightness(1.1); }
+    .start-menu{
+      position:absolute; top:calc(100% + 8px); right:0; z-index:70; min-width:210px;
+      background:var(--card); border:1px solid var(--border); border-radius:14px;
+      padding:6px; box-shadow:var(--hover-shadow); animation:sbCardIn .16s ease both;
+    }
+    .start-menu button{
+      display:flex; align-items:center; gap:10px; width:100%; text-align:left;
+      background:transparent; border:none; border-radius:10px;
+      padding:10px 12px; font-size:13.5px; color:var(--text); font-weight:600;
+    }
+    .start-menu button:hover{ background:var(--tag-bg); box-shadow:none; transform:none; }
+    .start-menu .sm-note{ padding:4px 12px 8px; font-size:11px; color:var(--muted); }
+    .start-menu hr{ border:none; border-top:1px solid var(--border); margin:5px 8px; }
+
+    /* ==== tercihler satırları ==== */
+    .pref-row{
+      display:flex; justify-content:space-between; align-items:center; gap:12px;
+      padding:12px 0; border-bottom:1px dashed var(--border);
+    }
+    .pref-row:last-child{ border-bottom:0; padding-bottom:0; }
+    .pref-row:first-of-type{ padding-top:10px; }
+    .pref-row .pk{ font-size:13.5px; font-weight:600; }
+    .pref-row .pd{ font-size:11.5px; color:var(--muted); margin-top:2px; }
+    .pref-row button{ flex:none; border-radius:999px; padding:8px 14px; font-size:12.5px; }
     @media (max-width:640px){
       .dock{ padding:4px; }
       .dock-btn{ min-width:44px; padding:8px 9px; }
@@ -887,7 +949,7 @@
       background:var(--bg); overflow-y:auto; -webkit-overflow-scrolling:touch;
     }
     #libView.open{ display:block; }
-    #libView .lib-inner{ max-width:680px; margin:0 auto; padding:70px 16px 60px; }
+    .lib-inner{ max-width:680px; margin:0 auto; padding:70px 20px 70px; }
     #libView h2{ color:var(--acc); margin:0 0 6px; }
     .lib-item{
       background:var(--card); border:1px solid var(--border); border-radius:14px;
@@ -901,7 +963,7 @@
       border-radius:8px; padding:2px 6px; overflow-wrap:anywhere;
     }
     @media (max-width:640px){
-      #libView .lib-inner{ padding-top:64px; }
+      .lib-inner{ padding:64px 14px 50px; }
     }
   </style>
   <style>
@@ -985,7 +1047,6 @@
     @keyframes sbPing2{ 0%,100%{ opacity:1; } 50%{ opacity:.35; } }
     #meetInput{ width:100%; box-sizing:border-box; margin-top:10px; }
     @media (max-width:640px){
-      #watchView .lib-inner{ padding-top:64px; }
       .wn-grid{ columns:1; }
     }
     @media (prefers-reduced-motion: reduce){
@@ -1100,15 +1161,9 @@
       <div class="title"><span class="dot"></span> Çalışma Odası</div>
 
       <div class="controls" id="topRight">
-        <nav class="dock" aria-label="Uygulama sekmeleri">
-          <button id="themeToggle" class="dock-btn" title="Temayı değiştir"><span class="di">🌙</span><span class="dl">Tema</span></button>
-          <button id="focusBtn" class="dock-btn" title="Odak modu" style="display:none"><span class="di">🎯</span><span class="dl">Odak</span></button>
-          <button id="pomoBtn" class="dock-btn" title="Pomodoro" style="display:none"><span class="di">🍅</span><span class="dl">Pomodoro</span></button>
-          <button id="statsBtn" class="dock-btn" title="İstatistik ve günlük" style="display:none"><span class="di">📊</span><span class="dl">İstatistik</span></button>
-          <button id="libBtn" class="dock-btn" title="Kütüphane" style="display:none"><span class="di">📚</span><span class="dl">Kitaplar</span></button>
-          <button id="watchBtn" class="dock-btn" title="Film gecesi" style="display:none"><span class="di">🎬</span><span class="dl">Film</span></button>
-          <button id="notifBtn" class="dock-btn" title="Bildirimleri aç/kapat" style="display:none"><span class="di">🔕</span><span class="dl">Bildirim</span></button>
-          <button id="profBtn" class="dock-btn" title="Profil" style="display:none"><span class="di">👤</span><span class="dl">Profil</span></button>
+        <nav class="dock" id="appDock" aria-label="Uygulama sekmeleri" style="display:none">
+          <button id="libBtn" class="dock-btn" title="Kütüphane"><span class="di">📚</span><span class="dl">Kitaplar</span></button>
+          <button id="watchBtn" class="dock-btn" title="Film gecesi"><span class="di">🎬</span><span class="dl">Film</span></button>
         </nav>
 
         <div id="pomoPanel" class="pomo-panel" style="display:none">
@@ -1118,9 +1173,17 @@
         </div>
 
         <div class="group" id="studyGroup" style="display:none">
-          <select id="subjectSelect" title="Ders seç"></select>
-          <button id="subjectAdd" title="Yeni ders ekle">＋</button>
-          <button id="toggleStudyBtn" class="primary">Çalışmaya Başla</button>
+          <div class="subj-field">
+            <span class="subj-ico">📚</span>
+            <select id="subjectSelect" title="Ders seç"></select>
+            <span class="subj-chev">▾</span>
+            <button id="subjectAdd" title="Yeni ders ekle">＋</button>
+          </div>
+          <div class="start-wrap">
+            <button id="toggleStudyBtn" class="primary">Çalışmaya Başla</button>
+            <button id="startMenuBtn" class="start-caret" title="Seçenekler" aria-label="Seçenekler">▾</button>
+            <div id="startMenu" class="start-menu" style="display:none"></div>
+          </div>
           <span id="pomoPill" class="pill idle" style="display:none"></span>
           <span id="myAnim" class="anim-eq" style="display:none"><i></i><i></i><i></i></span>
         </div>
@@ -1289,50 +1352,34 @@
     </div>
   </div>
 
-  <!-- ============ PROFILE ============ -->
+  <!-- ============ PROFILE (profil + istatistik + tercihler) ============ -->
   <div id="profView">
     <button id="profClose" class="ov-close" title="Kapat">✕</button>
-    <div class="lib-inner" style="max-width:560px">
+    <div class="lib-inner">
       <h2 style="color:var(--acc);margin:0 0 6px">👤 Profil</h2>
+
       <div class="prof-head">
         <div class="prof-av-wrap">
           <div id="profAvatar" class="prof-av"></div>
           <button id="profAvatarBtn" class="prof-cam" title="Fotoğrafı değiştir">📷</button>
           <input type="file" id="profAvatarFile" accept="image/*" hidden>
         </div>
-        <div style="flex:1;min-width:200px">
+        <div style="flex:1;min-width:220px">
           <div class="row" style="gap:8px;align-items:center">
             <input id="profName" maxlength="30" placeholder="Görünen ad" style="flex:1;min-width:120px">
             <button class="primary" id="profNameSave">Kaydet</button>
           </div>
-          <div class="muted small" id="profEmail" style="margin-top:8px"></div>
+          <div id="badgeRow" style="margin-top:10px"></div>
         </div>
       </div>
+
       <div class="stat-block">
         <b class="stat-title">📈 Özet</b>
         <div id="profStats" class="prof-stats"></div>
-        <div id="profBadges" style="margin-top:12px"></div>
-      </div>
-      <div class="stat-block" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-        <div>
-          <b class="stat-title">🚪 Oturum</b>
-          <div class="muted small" style="margin-top:4px">Hesabından çıkış yap</div>
-        </div>
-        <button id="profLogout" style="color:var(--danger)">Çıkış yap</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============ STATS & SESSION LOG MODAL ============ -->
-  <div id="statsModal" class="sb-modal" role="dialog" aria-modal="true" aria-label="İstatistik ve günlük">
-    <div class="sb-modal-card">
-      <div class="spaced">
-        <h3 style="margin:0;color:var(--acc)">📊 İstatistik &amp; Günlük</h3>
-        <button id="statsClose" title="Kapat">✕</button>
       </div>
 
-      <div class="stat-block first">
-        <div class="spaced" style="flex-wrap:wrap">
+      <div class="stat-block">
+        <div class="spaced" style="flex-wrap:wrap;gap:8px">
           <b class="stat-title">🎯 Günlük hedef</b>
           <span class="inline-form">
             <input id="targetInput" type="number" min="5" max="960" style="width:80px"> dk
@@ -1341,7 +1388,6 @@
         </div>
         <div class="progress-outer"><div id="targetBar" class="progress-inner"></div></div>
         <div class="muted small" id="targetText"></div>
-        <div id="badgeRow"></div>
       </div>
 
       <div class="stat-block">
@@ -1371,6 +1417,47 @@
       <div class="stat-block">
         <b class="stat-title">🗓 Oturum günlüğü</b>
         <div id="sessionLog" class="session-log"></div>
+      </div>
+
+      <div class="stat-block">
+        <b class="stat-title">⚙️ Tercihler</b>
+        <div class="pref-row">
+          <div>
+            <div class="pk">Görünüm</div>
+            <div class="pd">Açık / koyu tema</div>
+          </div>
+          <button id="themeToggle">🌙 Koyu</button>
+        </div>
+        <div class="pref-row">
+          <div>
+            <div class="pk">Bildirimler</div>
+            <div class="pd">Dürtme, çalışma ve film çağrıları</div>
+          </div>
+          <button id="notifBtn">🔕 Kapalı</button>
+        </div>
+      </div>
+
+      <div class="stat-block" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+        <div>
+          <b class="stat-title">🚪 Oturum</b>
+          <div class="muted small" style="margin-top:4px">Hesabından çıkış yap</div>
+        </div>
+        <button id="profLogout" style="color:var(--danger)">Çıkış yap</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ YENİ DERS ============ -->
+  <div id="subjModal" class="sb-modal" role="dialog" aria-modal="true" aria-label="Yeni ders">
+    <div class="sb-modal-card" style="max-width:380px">
+      <div class="spaced">
+        <h3 style="margin:0;color:var(--acc)">📚 Yeni ders</h3>
+        <button id="subjAddClose" title="Kapat">✕</button>
+      </div>
+      <input id="subjNewName" maxlength="30" placeholder="Ders adı (örn. Matematik)" style="width:100%;box-sizing:border-box;margin-top:14px">
+      <div class="row" style="margin-top:16px;gap:8px;justify-content:flex-end">
+        <button id="subjAddCancel">Vazgeç</button>
+        <button class="primary" id="subjAddSave">Ekle</button>
       </div>
     </div>
   </div>
@@ -1687,11 +1774,12 @@
       pomoWork: document.getElementById("pomoWork"),
       pomoBreak: document.getElementById("pomoBreak"),
       pomoStartBtn: document.getElementById("pomoStartBtn"),
-      statsBtn: document.getElementById("statsBtn"),
       notifBtn: document.getElementById("notifBtn"),
       chatBadge: document.getElementById("chatBadge"),
       chatCard: document.getElementById("chatCard"),
-      statsModal: document.getElementById("statsModal"),
+      appDock: document.getElementById("appDock"),
+      startMenuBtn: document.getElementById("startMenuBtn"),
+      startMenu: document.getElementById("startMenu"),
       libBtn: document.getElementById("libBtn"),
       libView: document.getElementById("libView"),
       libClose: document.getElementById("libClose"),
@@ -1719,7 +1807,6 @@
       wnBgBtn: document.getElementById("wnBgBtn"),
       wnBgPal: document.getElementById("wnBgPal"),
       wnModal: document.getElementById("wnModal"),
-      profBtn: document.getElementById("profBtn"),
       profView: document.getElementById("profView"),
       profClose: document.getElementById("profClose"),
       profAvatar: document.getElementById("profAvatar"),
@@ -1728,7 +1815,6 @@
       profName: document.getElementById("profName"),
       profNameSave: document.getElementById("profNameSave"),
       profStats: document.getElementById("profStats"),
-      profBadges: document.getElementById("profBadges"),
       profLogout: document.getElementById("profLogout")
     });
 
@@ -1744,14 +1830,11 @@
     const THEME_KEY = "sb_theme";
     function applyTheme(theme){
       const root = document.documentElement;
-      if(theme === "dark"){
-        root.classList.add("theme-dark");
-        setDock(els.themeToggle, "☀️");
-        els.themeToggle.title = "Açık temaya geç";
-      }else{
-        root.classList.remove("theme-dark");
-        setDock(els.themeToggle, "🌙");
-        els.themeToggle.title = "Koyu temaya geç";
+      const dark = theme === "dark";
+      root.classList.toggle("theme-dark", dark);
+      if (els.themeToggle){
+        els.themeToggle.textContent = dark ? "☀️ Açık" : "🌙 Koyu";
+        els.themeToggle.title = dark ? "Açık temaya geç" : "Koyu temaya geç";
       }
     }
     (function initTheme(){
@@ -1762,7 +1845,7 @@
         applyTheme(prefersDark ? "dark" : "light");
       }
     })();
-    els.themeToggle.onclick = () => {
+    if (els.themeToggle) els.themeToggle.onclick = () => {
       const root = document.documentElement;
       const next = root.classList.contains("theme-dark") ? "light" : "dark";
       localStorage.setItem(THEME_KEY, next);
@@ -1782,6 +1865,7 @@
       if (els.focusStatus) els.focusStatus.textContent = study ? "Çalışıyor 🔥" : "Boşta";
       if (els.subjectSelect) els.subjectSelect.disabled = study;
       if (els.subjectAdd) els.subjectAdd.disabled = study;
+      if (els.startMenu && els.startMenu.style.display !== 'none') renderStartMenu();
     }
     function setPresence(on) {
       if (els.presenceDot) els.presenceDot.className = "status-dot " + (on ? "dot-on" : "dot-off");
@@ -1822,13 +1906,7 @@
       if (user) {
         els.authView.style.display = "none";
         els.appView.style.display = "block";
-        if (els.focusBtn) els.focusBtn.style.display = "";
-        if (els.pomoBtn) els.pomoBtn.style.display = "";
-        if (els.statsBtn) els.statsBtn.style.display = "";
-        if (els.libBtn) els.libBtn.style.display = "";
-        if (els.watchBtn) els.watchBtn.style.display = "";
-        if (els.notifBtn) els.notifBtn.style.display = "";
-        if (els.profBtn) els.profBtn.style.display = "";
+        if (els.appDock) els.appDock.style.display = "";
         if (els.studyGroup) els.studyGroup.style.display = "";
         if (els.presenceGroup) els.presenceGroup.style.display = "";
         renderAuthChip(user);
@@ -1863,14 +1941,9 @@
         els.authView.style.display = "grid";
         els.appView.style.display = "none";
         els.authArea.innerHTML = "";
-        if (els.focusBtn) els.focusBtn.style.display = "none";
-        if (els.pomoBtn) els.pomoBtn.style.display = "none";
-        if (els.statsBtn) els.statsBtn.style.display = "none";
-        if (els.libBtn) els.libBtn.style.display = "none";
-        if (els.watchBtn) els.watchBtn.style.display = "none";
-        if (els.notifBtn) els.notifBtn.style.display = "none";
-        if (els.profBtn) els.profBtn.style.display = "none";
+        if (els.appDock) els.appDock.style.display = "none";
         if (els.profView) els.profView.classList.remove("open");
+        if (els.startMenu) els.startMenu.style.display = "none";
         if (els.libView) els.libView.classList.remove("open");
         if (els.watchView) els.watchView.classList.remove("open");
         if (els.wnModal) els.wnModal.classList.remove("open");
@@ -2272,6 +2345,44 @@
     }
     els.toggleStudyBtn.onclick = () => { (typeof pomo !== 'undefined' && pomo.active) ? pomoStop() : toggleStudy(); };
 
+    /* ---- başlat menüsü: pomodoro (sadece oturum başında) + odak (her zaman) ---- */
+    function renderStartMenu(){
+      if (!els.startMenu) return;
+      const studying = amStudying();
+      let html = '';
+      if (pomo.active){
+        html += '<button data-sact="pomostop">⏹ <span>Pomodoro\u2019yu bitir</span></button>';
+      } else if (!studying){
+        html += '<button data-sact="pomo">🍅 <span>Pomodoro ile başla</span></button>';
+      } else {
+        html += '<div class="sm-note">🍅 Pomodoro yalnızca oturum başında seçilebilir</div>';
+      }
+      html += '<hr>';
+      html += '<button data-sact="focus">🎯 <span>Odak modu</span></button>';
+      els.startMenu.innerHTML = html;
+    }
+    function toggleStartMenu(force){
+      if (!els.startMenu) return;
+      const open = els.startMenu.style.display !== 'none';
+      const next = (force === undefined) ? !open : force;
+      if (next) renderStartMenu();
+      els.startMenu.style.display = next ? '' : 'none';
+    }
+    if (els.startMenuBtn) els.startMenuBtn.onclick = e => { e.stopPropagation(); toggleStartMenu(); };
+    if (els.startMenu) els.startMenu.addEventListener('click', e => {
+      const b = e.target.closest('[data-sact]'); if (!b) return;
+      const a = b.getAttribute('data-sact');
+      toggleStartMenu(false);
+      if (a === 'pomo') togglePomoPanel();
+      else if (a === 'pomostop') pomoStop();
+      else if (a === 'focus') openFocus();
+    });
+    document.addEventListener('click', e => {
+      if (!els.startMenu || els.startMenu.style.display === 'none') return;
+      if (e.target.closest('#startMenu') || e.target.closest('#startMenuBtn')) return;
+      toggleStartMenu(false);
+    });
+
     /* ---------------- Focus mode (distraction-free timer) ---------------- */
     function myTodayMs(){
       const u = (latestUsers || {})[(auth.currentUser||{}).uid] || {};
@@ -2499,18 +2610,45 @@
         Object.values(subj).map(s => `<option value="${escapeHtml(s.name)}">${escapeHtml(s.name)}</option>`).join('');
       if ([...els.subjectSelect.options].some(o => o.value === cur)) els.subjectSelect.value = cur;
     }
-    if (els.subjectAdd) els.subjectAdd.onclick = async () => {
+    async function addSubject(raw){
       const uid = (auth.currentUser || {}).uid; if (!uid) return;
-      const name = (prompt('Yeni ders adı:') || '').trim().slice(0, 30);
+      const name = (raw || '').trim().slice(0, 30);
       if (!name) return;
       const me = (latestUsers || {})[uid] || {};
-      const exists = Object.values(me.subjects || {}).some(s => (s.name || '').toLowerCase() === name.toLowerCase());
-      if (exists){ els.subjectSelect.value = Object.values(me.subjects).find(s => s.name.toLowerCase() === name.toLowerCase()).name; return; }
+      const hit = Object.values(me.subjects || {}).find(s => (s.name || '').toLowerCase() === name.toLowerCase());
+      if (hit){ els.subjectSelect.value = hit.name; toast('Bu ders zaten var 🙂'); return; }
       try {
         await push(ref(db, `users/${uid}/subjects`), { name });
-        setTimeout(() => { subjectsCacheJSON = ''; refreshSubjects(); els.subjectSelect.value = name; }, 350);
+        setTimeout(() => { subjectsCacheJSON = ''; refreshSubjects(); els.subjectSelect.value = name; renderSubjManage(); }, 350);
+        toast('Ders eklendi: ' + name + ' 📚');
       } catch(e){ alert(e.message); }
-    };
+    }
+    function openSubjModal(){
+      const m = document.getElementById('subjModal');
+      const i = document.getElementById('subjNewName');
+      if (!m) return;
+      i.value = '';
+      m.classList.add('open');
+      setTimeout(() => i.focus(), 60);
+    }
+    function closeSubjModal(){
+      const m = document.getElementById('subjModal');
+      if (m) m.classList.remove('open');
+    }
+    if (els.subjectAdd) els.subjectAdd.onclick = () => { if (auth.currentUser) openSubjModal(); };
+    (function wireSubjModal(){
+      const m = document.getElementById('subjModal'); if (!m) return;
+      const i = document.getElementById('subjNewName');
+      const save = () => { addSubject(i.value); closeSubjModal(); };
+      document.getElementById('subjAddSave').onclick = save;
+      document.getElementById('subjAddCancel').onclick = closeSubjModal;
+      document.getElementById('subjAddClose').onclick = closeSubjModal;
+      i.addEventListener('keydown', e => {
+        if (e.key === 'Enter'){ e.preventDefault(); save(); }
+        else if (e.key === 'Escape'){ e.stopPropagation(); closeSubjModal(); }
+      });
+      m.addEventListener('click', e => { if (e.target === m) closeSubjModal(); });
+    })();
 
     /* ---------- session log data ---------- */
     let mySessions = {};
@@ -2580,7 +2718,7 @@
       renderPomoUI();
     }
     function renderPomoUI(){
-      if (!els.pomoPill || !els.pomoBtn) return;
+      if (!els.pomoPill) return;
       if (!pomo.active){
         els.pomoPill.style.display = 'none';
         setDock(els.pomoBtn, '🍅', 'Pomodoro');
@@ -2613,7 +2751,7 @@
     };
     document.addEventListener('click', e => {
       if (!els.pomoPanel || els.pomoPanel.style.display === 'none') return;
-      if (e.target.closest('#pomoPanel') || e.target.closest('#pomoBtn')) return;
+      if (e.target.closest('#pomoPanel') || e.target.closest('#startMenuBtn') || e.target.closest('#startMenu')) return;
       els.pomoPanel.style.display = 'none';
     });
 
@@ -2689,7 +2827,7 @@
       try { new Notification(title, { body }); } catch(e){}
     }
     function renderNotifBtn(){
-      setDock(els.notifBtn, notifOn() ? '🔔' : '🔕');
+      if (els.notifBtn) els.notifBtn.textContent = notifOn() ? '🔔 Açık' : '🔕 Kapalı';
     }
     if (els.notifBtn) els.notifBtn.onclick = async () => {
       if (notifOn()){
@@ -2756,12 +2894,12 @@
       const el = Date.now() - statsOpenedAt;
       return el >= 750 ? 1 : easeOut(Math.max(0, el) / 750);
     }
-    function openStats(){
+    function openStats(){        // profil sayfası açılınca çağrılır
       statsOpen = true;
       statsOpenedAt = Date.now();
-      els.statsModal.classList.add('open');
       const me = (latestUsers || {})[(auth.currentUser || {}).uid] || {};
-      document.getElementById('targetInput').value = me.dailyTargetMin || 120;
+      const ti = document.getElementById('targetInput');
+      if (ti) ti.value = me.dailyTargetMin || 120;
       renderStats();
       (function loop(){        // sayılar 0'dan sayarak gelsin
         if (!statsOpen) return;
@@ -2769,10 +2907,7 @@
         if (statsAnimFactor() < 1) requestAnimationFrame(loop);
       })();
     }
-    function closeStats(){
-      statsOpen = false;
-      if (els.statsModal) els.statsModal.classList.remove('open');
-    }
+    function closeStats(){ statsOpen = false; }
     function renderStats(){        // heavy parts, on open / data change
       if (!statsOpen) return;
       renderTarget();
@@ -2795,16 +2930,17 @@
       const pctFull = Math.min(100, Math.round(cur / (targetMin * 60000) * 100));
       const pct = Math.round(pctFull * f);
       const bar = document.getElementById('targetBar');
+      if (!bar) return;
       bar.style.width = pct + '%';
       bar.style.background = pctFull >= 100 ? 'var(--ok)' : 'var(--acc)';
-      document.getElementById('targetText').textContent =
+      const tt = document.getElementById('targetText');
+      if (tt) tt.textContent =
         msToHHMMSS(Math.round(cur * f)) + ' / ' + targetMin + ' dk' + (pctFull >= 100 && f === 1 ? ' — tamamlandı! 🎉' : ' (%' + pct + ')');
     }
     function renderBadgeRow(){
       const me = (latestUsers || {})[(auth.currentUser || {}).uid] || {};
-      const html = badgesHTML(me.streak || 0);
-      document.getElementById('badgeRow').innerHTML =
-        html || '<div class="muted small" style="margin-top:6px">Rozetler seri günlerle gelir: 3✨ · 7🥇 · 14🚀 · 30🌟 · 50🏆 · 100💎</div>';
+      const box = document.getElementById('badgeRow');
+      if (box) box.innerHTML = badgesHTML(me.streak || 0);
     }
     function animateChart(days){
       const t0 = Date.now();
@@ -2977,12 +3113,7 @@
     document.getElementById('chart30').onclick = () => { chartDays = 30; setChip('chart30','chart7'); animateChart(30); };
     document.getElementById('subjToday').onclick = () => { subjMode = 'today'; setChip('subjToday','subjWeek'); renderSubjBreakdown(); };
     document.getElementById('subjWeek').onclick = () => { subjMode = 'week'; setChip('subjWeek','subjToday'); renderSubjBreakdown(); };
-    document.getElementById('statsClose').onclick = closeStats;
-    if (els.statsBtn) els.statsBtn.onclick = openStats;
-    if (els.statsModal) els.statsModal.addEventListener('click', e => { if (e.target === els.statsModal) closeStats(); });
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Escape' && statsOpen) closeStats();
-    });
+
 
     /* ---------- chat reactions + read state ---------- */
     const REACTS = ['❤️','👍','😂','🔥','🥺'];
@@ -3551,14 +3682,15 @@
       els.profView.classList.add('open');
       document.body.style.overflow = 'hidden';
       els.profName.value = u.displayName || '';
-      const em = document.getElementById('profEmail');
-      if (em) em.textContent = u.email || '';
       attachLibrary();          // kitap istatistiği için
       renderProfAvatar();
       renderProfStats();
+      openStats();              // istatistikler artık bu sayfanın içinde
+      els.profView.scrollTop = 0;
     }
     function closeProf(){
       profOpen = false;
+      closeStats();
       els.profView.classList.remove('open');
       document.body.style.overflow = '';
     }
@@ -3591,8 +3723,7 @@
       ];
       els.profStats.innerHTML = chips.map(([v, k]) =>
         `<div class="prof-stat"><div class="v">${v}</div><div class="k">${k}</div></div>`).join('');
-      els.profBadges.innerHTML = badgesHTML(m.streak || 0) ||
-        '<span class="muted small">Rozetler seri günlerle gelir: 3✨ 7🥇 14🚀 30🌟 50🏆 100💎</span>';
+      renderBadgeRow();
     }
     function renderProfLive(){ if (profOpen) renderProfStats(); }
     if (els.profAvatarBtn) els.profAvatarBtn.onclick = () => els.profAvatarFile.click();
