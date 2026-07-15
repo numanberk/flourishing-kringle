@@ -660,7 +660,29 @@
     .stat-block.first{ margin-top:14px; }
     .stat-title{ font-size:15px; color:var(--acc); }
     #statChart{ width:100%; height:180px; display:block; margin-top:12px; }
-    .subj-row{ margin-top:12px; }
+    .subj-row{
+      margin-top:12px; display:block; width:100%; text-align:left;
+      background:transparent; border:1px solid transparent; border-radius:10px;
+      padding:8px 10px; cursor:pointer; font-family:inherit; font-size:13.5px; color:var(--text);
+      transition:border-color .15s ease, background .15s ease;
+    }
+    .subj-row:hover{ background:var(--tag-bg); border-color:var(--border); box-shadow:none; transform:none; }
+    .subj-row .sr-chev{ color:var(--muted); font-size:15px; }
+    .subj-row:hover .sr-chev{ color:var(--acc); }
+
+    /* ders detay */
+    .sd-chips{ display:grid; grid-template-columns:repeat(auto-fit,minmax(104px,1fr)); gap:8px; margin-top:12px; }
+    .sd-chip{ background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:8px 10px; }
+    .sd-chip .v{ font-size:15px; font-weight:800; color:var(--acc); font-variant-numeric:tabular-nums; }
+    .sd-chip .k{ font-size:10.5px; color:var(--muted); margin-top:2px; }
+    .sd-days{ max-height:300px; overflow-y:auto; margin-top:12px; padding-right:4px; }
+    .sd-day{ margin-bottom:10px; }
+    .sd-day .spaced{ font-size:12.5px; }
+    .sd-day .spaced b{ font-weight:600; }
+    .sd-day .muted{ font-variant-numeric:tabular-nums; }
+    .sd-bar{ height:6px; background:var(--input-bg); border:1px solid var(--border); border-radius:999px; overflow:hidden; margin-top:4px; }
+    .sd-bar i{ display:block; height:100%; background:var(--acc); border-radius:999px; }
+    .sd-bar i.today{ background:var(--ok); }
     .session-log{ max-height:340px; overflow-y:auto; margin-top:12px; padding-right:4px; }
     .log-day{
       margin-bottom:12px; padding:12px;
@@ -1484,6 +1506,26 @@
         </div>
         <button id="profLogout" style="color:var(--danger)">Çıkış yap</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ============ DERS DETAYI ============ -->
+  <div id="subjDetailModal" class="sb-modal" role="dialog" aria-modal="true" aria-label="Ders detayı">
+    <div class="sb-modal-card" style="max-width:460px">
+      <div class="spaced">
+        <h3 style="margin:0;color:var(--acc)" id="sdTitle">📖</h3>
+        <button id="sdClose" title="Kapat">✕</button>
+      </div>
+      <div class="spaced" style="margin-top:12px;flex-wrap:wrap;gap:6px">
+        <span class="muted small">Gösterilen aralık</span>
+        <span>
+          <button class="small chip-btn" id="sdR7">7 gün</button>
+          <button class="small chip-btn on" id="sdR30">30 gün</button>
+          <button class="small chip-btn" id="sdRAll">Tümü</button>
+        </span>
+      </div>
+      <div id="sdChips" class="sd-chips"></div>
+      <div id="sdDays" class="sd-days"></div>
     </div>
   </div>
 
@@ -2754,6 +2796,7 @@
       onValue(query(ref(db, `users/${uid}/sessions`), limitToLast(400)), s => {
         mySessions = s.val() || {};
         if (statsOpen){ renderSessionLog(); renderSubjBreakdown(); }
+        if (typeof sdSubject !== 'undefined' && sdSubject) sdRender();
       }, err => console.error('sessions read failed:', err && err.message));
     }
 
@@ -3135,10 +3178,10 @@
       const rows = Object.entries(agg).sort((a, b) => b[1] - a[1]);
       box.innerHTML = rows.length ? rows.map(([n, ms]) => {
         const pct = total ? Math.round(ms / total * 100) : 0;
-        return `<div class="subj-row">
-          <div class="spaced"><span>${escapeHtml(n)}</span><span class="muted small">${msToHHMMSS(ms)} · %${pct}</span></div>
+        return `<button class="subj-row" data-subj="${escapeHtml(n)}" title="Günlük dökümü gör">
+          <div class="spaced"><span>${escapeHtml(n)} <span class="sr-chev">›</span></span><span class="muted small">${msToHHMMSS(ms)} · %${pct}</span></div>
           <div class="progress-outer"><div class="progress-inner" style="width:${pct}%"></div></div>
-        </div>`;
+        </button>`;
       }).join('') : '<div class="muted small" style="margin-top:6px">Bu aralıkta kayıt yok.</div>';
     }
     function fmtLogDay(dstr){
@@ -3823,6 +3866,88 @@
       renderBadgeRow();
     }
     function renderProfLive(){ if (profOpen) renderProfStats(); }
+
+    /* ---- ders detayı: günlük döküm ---- */
+    let sdSubject = null, sdRange = 30;   // 7 | 30 | 0 (tümü)
+    function sdOpen(name){
+      sdSubject = name;
+      const m = document.getElementById('subjDetailModal');
+      document.getElementById('sdTitle').textContent = '📖 ' + name;
+      if (m) m.classList.add('open');
+      sdRender();
+    }
+    function sdClose(){
+      sdSubject = null;
+      const m = document.getElementById('subjDetailModal');
+      if (m) m.classList.remove('open');
+    }
+    function sdRender(){
+      if (!sdSubject) return;
+      const daysBox = document.getElementById('sdDays');
+      const chipsBox = document.getElementById('sdChips');
+      if (!daysBox || !chipsBox) return;
+
+      // gün gün topla
+      const perDay = {};
+      Object.values(mySessions || {}).forEach(s => {
+        const key = s.subject || '(dersiz)';
+        if (key !== sdSubject) return;
+        const d = s.day || todayKey(new Date(s.startAt || Date.now()));
+        perDay[d] = (perDay[d] || 0) + (s.ms || 0);
+      });
+      // devam eden oturumu da göster
+      const me = (latestUsers || {})[(auth.currentUser || {}).uid] || {};
+      if (me.studying && me.currentStartAt && (me.currentSubject || '(dersiz)') === sdSubject){
+        const d = todayKey();
+        perDay[d] = (perDay[d] || 0) + Math.max(0, Date.now() - me.currentStartAt);
+      }
+
+      let entries = Object.entries(perDay).sort((a, b) => b[0] < a[0] ? -1 : 1).reverse();
+      if (sdRange){
+        const cut = todayKey(new Date(Date.now() - (sdRange - 1) * 86400000));
+        entries = entries.filter(([d]) => d >= cut);
+      }
+
+      const total = entries.reduce((a, [, ms]) => a + ms, 0);
+      const best = entries.reduce((a, [d, ms]) => ms > a[1] ? [d, ms] : a, ['', 0]);
+      const sessCount = Object.values(mySessions || {}).filter(s => (s.subject || '(dersiz)') === sdSubject).length;
+      const avg = entries.length ? Math.round(total / entries.length) : 0;
+      const maxMs = best[1] || 1;
+      const tkey = todayKey();
+
+      chipsBox.innerHTML = [
+        [msToHHMMSS(total), sdRange ? ('Son ' + sdRange + ' gün') : 'Tüm zamanlar'],
+        [entries.length, 'Çalışılan gün'],
+        [msToHHMMSS(avg), 'Gün ortalaması'],
+        [best[1] ? msToHHMMSS(best[1]) : '—', 'En iyi gün'],
+        [sessCount, 'Oturum sayısı']
+      ].map(([v, k]) => `<div class="sd-chip"><div class="v">${v}</div><div class="k">${k}</div></div>`).join('');
+
+      daysBox.innerHTML = entries.length ? entries.map(([d, ms]) => `
+        <div class="sd-day">
+          <div class="spaced"><b>${fmtLogDay(d)}</b><span class="muted">${msToHHMMSS(ms)}</span></div>
+          <div class="sd-bar"><i class="${d === tkey ? 'today' : ''}" style="width:${Math.max(2, Math.round(ms / maxMs * 100))}%"></i></div>
+        </div>`).join('')
+        : '<div class="muted small" style="margin-top:8px">Bu aralıkta bu dersten kayıt yok.</div>';
+    }
+    document.addEventListener('click', e => {
+      const r = e.target.closest('.subj-row');
+      if (r){ sdOpen(r.getAttribute('data-subj')); return; }
+    });
+    (function wireSubjDetail(){
+      const m = document.getElementById('subjDetailModal'); if (!m) return;
+      document.getElementById('sdClose').onclick = sdClose;
+      m.addEventListener('click', e => { if (e.target === m) sdClose(); });
+      const setR = (n, on) => {
+        sdRange = n;
+        ['sdR7', 'sdR30', 'sdRAll'].forEach(id => document.getElementById(id).classList.toggle('on', id === on));
+        sdRender();
+      };
+      document.getElementById('sdR7').onclick = () => setR(7, 'sdR7');
+      document.getElementById('sdR30').onclick = () => setR(30, 'sdR30');
+      document.getElementById('sdRAll').onclick = () => setR(0, 'sdRAll');
+      document.addEventListener('keydown', e => { if (e.key === 'Escape' && sdSubject) sdClose(); });
+    })();
 
     /* ---- oturum günlüğü: sonradan ders atama/değiştirme ---- */
     let sessEditKey = null;
