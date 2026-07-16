@@ -4211,6 +4211,14 @@
       function openModal(){ clearPin(); pinModal.classList.add('open'); setTimeout(() => pinSingle.focus(), 60); }
       function closeModal(){ pinModal.classList.remove('open'); clearPin(); }
 
+      /* oturum kapanırsa sürprizi de kapat (paylaşılan cihaz güvenliği) */
+      window.addEventListener('sb-auth', e => {
+        if (e.detail && !e.detail.uid){
+          closeModal();
+          if (bday.classList.contains('open')) closeBirthday();
+        }
+      });
+
       let pinChecking = false;
       async function trySubmit(){
         const val = pinSingle.value.replace(/\D/g, '');
@@ -4334,10 +4342,15 @@
       bday.querySelectorAll('.gallery img').forEach((img, i) => guard(img, img.alt || ('Foto ' + (i + 1))));
       const intro = $('bdayIntroImg'); if (intro) guard(intro, 'Aşkım 💖');
 
-      /* ---- the secret trigger: tap the glowing logo dot ---- */
+      /* ---- the secret trigger: tap the glowing logo dot ----
+         Giriş yapılmamışsa kapı hiç açılmaz: dışarıdan bakan biri için
+         nokta sadece bir süs. Firebase oturumu tarayıcıda kalıcı olduğu
+         için ikiniz bir kere giriş yapınca bir daha uğraşmıyorsunuz. */
+      const loggedIn = () => !!(window.fb && window.fb.auth && window.fb.auth.currentUser);
       let taps = 0, t = null;
       if (dot){
         dot.addEventListener('click', () => {
+          if (!loggedIn()) { taps = 0; return; }
           taps++;
           clearTimeout(t);
           t = setTimeout(() => { taps = 0; }, TAP_WINDOW);
