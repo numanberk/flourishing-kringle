@@ -1105,6 +1105,77 @@
       .meet-live-dot{ animation:none; }
       .wn-dot.on{ transform:none; }
     }
+
+    /* ==== film künye kartı (PDF sayfası estetiği) ==== */
+    .mc-no{ font-size:12px; color:var(--muted); letter-spacing:.1em; }
+    .mc-no b{ color:var(--text); border-bottom:1px solid var(--border); padding:0 14px; }
+    .movie-card{
+      margin-top:14px; padding:22px; border-radius:16px;
+      background:var(--card); border:1px solid var(--border); box-shadow:var(--shadow);
+    }
+    .mc-top{ display:flex; gap:20px; }
+    .mc-poster{
+      position:relative; width:150px; height:210px; flex:none;
+      border-radius:6px; overflow:hidden; background:#f3dde4;
+      box-shadow:0 6px 16px rgba(180,60,90,.18); border:4px solid #fff;
+    }
+    .theme-dark .mc-poster{ background:#3a2b31; border-color:#4a3a40; }
+    .mc-poster img{ width:100%; height:100%; object-fit:cover; }
+    .mc-poster-empty{
+      position:absolute; inset:0; display:flex; flex-direction:column;
+      align-items:center; justify-content:center; gap:6px;
+      color:#c98ca3; font-size:30px;
+    }
+    .mc-poster-empty span{ font-size:12px; letter-spacing:.06em; }
+    .mc-poster-cam{
+      position:absolute; right:6px; bottom:6px; width:30px; height:30px;
+      border-radius:50%; padding:0; font-size:13px;
+      background:rgba(255,255,255,.9); border:1px solid var(--border); color:#333;
+    }
+    .mc-meta{ flex:1; min-width:0; }
+    .mc-lbl{
+      display:block; font-size:10px; letter-spacing:.22em; color:#c98ca3; font-weight:700;
+    }
+    .mc-name{
+      font-size:18px; font-weight:700; color:var(--text);
+      border-bottom:2px solid crimson; padding-bottom:6px; margin-top:4px;
+      overflow-wrap:anywhere;
+    }
+    .mc-date{
+      width:100%; box-sizing:border-box; background:transparent; border:none;
+      border-bottom:1px solid var(--border); border-radius:0; color:var(--text);
+      padding:4px 0; font-size:14px; margin-top:4px; outline:none;
+    }
+    .mc-date:focus{ border-bottom-color:crimson; }
+    .mc-stars{ display:flex; gap:4px; margin-top:6px; }
+    .mc-stars .st{
+      font-size:20px; line-height:1; cursor:pointer; color:transparent;
+      -webkit-text-stroke:1.4px #d06a86; user-select:none; transition:transform .1s ease;
+    }
+    .mc-stars.big .st{ font-size:24px; -webkit-text-stroke-width:1.6px; }
+    .mc-stars .st.on{ color:#e0567f; -webkit-text-stroke-color:#e0567f; }
+    .mc-stars .st.readonly{ cursor:default; }
+    .mc-stars .st:not(.readonly):hover{ transform:scale(1.2); }
+    .mc-overall-note{ font-size:11px; color:var(--muted); margin-top:4px; }
+    .mc-people{ display:flex; gap:18px; margin-top:22px; }
+    .mc-person{ flex:1; min-width:0; }
+    .mc-person-name{ display:flex; align-items:center; gap:8px; font-size:16px; font-weight:600; }
+    .mc-bar{ width:4px; height:18px; background:crimson; border-radius:2px; display:inline-block; }
+    .mc-comment{
+      width:100%; box-sizing:border-box; margin-top:10px; resize:vertical;
+      background:transparent; border:none; color:var(--text); font-family:inherit;
+      font-size:13.5px; line-height:1.9; outline:none;
+      background-image:repeating-linear-gradient(transparent, transparent 30px, var(--border) 30px, var(--border) 31px);
+    }
+    .mc-comment:disabled{ opacity:1; color:var(--text); }
+    .mc-comment.locked{ cursor:default; }
+    .mc-comment:focus{ background-image:repeating-linear-gradient(transparent, transparent 30px, crimson 30px, crimson 31px); }
+    .mc-foot{ text-align:center; color:#d06a86; margin-top:20px; letter-spacing:.3em; font-size:13px; }
+    @media (max-width:560px){
+      .mc-top{ flex-direction:column; align-items:center; text-align:center; }
+      .mc-meta{ width:100%; }
+      .mc-people{ flex-direction:column; }
+    }
   </style>
   <style>
     /* ============================================================
@@ -1378,6 +1449,46 @@
           </span>
           <span class="wn-arrow">›</span>
         </button>
+      </div>
+
+      <!-- film künye kartı (PDF sayfası gibi) -->
+      <div id="wnCard" style="display:none">
+        <div class="row" style="align-items:center;gap:10px;margin-top:4px">
+          <button id="wnCardBack">← Liste</button>
+          <span class="mc-no">No. <b id="mcNo">—</b></span>
+        </div>
+        <div class="movie-card" id="movieCard">
+          <div class="mc-top">
+            <div class="mc-poster" id="mcPoster">
+              <input type="file" id="mcPosterFile" accept="image/*" hidden>
+              <div class="mc-poster-empty" id="mcPosterEmpty">🎬<span>afiş ekle</span></div>
+              <img id="mcPosterImg" alt="" style="display:none">
+              <button class="mc-poster-cam" id="mcPosterBtn" title="Afiş">📷</button>
+            </div>
+            <div class="mc-meta">
+              <label class="mc-lbl">FİLM ADI</label>
+              <div class="mc-name" id="mcName">—</div>
+              <label class="mc-lbl" style="margin-top:14px">TARİH</label>
+              <input class="mc-date" id="mcDate" placeholder="izlediğimiz tarih">
+              <label class="mc-lbl" style="margin-top:14px">GENEL PUAN</label>
+              <div class="mc-stars big" id="mcOverall"></div>
+              <div class="mc-overall-note" id="mcOverallNote"></div>
+            </div>
+          </div>
+          <div class="mc-people">
+            <div class="mc-person" data-who="numan">
+              <div class="mc-person-name"><span class="mc-bar"></span>Numan</div>
+              <div class="mc-stars" data-rate="numan"></div>
+              <textarea class="mc-comment" data-cmt="numan" rows="4" placeholder="yorumun…" maxlength="1500"></textarea>
+            </div>
+            <div class="mc-person" data-who="erva">
+              <div class="mc-person-name"><span class="mc-bar"></span>Erva</div>
+              <div class="mc-stars" data-rate="erva"></div>
+              <textarea class="mc-comment" data-cmt="erva" rows="4" placeholder="yorumun…" maxlength="1500"></textarea>
+            </div>
+          </div>
+          <div class="mc-foot">✦ ✦ ✦</div>
+        </div>
       </div>
 
       <div id="wnPage" style="display:none">
@@ -3617,8 +3728,10 @@
     document.addEventListener('keydown', e => {
       if (e.key !== 'Escape') return;
       if (els.watchView && els.watchView.classList.contains('open')){
+        const c = document.getElementById('wnCard');
         const p = document.getElementById('wnPage');
-        if (p && p.style.display !== 'none') showWnPage(false);
+        if (c && c.style.display !== 'none') closeMovieCard();
+        else if (p && p.style.display !== 'none') showWnPage(false);
         else closeWatch();
       }
     });
@@ -3757,6 +3870,7 @@
       const row = n => `<div class="wn-item ${n.done ? 'done' : ''}" data-key="${n.k}">
           <input type="checkbox" class="wn-check" ${n.done ? 'checked' : ''} aria-label="İşaretle">
           <div class="txt">${escapeHtml(wnItemText(n))}</div>
+          <button class="wn-edit-btn" title="Adı düzenle">✎</button>
           <button class="wn-x" title="Sil">✕</button>
         </div>`;
       els.wnListOpen.innerHTML = open.map(row).join('') ||
@@ -3833,7 +3947,131 @@
         update(ref(db, 'watchlist'), { [key]: null }).catch(err => alert(err.message));
         return;
       }
-      if (e.target.closest('.txt')) wnStartEdit(item);
+      if (e.target.closest('.wn-edit-btn')){ wnStartEdit(item); return; }
+      if (e.target.closest('.txt')) openMovieCard(key);
+    }
+
+    /* ---- film künye kartı ---- */
+    let mcKey = null;
+    const myWho = () => isSpecialUser ? 'numan' : 'erva';   // Numan = özel hesap, diğeri = Erva
+    function starRow(el, value, editable, onSet){
+      el.innerHTML = [1,2,3,4,5].map(i => `<span class="st ${i <= value ? 'on' : ''} ${editable ? '' : 'readonly'}" data-v="${i}">${i <= value ? '★' : '☆'}</span>`).join('');
+      if (editable){
+        el.querySelectorAll('.st').forEach(s => s.onclick = () => {
+          let v = parseInt(s.getAttribute('data-v'), 10);
+          if (v === value) v = 0;   // aynı yıldıza basınca sıfırla
+          onSet(v);
+        });
+      }
+    }
+    function openMovieCard(key){
+      mcKey = key;
+      document.getElementById('watchHome').style.display = 'none';
+      document.getElementById('wnPage').style.display = 'none';
+      document.getElementById('wnCard').style.display = '';
+      if (els.watchView) els.watchView.scrollTop = 0;
+      renderMovieCard();
+    }
+    function closeMovieCard(){
+      mcKey = null;
+      document.getElementById('wnCard').style.display = 'none';
+      showWnPage(true);
+    }
+    function renderMovieCard(){
+      const n = latestWatch[mcKey]; if (!n) return;
+      const mc = n.card || {};
+      const mine = myWho();
+
+      document.getElementById('mcName').textContent = wnItemText(n);
+      const items = wnItems().sort((a,b)=>(a.at||0)-(b.at||0));
+      const idx = items.findIndex(x => x.k === mcKey);
+      document.getElementById('mcNo').textContent = idx >= 0 ? String(idx + 1).padStart(2, '0') : '—';
+
+      // afiş
+      const img = document.getElementById('mcPosterImg'), empty = document.getElementById('mcPosterEmpty');
+      if (mc.poster){ img.src = mc.poster; img.style.display = ''; empty.style.display = 'none'; }
+      else { img.style.display = 'none'; empty.style.display = ''; }
+
+      // tarih (ortak alan)
+      const dateEl = document.getElementById('mcDate');
+      if (document.activeElement !== dateEl) dateEl.value = mc.date || '';
+
+      // kişisel puanlar
+      const rN = (mc.rate && mc.rate.numan) || 0;
+      const rE = (mc.rate && mc.rate.erva) || 0;
+      starRow(document.querySelector('[data-rate="numan"]'), rN, mine === 'numan', v => saveCard({ ['rate/numan']: v || null }));
+      starRow(document.querySelector('[data-rate="erva"]'), rE, mine === 'erva', v => saveCard({ ['rate/erva']: v || null }));
+
+      // genel puan = ikisinin ortalaması (otomatik)
+      const both = [rN, rE].filter(x => x > 0);
+      const avg = both.length ? both.reduce((a,b)=>a+b,0) / both.length : 0;
+      const ov = document.getElementById('mcOverall');
+      ov.innerHTML = [1,2,3,4,5].map(i => `<span class="st ${i <= Math.round(avg) ? 'on' : ''} readonly">${i <= Math.round(avg) ? '★' : '☆'}</span>`).join('');
+      document.getElementById('mcOverallNote').textContent = both.length
+        ? ('ortalama ' + avg.toFixed(1) + ' / 5' + (both.length < 2 ? ' (tek oy)' : ''))
+        : 'ikiniz puan verince oluşur';
+
+      // yorumlar — herkes kendininkini yazar, diğerininkini okur
+      ['numan','erva'].forEach(who => {
+        const ta = document.querySelector(`[data-cmt="${who}"]`);
+        const editable = who === mine;
+        if (document.activeElement !== ta) ta.value = (mc.comment && mc.comment[who]) || '';
+        ta.disabled = !editable;
+        ta.classList.toggle('locked', !editable);
+        ta.placeholder = editable ? 'yorumun…' : '—';
+      });
+    }
+    async function saveCard(patch){
+      if (!mcKey) return;
+      const upd = {};
+      Object.entries(patch).forEach(([k, v]) => { upd[`watchlist/${mcKey}/card/${k}`] = v; });
+      try { await update(ref(db), upd); } catch(e){ alert(e.message); }
+    }
+    // afiş yükleme
+    document.getElementById('mcPosterBtn').onclick = () => document.getElementById('mcPosterFile').click();
+    document.getElementById('mcPosterFile').addEventListener('change', async ev => {
+      const f = ev.target.files && ev.target.files[0]; ev.target.value = '';
+      if (!f || !mcKey) return;
+      try {
+        const u = auth.currentUser;
+        const blob = await pCompressTo(f, 400, 560, .82);
+        const sr = sRef(storage, `posters/${mcKey}.jpg`);
+        await uploadBytesResumable(sr, blob, { contentType: 'image/jpeg', cacheControl: 'public,max-age=604800' });
+        const url = await getDownloadURL(sr);
+        await saveCard({ poster: url });
+      } catch(e){ alert('Afiş yüklenemedi: ' + (e && e.message ? e.message : e)); }
+    });
+    // tarih + yorum (kendi alanın) kaydet
+    document.getElementById('mcDate').addEventListener('change', e => saveCard({ date: e.target.value.trim() || null }));
+    ['numan','erva'].forEach(who => {
+      const ta = document.querySelector(`[data-cmt="${who}"]`);
+      ta.addEventListener('blur', () => {
+        if (ta.disabled || who !== myWho()) return;
+        saveCard({ [`comment/${who}`]: ta.value.trim() || null });
+      });
+    });
+    document.getElementById('wnCardBack').onclick = closeMovieCard;
+
+    /* genel bir 400x560 kare-olmayan sıkıştırıcı (afiş için) */
+    function pCompressTo(file, W, H, q){
+      return new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = e => {
+          const img = new Image();
+          img.onload = () => {
+            const c = document.createElement('canvas'); c.width = W; c.height = H;
+            const ctx = c.getContext('2d');
+            const scale = Math.max(W / img.width, H / img.height);
+            const w = img.width * scale, h = img.height * scale;
+            ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+            c.toBlob(b => b ? res(b) : rej(new Error('Görsel işlenemedi')), 'image/jpeg', q || .82);
+          };
+          img.onerror = () => rej(new Error('Görsel okunamadı'));
+          img.src = e.target.result;
+        };
+        r.onerror = () => rej(new Error('Dosya okunamadı'));
+        r.readAsDataURL(file);
+      });
     }
     if (els.wnListOpen) els.wnListOpen.addEventListener('click', wnListClick);
     if (els.wnListDone) els.wnListDone.addEventListener('click', wnListClick);
