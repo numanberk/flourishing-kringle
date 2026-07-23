@@ -1008,11 +1008,6 @@
     .lib-title{ font-weight:700; color:var(--text); overflow-wrap:anywhere; }
     .lib-del{ flex:none; border-radius:999px; padding:4px 10px; }
     .lib-pending{ color:var(--acc); }
-    .lib-mails{ margin-top:10px; }
-    .lib-mails code{
-      font-size:11px; background:var(--tag-bg); border:1px solid var(--border);
-      border-radius:8px; padding:2px 6px; overflow-wrap:anywhere;
-    }
     @media (max-width:640px){
       .lib-inner{ padding:64px 14px 50px; }
     }
@@ -1386,7 +1381,6 @@
             </div>
           </div>
 
-          <div class="footer">İpucu: canlı sayaç için çalışırken sekmeyi açık tut ⏱️</div>
         </div>
       </div>
     </div>
@@ -1416,10 +1410,7 @@
         <input type="file" id="libFile" accept="application/pdf,.pdf" hidden>
       </div>
       <div id="libHint" class="muted small" style="min-height:18px;margin-top:8px"></div>
-      <div class="muted small lib-mails">
-        Gidecek adresler:
-        <code>ikinizin Kindle adresi</code>
-      </div>
+
       <div id="libList"></div>
       <div id="libEmpty" class="muted" style="margin-top:18px">Kütüphane henüz boş — ilk kitabı sen gönder 📖</div>
     </div>
@@ -1608,7 +1599,6 @@
       <div class="stat-block" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
         <div>
           <b class="stat-title">🚪 Oturum</b>
-          <div class="muted small" style="margin-top:4px">Hesabından çıkış yap</div>
         </div>
         <button id="profLogout" style="color:var(--danger)">Çıkış yap</button>
       </div>
@@ -1622,7 +1612,6 @@
         <h3 style="margin:0;color:var(--acc)">＋ Oturum ekle</h3>
         <button id="saClose" title="Kapat">✕</button>
       </div>
-      <div class="muted small" style="margin-top:8px">Zamanlayıcıyı başlatmayı unuttuysan çalışmanı buradan ekleyebilirsin.</div>
       <div style="margin-top:14px">
         <label class="muted small">Tarih</label>
         <input type="date" id="saDate" style="width:100%;box-sizing:border-box;margin-top:4px">
@@ -2108,7 +2097,7 @@
     /* ---------------- Auth actions ---------------- */
     els.loginBtn.onclick = async () => {
       try { await signInWithEmailAndPassword(auth, els.loginEmail.value, els.loginPassword.value); }
-      catch (e) { alert(e.message); }
+      catch (e) { toast(e.message); }
     };
 
     function renderAuthChip(user) {
@@ -2706,7 +2695,7 @@
         markChatRead();
         if (typeof setTyping === 'function') setTyping(false);
       }
-      catch(e){ alert(e.message); }
+      catch(e){ toast(e.message); }
     }
     function attachChat(){
       if (chatAttached || !els.chatMessages) return;
@@ -2737,6 +2726,7 @@
       clearTimeout(t._h);
       t._h = setTimeout(() => t.classList.remove('show'), 3200);
     }
+    window.toast = toast;   // diğer script bloklarından da erişilsin
     /* Tek paylaşılan ses bağlamı — her seste yenisini açmak tarayıcı
        sınırına (Chrome'da 6) takılıp sesleri sessizce öldürüyordu. */
     let _actx = null;
@@ -2909,7 +2899,7 @@
         await push(ref(db, `users/${uid}/subjects`), { name });
         setTimeout(() => { subjectsCacheJSON = ''; refreshSubjects(); els.subjectSelect.value = name; syncSubjLabel(); renderSubjManage(); }, 350);
         toast('Ders eklendi: ' + name + ' 📚');
-      } catch(e){ alert(e.message); }
+      } catch(e){ toast(e.message); }
     }
     function openSubjModal(){
       const m = document.getElementById('subjModal');
@@ -3166,7 +3156,7 @@
         await push(ref(db, `nudges/${to}`), { from: me.displayName || me.email, at: Date.now() });
         sendPush('nudge', to);
         toast('Dürttün 👉');
-      } catch(err){ alert(err.message); }
+      } catch(err){ toast(err.message); }
     });
 
     /* ---------- stats & session log modal ---------- */
@@ -3346,7 +3336,7 @@
       const items = Object.entries(mySessions || {})
         .map(([k, v]) => Object.assign({ k }, v))
         .sort((a, b) => (b.startAt || 0) - (a.startAt || 0)).slice(0, 120);
-      if (!items.length){ box.innerHTML = '<div class="muted small">Henüz kayıtlı oturum yok. Çalışmayı bitirdiğinde burada görünecek.</div>'; return; }
+      if (!items.length){ box.innerHTML = '<div class="muted small">Henüz kayıt yok</div>'; return; }
       const byDay = {};
       items.forEach(s => {
         const d = s.day || todayKey(new Date(s.startAt || Date.now()));
@@ -3380,14 +3370,14 @@
       try {
         await update(ref(db, `users/${uid}/subjects`), { [b.getAttribute('data-key')]: null });
         setTimeout(() => { subjectsCacheJSON = ''; refreshSubjects(); renderSubjManage(); }, 350);
-      } catch(err){ alert(err.message); }
+      } catch(err){ toast(err.message); }
     });
     document.getElementById('targetSave').onclick = async () => {
       const uid = (auth.currentUser || {}).uid; if (!uid) return;
       const v = Math.min(960, Math.max(5, parseInt(document.getElementById('targetInput').value, 10) || 120));
       document.getElementById('targetInput').value = v;
       try { await update(ref(db, `users/${uid}`), { dailyTargetMin: v }); toast('Günlük hedef: ' + v + ' dk 🎯'); }
-      catch(e){ alert(e.message); }
+      catch(e){ toast(e.message); }
     };
     function setChip(onId, offId){
       document.getElementById(onId).classList.add('on');
@@ -3429,7 +3419,7 @@
         const cur = (((latestChat || {})[key] || {}).reactions || {})[me.uid];
         if (cur !== emoji) floatEmoji(e.clientX, e.clientY, emoji);
         try { await update(ref(db, `chat/${key}/reactions`), { [me.uid]: cur === emoji ? null : emoji }); }
-        catch(err){ alert(err.message); }
+        catch(err){ toast(err.message); }
       }
     });
     function chatSeen(){ return parseInt(localStorage.getItem('sb_chat_seen') || '0', 10) || 0; }
@@ -3582,7 +3572,7 @@
       els.libFile.value = '';
       const u = auth.currentUser;
       if (!f || !u) return;
-      if (!/\.pdf$/i.test(f.name)){ libHintMsg('Sadece PDF gönderilebilir 🙈'); return; }
+      if (!/\.pdf$/i.test(f.name)){ libHintMsg('Sadece PDF gönderilebilir'); return; }
       if (f.size > LIB_MAX_BYTES){
         libHintMsg('Bu PDF çok büyük (' + (f.size / 1048576).toFixed(1) + ' MB). E-posta yolunun tavanı ~25 MB — daha büyükleri amazon.com/sendtokindle ile gönderebilirsin.');
         return;
@@ -3604,7 +3594,7 @@
         url = await getDownloadURL(task.snapshot.ref);
       } catch(e){
         libBusy(false);
-        libHintMsg('Yükleme başarısız: ' + e.message + ' (Firebase konsolunda Storage etkin ve kuralları ayarlı mı?)');
+        libHintMsg('Yükleme başarısız: ' + e.message + '');
         return;
       }
 
@@ -3622,6 +3612,9 @@
           /* Gizli anahtar yerine kendi Firebase kimlik jetonumuzu yolluyoruz;
              betik onu Google'a doğrulatıyor. Jeton kısa ömürlü ve bize özel. */
           const idToken = await u.getIdToken();
+          /* İşi önce biz (girişli kullanıcı) açıyoruz; böylece veritabanı
+             kuralı yalnızca VAR OLAN bir işin güncellenmesine izin verebiliyor. */
+          await set(ref(db, `kindleJobs/${jobId}`), { status: 'pending', at: Date.now() });
           await fetch(LIB_ENDPOINT, {
             method: 'POST',
             mode: 'no-cors',
@@ -3648,7 +3641,7 @@
           ? 'Kütüphaneye eklendi 📚 — Kindle\u2019lara gönderiliyor, büyük dosyalar birkaç dakika sürebilir ✉️'
           : 'Kütüphaneye eklendi (mail gönderilemedi)');
         if (queued) watchKindleJob(jobId, key);
-      } catch(e){ alert(e.message); }
+      } catch(e){ toast(e.message); }
       libBusy(false);
     });
 
@@ -3662,7 +3655,7 @@
           await update(ref(db, `library/${key}/finished`), { [uid]: cur ? null : { at: Date.now() } });
           if (!cur){ confetti(); toast('Kitap bitti, tebrikler! 📖✨'); }
         }
-        catch(err){ alert(err.message); }
+        catch(err){ toast(err.message); }
         return;
       }
       const del = e.target.closest('.lib-del');
@@ -3674,7 +3667,7 @@
           await update(ref(db, 'library'), { [key]: null });
           if (b.storagePath){ try { await deleteObject(sRef(storage, b.storagePath)); } catch(e){} }
         }
-        catch(err){ alert(err.message); }
+        catch(err){ toast(err.message); }
       }
     });
 
@@ -3692,6 +3685,11 @@
       onValue(ref(db, 'watchlist'), s => {
         latestWatch = s.val() || {};
         renderWatchNotes();
+        // künye kartı açıksa canlı güncelle (yıldız/yorum anında yansısın)
+        if (mcKey){
+          if (latestWatch[mcKey]) renderMovieCard();
+          else closeMovieCard();          // öğe silinmişse karttan çık
+        }
       }, err => console.error('watchlist read failed:', err && err.message));
       onValue(ref(db, 'meet'), s => {
         const m = s.val();
@@ -3749,7 +3747,7 @@
           sendPush('watch', to);
         }
         toast('Gönderildi 🎬🍿');
-      } catch(e){ alert(e.message); }
+      } catch(e){ toast(e.message); }
     };
 
     /* ---- Google Meet paylaşımı ---- */
@@ -3772,7 +3770,7 @@
       } else if (meetPasting){
         els.meetBox.innerHTML = `
           <b class="stat-title">🎥 Google Meet</b>
-          <div class="muted small" style="margin-top:6px">Açılan sekmedeki meet linkini kopyala ve buraya yapıştır — karşı tarafa "Katıl" butonu düşer.</div>
+          
           <input id="meetInput" placeholder="https://meet.google.com/xxx-yyyy-zzz" autocomplete="off">
           <div class="meet-actions">
             <button class="primary" data-mact="share">Paylaş</button>
@@ -3812,12 +3810,12 @@
           meetPasting = false;
           sendPush('meet');
           toast('Paylaşıldı — karşı tarafa haber gitti 🎥');
-        } catch(err){ alert(err.message); }
+        } catch(err){ toast(err.message); }
       } else if (act === 'join'){
         if (latestMeet && latestMeet.url) window.open(latestMeet.url, '_blank', 'noopener');
       } else if (act === 'end'){
         if (!confirm('Buluşmayı herkes için kapatmak istediğine emin misin?')) return;
-        try { await update(ref(db), { meet: null }); } catch(err){ alert(err.message); }
+        try { await update(ref(db), { meet: null }); } catch(err){ toast(err.message); }
       }
     });
 
@@ -3890,7 +3888,7 @@
       const t = (text || '').trim(); if (!t) return;
       try {
         await push(ref(db, 'watchlist'), { text: t, done: false, by: u.displayName || u.email, byUid: u.uid, at: Date.now() });
-      } catch(e){ alert(e.message); }
+      } catch(e){ toast(e.message); }
     }
     if (els.wnNewInput){
       els.wnNewInput.addEventListener('keydown', e => {
@@ -3923,7 +3921,7 @@
         const v = inp.value.trim();
         if (save && v && v !== wnItemText(n)){
           try { await update(ref(db, `watchlist/${key}`), { text: v, title: null, updatedAt: Date.now() }); }
-          catch(e){ alert(e.message); }
+          catch(e){ toast(e.message); }
         }
         renderWatchNotes();
       };
@@ -3939,12 +3937,12 @@
       if (e.target.classList.contains('wn-check')){
         const n = latestWatch[key]; if (!n) return;
         update(ref(db, `watchlist/${key}`), { done: !n.done, doneAt: !n.done ? Date.now() : null })
-          .catch(err => alert(err.message));
+          .catch(err => toast(err.message));
         return;
       }
       if (e.target.closest('.wn-x')){
         if (!confirm('Bu öğeyi silmek istediğine emin misin?')) return;
-        update(ref(db, 'watchlist'), { [key]: null }).catch(err => alert(err.message));
+        update(ref(db, 'watchlist'), { [key]: null }).catch(err => toast(err.message));
         return;
       }
       if (e.target.closest('.wn-edit-btn')){ wnStartEdit(item); return; }
@@ -4025,7 +4023,7 @@
       if (!mcKey) return;
       const upd = {};
       Object.entries(patch).forEach(([k, v]) => { upd[`watchlist/${mcKey}/card/${k}`] = v; });
-      try { await update(ref(db), upd); } catch(e){ alert(e.message); }
+      try { await update(ref(db), upd); } catch(e){ toast(e.message); }
     }
     // afiş yükleme
     document.getElementById('mcPosterBtn').onclick = () => document.getElementById('mcPosterFile').click();
@@ -4039,7 +4037,7 @@
         await uploadBytesResumable(sr, blob, { contentType: 'image/jpeg', cacheControl: 'public,max-age=604800' });
         const url = await getDownloadURL(sr);
         await saveCard({ poster: url });
-      } catch(e){ alert('Afiş yüklenemedi: ' + (e && e.message ? e.message : e)); }
+      } catch(e){ toast('Afiş yüklenemedi: ' + (e && e.message ? e.message : e)); }
     });
     // tarih + yorum (kendi alanın) kaydet
     document.getElementById('mcDate').addEventListener('change', e => saveCard({ date: e.target.value.trim() || null }));
@@ -4097,7 +4095,7 @@
       if (!els.wnBgPal || els.wnBgPal.style.display === 'none') return;
       const b = e.target.closest('.wn-bg');
       if (b){
-        update(ref(db, 'watchlist/_meta'), { bg: b.getAttribute('data-bg') }).catch(err => alert(err.message));
+        update(ref(db, 'watchlist/_meta'), { bg: b.getAttribute('data-bg') }).catch(err => toast(err.message));
         els.wnBgPal.style.display = 'none';
         return;
       }
@@ -4248,7 +4246,7 @@
           });
           close();
           toast('Oturum eklendi: ' + msToHHMMSS(t.ms) + ' ✓');
-        } catch(e){ alert(e.message); }
+        } catch(e){ toast(e.message); }
       };
     })();
 
@@ -4367,7 +4365,7 @@
           await update(ref(db, `users/${uid}/sessions/${sessEditKey}`), { subject: val || null });
           toast(val ? ('Ders güncellendi: ' + val + ' 📖') : 'Ders kaldırıldı');
           close();
-        } catch(err){ alert(err.message); }
+        } catch(err){ toast(err.message); }
       });
       document.addEventListener('keydown', e => { if (e.key === 'Escape' && m.classList.contains('open')) close(); });
     })();
@@ -4387,7 +4385,7 @@
         await update(ref(db, `users/${u.uid}`), { avatar: url });
         renderProfAvatar();
         toast('Profil fotoğrafın güncellendi 🖼');
-      } catch(e){ alert('Yüklenemedi: ' + (e && e.message ? e.message : e)); }
+      } catch(e){ toast('Yüklenemedi: ' + (e && e.message ? e.message : e)); }
     });
     if (els.profNameSave) els.profNameSave.onclick = async () => {
       const u = auth.currentUser; if (!u) return;
@@ -4398,11 +4396,11 @@
         await update(ref(db, `users/${u.uid}`), { displayName: val });
         renderAuthChip(u);
         toast('Görünen ad güncellendi ✓');
-      } catch(e){ alert(e.message); }
+      } catch(e){ toast(e.message); }
     };
     if (els.profLogout) els.profLogout.onclick = async () => {
       if (!confirm('Çıkış yapmak istediğine emin misin?')) return;
-      try { closeProf(); await signOut(auth); } catch(e){ alert(e.message); }
+      try { closeProf(); await signOut(auth); } catch(e){ toast(e.message); }
     };
 
   </script>
@@ -4713,7 +4711,7 @@
         if (!kind || !key) return;
         if (!confirm('Bunu silmek istediğine emin misin?')) return;
         try { await fb.update(fb.ref(fb.db, kind), { [key]: null }); }
-        catch(err){ alert('Silinemedi: ' + (err && err.message ? err.message : err)); }
+        catch(err){ toast('Silinemedi: ' + (err && err.message ? err.message : err)); }
       });
     })();
   </script>
@@ -4993,7 +4991,7 @@
 
       /* ---- edit mode ---- */
       $('tgEditBtn').addEventListener('click', () => {
-        if (!me()){ alert('Düzenlemek için önce Çalışma Odası\u2019na giriş yapmalısın 💗'); return; }
+        if (!me()){ toast('Düzenlemek için önce Çalışma Odası\u2019na giriş yapmalısın 💗'); return; }
         editMode = !editMode;
         $('tgEditBtn').textContent = editMode ? '✔ Düzenleme bitti' : '✏️ Düzenle';
         refreshTravelUI(true);
@@ -5078,9 +5076,9 @@
       tgModal.addEventListener('click', e => { if (e.target === tgModal) closeTgModal(); });
       $('tgSave').addEventListener('click', async () => {
         if (!tgSaveFn) return;
-        if (!me() || !fb2){ alert('Önce Çalışma Odası\u2019na giriş yapmalısın 💗'); return; }
+        if (!me() || !fb2){ toast('Önce Çalışma Odası\u2019na giriş yapmalısın 💗'); return; }
         try { await tgSaveFn(); closeTgModal(); }
-        catch(e){ alert('Kaydedilemedi: ' + e.message); }
+        catch(e){ toast('Kaydedilemedi: ' + e.message); }
       });
       const fld = (id, label, val, hint) =>
         `<div class="tg-field"><label>${label}</label><input type="text" id="${id}" value="${esc(val || '')}">${hint ? '<div class="hint">' + hint + '</div>' : ''}</div>`;
@@ -5132,16 +5130,16 @@
         openTgModal();
       }
       async function deleteCountry(cid){
-        if (!me() || !fb2){ alert('Önce giriş yapmalısın 💗'); return; }
+        if (!me() || !fb2){ toast('Önce giriş yapmalısın 💗'); return; }
         const c = findCountry(cid); if (!c) return;
         if (!confirm('"' + c.name + '" ülkesini TÜM şehirleriyle silmek istediğine emin misin?')) return;
         const writes = { ['travelGuide/countries/' + cid]: null };
         cityList(c).forEach(ct => { writes['travel/' + ct.id] = null; });
         try { await fb2.update(fb2.ref(fb2.db), writes); }
-        catch(e){ alert('Silinemedi: ' + e.message); }
+        catch(e){ toast('Silinemedi: ' + e.message); }
       }
       async function deleteCity(cid, ctid){
-        if (!me() || !fb2){ alert('Önce giriş yapmalısın 💗'); return; }
+        if (!me() || !fb2){ toast('Önce giriş yapmalısın 💗'); return; }
         const f = findCity(cid, ctid); if (!f) return;
         if (!confirm('"' + f.ct.name + '" şehrini silmek istediğine emin misin?')) return;
         try {
@@ -5149,7 +5147,7 @@
             ['travelGuide/countries/' + cid + '/cities/' + ctid]: null,
             ['travel/' + ctid]: null
           });
-        } catch(e){ alert('Silinemedi: ' + e.message); }
+        } catch(e){ toast('Silinemedi: ' + e.message); }
       }
 
       /* ---- clean reader ---- */
@@ -5259,7 +5257,7 @@
         if (!me() || !fb2){ $('crNoteHint').textContent = 'Önce Çalışma Odası\u2019na giriş yapmalısın 💗'; return; }
         const cur = !!((travelData[curCityId] || {}).visited);
         try { await fb2.update(fb2.ref(fb2.db, 'travel/' + curCityId), { visited: !cur }); }
-        catch(e){ alert('Kaydedilemedi: ' + e.message); }
+        catch(e){ toast('Kaydedilemedi: ' + e.message); }
       });
       $('crEdit').addEventListener('click', () => {
         if (!curCityId) return;
@@ -5275,7 +5273,7 @@
         try {
           await fb2.update(fb2.ref(fb2.db, 'travel/' + curCityId + '/notes/' + key), { text: t, by: u.displayName || u.email, at: Date.now() });
           $('crNoteInput').value = '';
-        } catch(e){ alert('Kaydedilemedi: ' + e.message); }
+        } catch(e){ toast('Kaydedilemedi: ' + e.message); }
       });
       $('crNoteInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('crNoteBtn').click(); });
 
@@ -5319,7 +5317,7 @@
           const img = await tgCompress(file, 1280, 0.82);
           const key = Date.now() + '-' + Math.random().toString(36).slice(2, 7);
           await fb2.update(fb2.ref(fb2.db, path + key), { img, by: u.displayName || u.email, at: Date.now() });
-        } catch(e){ alert('Yüklenemedi: ' + e.message); }
+        } catch(e){ toast('Yüklenemedi: ' + e.message); }
         btn.textContent = old; btn.disabled = false;
         photoTarget = { type:'city', pid:null };
       });
@@ -5330,7 +5328,7 @@
         if (!confirm('Bu fotoğrafı silmek istediğine emin misin?')) return;
         try {
           await fb2.update(fb2.ref(fb2.db, 'travelGuide/countries/' + curCountryId + '/cities/' + curCityId + '/photos'), { [del.getAttribute('data-k')]: null });
-        } catch(err){ alert('Silinemedi: ' + err.message); }
+        } catch(err){ toast('Silinemedi: ' + err.message); }
       });
 
       /* ---- places: add / edit / delete / expand / photos ---- */
@@ -5367,7 +5365,7 @@
           if (!confirm('Bu fotoğrafı silmek istediğine emin misin?')) return;
           try {
             await fb2.update(fb2.ref(fb2.db, 'travelGuide/countries/' + curCountryId + '/cities/' + curCityId + '/places/' + phDel.getAttribute('data-p') + '/photos'), { [phDel.getAttribute('data-k')]: null });
-          } catch(err){ alert('Silinemedi: ' + err.message); }
+          } catch(err){ toast('Silinemedi: ' + err.message); }
           return;
         }
         // aksiyon butonları
@@ -5385,7 +5383,7 @@
             try {
               await fb2.update(fb2.ref(fb2.db, 'travelGuide/countries/' + curCountryId + '/cities/' + curCityId + '/places'), { [pid]: null });
               openPlaces.delete(pid);
-            } catch(err){ alert('Silinemedi: ' + err.message); }
+            } catch(err){ toast('Silinemedi: ' + err.message); }
             return;
           }
         }
