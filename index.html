@@ -1049,11 +1049,11 @@
     .wn-board.custom .wn-check:checked::after{ color:var(--wnfg); }
     .wn-item .txt{ flex:1; font-size:15px; line-height:1.45; white-space:pre-wrap; overflow-wrap:anywhere; cursor:text; padding-top:1px; }
     .wn-item.done .txt{ text-decoration:line-through; opacity:.55; }
-    .wn-item .wn-x{
+    .wn-item .wn-x, .wn-item .wn-edit-btn{
       flex:none; background:transparent; border:none; color:inherit; opacity:.35;
-      font-size:13px; padding:2px 6px; cursor:pointer; border-radius:8px;
+      font-size:14px; line-height:1; padding:4px 7px; cursor:pointer; border-radius:8px; transition:opacity .15s ease, background .15s ease;
     }
-    .wn-item .wn-x:hover{ opacity:1; box-shadow:none; transform:none; }
+    .wn-item .wn-x:hover, .wn-item .wn-edit-btn:hover{ opacity:1; background:color-mix(in srgb, var(--acc) 14%, transparent); box-shadow:none; transform:none; }
     .wn-edit{
       flex:1; background:transparent !important; border:none !important;
       border-bottom:1px dashed currentColor !important; border-radius:0 !important;
@@ -1437,7 +1437,7 @@
         <div class="stat-block" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
           <div>
             <b class="stat-title">📣 Bişeyler izleyelim</b>
-            <div class="muted small" style="margin-top:4px">Karşı tarafa anında bildirim gönderir</div>
+            
           </div>
           <button class="primary" id="watchNudgeBtn">Gönder 🎬</button>
         </div>
@@ -1445,7 +1445,7 @@
         <button class="stat-block wn-open" id="wnOpenCard">
           <span>
             <b class="stat-title">📝 İzlenecekler</b>
-            <span class="muted small" style="display:block;margin-top:4px"><span id="wnCount">0</span> not · açmak için dokun</span>
+            <span class="muted small" style="display:block;margin-top:4px"><span id="wnCount">0</span> film</span>
           </span>
           <span class="wn-arrow">›</span>
         </button>
@@ -3782,7 +3782,7 @@
       } else {
         els.meetBox.innerHTML = `
           <b class="stat-title">🎥 Google Meet</b>
-          <div class="muted small" style="margin-top:6px">Yeni bir görüşme başlat, linki paylaş; karşı taraf tek tıkla katılsın.</div>
+          
           <div class="meet-actions">
             <button class="primary" data-mact="start">Meet başlat</button>
           </div>`;
@@ -3874,7 +3874,7 @@
           <button class="wn-x" title="Sil">✕</button>
         </div>`;
       els.wnListOpen.innerHTML = open.map(row).join('') ||
-        '<div class="wn-hint">Liste boş — aşağıdan ekle 🍿</div>';
+        '<div class="wn-hint">Liste boş</div>';
       if (done.length){
         els.wnDoneWrap.style.display = '';
         els.wnDoneCount.textContent = done.length + ' ';
