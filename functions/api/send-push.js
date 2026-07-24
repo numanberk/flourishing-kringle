@@ -14,7 +14,9 @@ const MSGS = {
   nudge: f => ({ title: f + " seni dürttü 👉", body: "Hadi çalışmaya!" }),
   watch: f => ({ title: "🎬 Bişeyler izleyelim!", body: f + " film gecesi istiyor 🍿" }),
   meet:  f => ({ title: "🎥 Meet hazır!", body: f + " seni bekliyor — 🎬 sekmesinden katıl" }),
-  goal:  f => ({ title: f + " hedefini tamamladı 🎉", body: "Tebrik etmeyi unutma!" })
+  goal:  f => ({ title: f + " hedefini tamamladı 🎉", body: "Tebrik etmeyi unutma!" }),
+  habit: f => ({ title: "🎯 Ortak alışkanlık", body: f + " onayını bekliyor" }),
+  habitOk: f => ({ title: "🎯 Onaylandı!", body: f + " ortak alışkanlığı kabul etti" })
 };
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -128,7 +130,7 @@ async function sendOne(sub, payloadStr, pub, priv, subject) {
     },
     body
   });
-  return res.ok || res.status === 201;
+  return res.status;
 }
 
 export async function onRequestOptions() { return new Response(null, { status: 204, headers: cors }); }
@@ -159,14 +161,29 @@ export async function onRequestPost({ request, env }) {
   for (const [uid, subs] of Object.entries(all)) {
     if (uid === fromUid) continue;
     if (toUid && uid !== toUid) continue;
-    for (const s of Object.values(subs || {})) if (s && s.sub && s.sub.endpoint) targets.push(s.sub);
+    for (const [key, s] of Object.entries(subs || {})) {
+      if (s && s.sub && s.sub.endpoint) targets.push({ uid, key, sub: s.sub });
+    }
   }
 
   let sent = 0, failed = 0;
-  await Promise.all(targets.map(async s => {
-    try { (await sendOne(s, msg, PUB, PRIV, SUBJECT)) ? sent++ : failed++; }
-    catch { failed++; }
+  const dead = [];
+  await Promise.all(targets.map(async t => {
+    try {
+      const code = await sendOne(t.sub, msg, PUB, PRIV, SUBJECT);
+      if (code === 200 || code === 201 || code === 204) sent++;
+      else {
+        failed++;
+        // 404/410 = abonelik kalıcı olarak öldü, temizle
+        if (code === 404 || code === 410) dead.push(t);
+      }
+    } catch { failed++; }
   }));
 
-  return json({ ok: true, sent, failed });
+  // ölü abonelikleri veritabanından sil (sessizce; başarısız olursa önemli değil)
+  await Promise.all(dead.map(t =>
+    fetch(`${DB_URL}/pushSubs/${t.uid}/${t.key}.json`, { method: "DELETE" }).catch(() => {})
+  ));
+
+  return json({ ok: true, sent, failed, cleaned: dead.length });
 }
