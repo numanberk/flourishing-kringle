@@ -1358,10 +1358,14 @@ function sendPush(type, toUid, opts){
   .then(r => r.json())
   .then(j => {
     if (quiet) return;
-    if (j && j.sent > 0) toast('Bildirim ulaştı ✓');
-    else toast('Ulaşamadım — karşı tarafta bildirim kapalı olabilir');
+    if (j && j.sent > 0){ toast('Bildirim ulaştı ✓'); return; }
+    /* Her başarısızlığa "karşı taraf kapalı" demek yanlış teşhise
+       yol açıyordu; sunucunun döndürdüğü hatayı olduğu gibi göster. */
+    if (j && j.error){ toast('Bildirim hatası: ' + j.error); return; }
+    if (j && j.sent === 0 && j.failed === 0) toast('Karşı tarafta kayıtlı abonelik yok');
+    else toast('Gönderildi ama ulaşmadı (abonelik geçersiz olabilir)');
   })
-  .catch(() => { if (!quiet) toast('Bildirim gönderilemedi'); });
+  .catch(e => { if (!quiet) toast('Sunucuya ulaşılamadı: ' + e.message); });
 }
 
 /* ---------- browser notifications ---------- */
