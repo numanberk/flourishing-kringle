@@ -1297,6 +1297,7 @@ button.primary:not(:disabled):hover{ filter:brightness(1.06); }
   position:fixed; inset:0; z-index:8200; display:none;
   background:var(--bg); overflow-y:auto; -webkit-overflow-scrolling:touch;
 }
+#cycleView[hidden]{ display:none !important; }
 #cycleView.open{ display:block; }
 .cy-inner{ max-width:520px; margin:0 auto; padding:64px 18px 60px; }
 
@@ -1305,9 +1306,9 @@ button.primary:not(:disabled):hover{ filter:brightness(1.06); }
 /* --- halka --- */
 .cy-hero{ position:relative; width:230px; height:230px; margin:6px auto 2px; }
 .cy-ring{ width:100%; height:100%; transform:rotate(-90deg); }
-.cy-track{ fill:none; stroke:var(--tag-bg); stroke-width:13; }
+.cy-track{ fill:none; stroke:var(--tag-bg); stroke-width:13; opacity:1; }
 .cy-prog{
-  fill:none; stroke:url(#cyGrad); stroke-width:13; stroke-linecap:round;
+  fill:none; stroke-width:13; stroke-linecap:round;
   stroke-dasharray:552.9; stroke-dashoffset:552.9;
   transition:stroke-dashoffset .9s cubic-bezier(.22,.9,.3,1);
   stroke:var(--acc);
@@ -1398,3 +1399,9 @@ button.primary:not(:disabled):hover{ filter:brightness(1.06); }
 .cy-hrow .muted{ font-size:12px; }
 .cy-foot{ margin-top:18px; text-align:center; font-size:11px; color:var(--muted); }
 @media (max-width:640px){ .cy-inner{ padding:60px 14px 46px; } .cy-hero{ width:200px; height:200px; } .cy-day{ font-size:45px; } }
+
+/* izleyici modu: takvim/çipler yalnızca bilgi amaçlı */
+#cycleView.cy-ro .cy-chip{ cursor:default; }
+#cycleView.cy-ro .cy-chip:hover{ transform:none; }
+#cycleView.cy-ro .cy-cell{ cursor:default; }
+#cycleView.cy-ro .cy-cell:hover{ transform:none; }
