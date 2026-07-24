@@ -3,6 +3,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, on
 import { getDatabase, ref, set, update, get, onValue, onDisconnect, push, query, limitToLast } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 import { getStorage, ref as sRef, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js";
 import { initHabits } from "./habits.js";
+import { initCycle } from "./cycle.js";
 
 /* ======= Firebase ======= */
 const firebaseConfig = {
@@ -290,11 +291,17 @@ onAuthStateChanged(auth, async user => {
 });
 
 /* ---------------- Global listeners (populate snapshots) ---------------- */
+let cycleApi = null;
+try {
+  cycleApi = initCycle({ db, auth, ref, set, update, onValue, toast });
+} catch(e){ console.error('cycle init failed:', e && e.message); }
+
 let habitsApi = null;
 try {
   habitsApi = initHabits({
     db, auth, ref, set, update, onValue,
-    toast, confetti, sendPush, escapeHtml
+    toast, confetti, sendPush, escapeHtml,
+    openCycle: () => cycleApi && cycleApi.open()
   });
 } catch(e){ console.error('habits init failed:', e && e.message); }
 

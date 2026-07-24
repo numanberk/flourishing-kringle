@@ -14,7 +14,7 @@
    watchlist'teki "üstten inen izin" sorunu burada oluşmuyor.        */
 
 export function initHabits(ctx){
-  const { db, auth, ref, set, update, onValue, toast, confetti, sendPush, escapeHtml } = ctx;
+  const { db, auth, ref, set, update, onValue, toast, confetti, sendPush, escapeHtml, openCycle } = ctx;
 
   const $ = id => document.getElementById(id);
   const view = $('habitView');
@@ -189,6 +189,19 @@ export function initHabits(ctx){
     onValue(ref(db, 'habitLog'), s => { logs = s.val() || {}; render(); },
       err => console.error('habitLog read failed:', err && err.message));
   }
+
+  /* Başlıktaki 🎯 üç kez arka arkaya dokunulursa döngü takibi açılır.
+     Sessiz bir kısayol: tek/çift dokunuşta hiçbir şey olmuyor. */
+  (function(){
+    const sig = $('habitSigil'); if (!sig || typeof openCycle !== 'function') return;
+    let n = 0, t = null;
+    sig.addEventListener('click', () => {
+      n++;
+      clearTimeout(t);
+      t = setTimeout(() => { n = 0; }, 700);
+      if (n >= 3){ n = 0; clearTimeout(t); openCycle(); }
+    });
+  })();
 
   $('habitAdd').onclick = addHabit;
   $('habitName').addEventListener('keydown', e => { if (e.key === 'Enter') addHabit(); });
