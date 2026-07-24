@@ -232,9 +232,6 @@ export function initCycle(ctx){
 
   /* ---------- olaylar ---------- */
   $('cyToggle').onclick = () => togglePeriod(selDate);
-  $('cyPickDate').onclick = () => {
-    toast(selDate ? 'Takvimden gün seç, sonra kaydet' : 'Takvimden bir gün seç');
-  };
   $('cyPrev').onclick = () => { viewMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth()-1, 1); renderCalendar(); };
   $('cyNext2').onclick = () => { viewMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth()+1, 1); renderCalendar(); };
   $('cycleClose').onclick = close;
@@ -281,13 +278,22 @@ export function initCycle(ctx){
   }
 
   function open(){
+    /* Görünürlüğü doğrudan ayarlıyoruz: stil dosyası bir şekilde
+       yüklenmezse bile ekran sayfanın içine dökülmesin. */
+    view.hidden = false;
+    view.style.display = 'block';
     view.classList.add('open');
     document.body.style.overflow = 'hidden';
     viewMonth = new Date(); viewMonth.setDate(1);
     selDate = null;
     attach(); render();
   }
-  function close(){ view.classList.remove('open'); document.body.style.overflow = ''; }
+  function close(){
+    view.classList.remove('open');
+    view.style.display = 'none';
+    view.hidden = true;
+    document.body.style.overflow = '';
+  }
 
   return { open, close };
 }
