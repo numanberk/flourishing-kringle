@@ -2,8 +2,11 @@
    1) Push bildirimlerini alır ve gösterir
    2) Uygulama kabuğunu önbelleğe alır → internet yokken de açılır */
 
-const CACHE = 'co-shell-v2';
-const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/apple-touch-icon.png'];
+const CACHE = 'co-shell-v4';
+const SHELL = ['/', '/index.html', '/manifest.webmanifest',
+  '/icon-192.png', '/icon-512.png', '/apple-touch-icon.png',
+  '/css/app.css', '/js/app.js', '/js/habits.js',
+  '/js/gateway.js', '/js/gallery.js', '/js/birthday.js'];
 
 self.addEventListener('install', e => {
   e.waitUntil((async () => {
@@ -48,6 +51,21 @@ self.addEventListener('fetch', e => {
     return;
   }
 
+  // kod dosyaları: önce ağ (deploy sonrası bayat JS/CSS servis edilmesin)
+  if (url.pathname.startsWith('/js/') || url.pathname.startsWith('/css/')) {
+    e.respondWith((async () => {
+      try {
+        const fresh = await fetch(req);
+        if (fresh && fresh.ok) { const c = await caches.open(CACHE); c.put(req, fresh.clone()); }
+        return fresh;
+      } catch (_) {
+        const c = await caches.open(CACHE);
+        return (await c.match(req)) || Response.error();
+      }
+    })());
+    return;
+  }
+
   // ikon/manifest gibi statikler: önce önbellek, arkada tazele
   e.respondWith((async () => {
     const c = await caches.open(CACHE);
@@ -67,12 +85,17 @@ self.addEventListener('push', e => {
     icon: '/icon-192.png',
     badge: '/icon-192.png',
     tag: d.tag || undefined,
+    renotify: !!d.tag,          // aynı etiketle gelen 2. dürtme yine sessizce ezmesin
+    requireInteraction: true,   // kapatana kadar ekranda kalsın — kaçırmak zorlaşsın
+    vibrate: [180, 80, 180],
     data: { url: d.url || '/' }
   };
   e.waitUntil((async () => {
-    // sayfa zaten önde ve odaktaysa toast gösteriyor; bildirimi atla
+    // sayfa önde VE odaktaysa uygulama zaten toast gösteriyor; bildirimi atla.
+    // (index.html'deki notifyMe artık tam tersini kontrol ediyor, ikisi
+    //  birbirine bırakıp hiçbir şey göstermiyordu.)
     const cs = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-    if (cs.some(c => c.focused)) return;
+    if (cs.some(c => c.focused && c.visibilityState === 'visible')) return;
     await self.registration.showNotification(title, opts);
   })());
 });
