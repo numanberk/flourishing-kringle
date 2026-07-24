@@ -1289,3 +1289,112 @@ button.primary:not(:disabled):hover{ filter:brightness(1.06); }
 .hb-invite .row{ margin-top:10px; }
 .hb-del{ flex:none; border-radius:999px; padding:4px 10px; }
 @media (max-width:640px){ .hb-add #habitName{ min-width:100%; } }
+
+/* ============================================================
+   CYCLE — döngü takibi
+   ============================================================ */
+#cycleView{
+  position:fixed; inset:0; z-index:8200; display:none;
+  background:var(--bg); overflow-y:auto; -webkit-overflow-scrolling:touch;
+}
+#cycleView.open{ display:block; }
+.cy-inner{ max-width:520px; margin:0 auto; padding:64px 18px 60px; }
+
+#habitSigil{ cursor:default; -webkit-tap-highlight-color:transparent; user-select:none; }
+
+/* --- halka --- */
+.cy-hero{ position:relative; width:230px; height:230px; margin:6px auto 2px; }
+.cy-ring{ width:100%; height:100%; transform:rotate(-90deg); }
+.cy-track{ fill:none; stroke:var(--tag-bg); stroke-width:13; }
+.cy-prog{
+  fill:none; stroke:url(#cyGrad); stroke-width:13; stroke-linecap:round;
+  stroke-dasharray:552.9; stroke-dashoffset:552.9;
+  transition:stroke-dashoffset .9s cubic-bezier(.22,.9,.3,1);
+  stroke:var(--acc);
+}
+.cy-hero-mid{
+  position:absolute; inset:0; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; text-align:center; gap:1px;
+}
+.cy-day{ font-size:52px; font-weight:800; line-height:1; color:var(--text); letter-spacing:-1px; }
+.cy-day-lbl{ font-size:12px; color:var(--muted); letter-spacing:.4px; }
+.cy-phase{
+  margin-top:8px; font-size:12px; font-weight:700; color:var(--acc);
+  background:var(--tag-bg); border:1px solid var(--border);
+  padding:4px 11px; border-radius:999px;
+}
+.cy-next{ text-align:center; color:var(--muted); font-size:14px; margin:6px 0 16px; }
+.cy-next b{ color:var(--text); }
+
+.cy-actions{ display:flex; gap:9px; margin-bottom:20px; }
+.cy-actions button{ flex:1; padding:13px; border-radius:13px; font-weight:700; }
+
+/* --- takvim --- */
+.cy-cal{
+  background:var(--card); border:1px solid var(--border); border-radius:18px;
+  padding:14px; box-shadow:var(--shadow);
+}
+.cy-cal-head{ display:flex; align-items:center; justify-content:space-between; font-weight:700; margin-bottom:10px; }
+.cy-nav{ border-radius:10px; padding:4px 12px; font-size:17px; line-height:1; }
+.cy-dow{ display:grid; grid-template-columns:repeat(7,1fr); gap:3px; margin-bottom:5px; }
+.cy-dow i{ font-style:normal; text-align:center; font-size:11px; color:var(--muted); font-weight:600; }
+.cy-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
+.cy-cell{
+  aspect-ratio:1; border-radius:11px; border:1px solid transparent;
+  display:flex; align-items:center; justify-content:center;
+  font-size:13px; font-weight:600; color:var(--text);
+  background:transparent; cursor:pointer; padding:0;
+  transition:transform .12s ease, background .15s ease;
+}
+.cy-cell:hover{ transform:scale(1.08); }
+.cy-cell.blank{ visibility:hidden; pointer-events:none; }
+.cy-cell.today{ border-color:var(--acc); font-weight:800; }
+.cy-cell.sel{ outline:2px solid var(--acc); outline-offset:1px; }
+.cy-cell.period{ background:var(--acc); color:#fff; }
+.cy-cell.pred{ background:transparent; border:1px dashed var(--acc); color:var(--acc); }
+.cy-cell.fertile{ background:color-mix(in srgb, var(--ok) 26%, transparent); }
+.cy-cell.ovu{ background:var(--ok); color:#0c2a17; font-weight:800; }
+.cy-cell.future{ opacity:.45; }
+
+.cy-legend{ display:flex; flex-wrap:wrap; gap:5px 14px; margin-top:12px; font-size:11.5px; color:var(--muted); }
+.cy-legend span{ display:flex; align-items:center; gap:5px; }
+.cy-legend i{ width:11px; height:11px; border-radius:4px; display:inline-block; }
+.cy-legend .k-period{ background:var(--acc); }
+.cy-legend .k-fertile{ background:color-mix(in srgb, var(--ok) 26%, transparent); }
+.cy-legend .k-ovu{ background:var(--ok); }
+.cy-legend .k-pred{ border:1px dashed var(--acc); }
+
+/* --- istatistik --- */
+.cy-stats{ display:grid; grid-template-columns:repeat(3,1fr); gap:9px; margin-top:16px; }
+.cy-stat{
+  background:var(--card); border:1px solid var(--border); border-radius:14px;
+  padding:12px 8px; text-align:center; box-shadow:var(--shadow);
+}
+.cy-stat b{ display:block; font-size:21px; color:var(--acc); line-height:1.15; }
+.cy-stat span{ font-size:11px; color:var(--muted); }
+
+/* --- günlük --- */
+.cy-log{
+  background:var(--card); border:1px solid var(--border); border-radius:18px;
+  padding:14px; margin-top:16px; box-shadow:var(--shadow);
+}
+.cy-log-title{ font-weight:700; margin-bottom:10px; }
+.cy-chiprow{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:9px; }
+.cy-chip{
+  border-radius:999px; padding:7px 12px; font-size:12.5px; font-weight:600;
+  background:var(--tag-bg); border:1px solid var(--border); color:var(--text); cursor:pointer;
+  transition:transform .12s ease;
+}
+.cy-chip:hover{ transform:translateY(-1px); }
+.cy-chip.on{ background:var(--acc); border-color:var(--acc); color:#fff; }
+
+/* --- geçmiş --- */
+.cy-history{ margin-top:16px; }
+.cy-hrow{
+  display:flex; justify-content:space-between; align-items:center; gap:10px;
+  background:var(--card); border:1px solid var(--border); border-radius:12px;
+  padding:10px 13px; margin-top:7px; font-size:13px;
+}
+.cy-hrow .muted{ font-size:12px; }
+.cy-foot{ margin-top:18px; text-align:center; font-size:11px; color:var(--muted); }
+@media (max-width:640px){ .cy-inner{ padding:60px 14px 46px; } .cy-hero{ width:200px; height:200px; } .cy-day{ font-size:45px; } }
