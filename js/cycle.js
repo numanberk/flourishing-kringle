@@ -14,6 +14,11 @@ export function initCycle(ctx){
   const view = $('cycleView');
   if (!view) return null;
 
+  /* Tek sahipli: bütün kayıtlar Erva'nın düğümünde durur.
+     Erva yazar, diğer taraf yalnızca izler. */
+  const OWNER_UID = '8EWGHxMqeJhep30drwHczVvEdG23';
+  const canEdit = () => (auth.currentUser || {}).uid === OWNER_UID;
+
   const DEF_CYCLE = 28, DEF_PERIOD = 5;
   let periods = {};        // id -> {start, end}
   let logs = {};           // 'YYYY-MM-DD' -> {...}
@@ -132,9 +137,16 @@ export function initCycle(ctx){
       $('cyNext').textContent = 'Başlamak için ilk günü kaydet';
     }
 
-    // ana buton
+    // ana buton — yalnızca sahibi görür
     const open = openPeriod();
-    $('cyToggle').textContent = open ? 'Adet bitti' : 'Adet başladı';
+    const acts = $('cyToggle').parentElement;
+    if (canEdit()){
+      acts.style.display = '';
+      $('cyToggle').textContent = open ? 'Adet bitti' : 'Adet başladı';
+    } else {
+      acts.style.display = 'none';
+    }
+    view.classList.toggle('cy-ro', !canEdit());
 
     renderCalendar();
 
@@ -182,11 +194,26 @@ export function initCycle(ctx){
     const l = logs[key] || {};
     $('cyLogTitle').textContent = key === k(new Date())
       ? 'Bugün' : parse(key).getDate() + ' ' + TR_MONTH[parse(key).getMonth()];
+    const ro = !canEdit();
+    const sym = l.sym || [];
+    if (ro){
+      /* İzleyici modunda boş seçenekleri göstermenin anlamı yok:
+         yalnızca o gün işaretlenmiş olanlar görünür. */
+      const picked = []
+        .concat(FLOW.filter(([v]) => l.flow === v).map(([,t]) => t))
+        .concat(MOOD.filter(([v]) => l.mood === v).map(([,t]) => t))
+        .concat(SYM.filter(([v]) => sym.includes(v)).map(([,t]) => t));
+      $('cyFlow').innerHTML = picked.length
+        ? picked.map(t => `<span class="cy-chip on">${t}</span>`).join('')
+        : '<span class="muted small">bu gün için kayıt yok</span>';
+      $('cyMood').innerHTML = '';
+      $('cySym').innerHTML = '';
+      return;
+    }
     $('cyFlow').innerHTML = FLOW.map(([v,t]) =>
       `<button class="cy-chip ${l.flow===v?'on':''}" data-f="${v}">${t}</button>`).join('');
     $('cyMood').innerHTML = MOOD.map(([v,t]) =>
       `<button class="cy-chip ${l.mood===v?'on':''}" data-m="${v}" title="${v}">${t}</button>`).join('');
-    const sym = l.sym || [];
     $('cySym').innerHTML = SYM.map(([v,t]) =>
       `<button class="cy-chip ${sym.includes(v)?'on':''}" data-s="${v}">${t}</button>`).join('');
   }
@@ -200,15 +227,16 @@ export function initCycle(ctx){
       return `<div class="cy-hrow">
         <span>${s.getDate()} ${TR_MONTH[s.getMonth()]} ${s.getFullYear()}</span>
         <span class="muted">${len ? len + ' gün' : 'sürüyor'}</span>
-        <button class="cy-del small" data-id="${id}" title="Sil">✕</button>
+        ${canEdit() ? `<button class="cy-del small" data-id="${id}" title="Sil">✕</button>` : ''}
       </div>`;
     }).join('');
   }
 
   /* ---------- yazma ---------- */
-  const uid = () => (auth.currentUser || {}).uid;
+  const uid = () => OWNER_UID;
 
   async function togglePeriod(dateKey){
+    if (!canEdit()) return;
     const u = uid(); if (!u) return;
     const day = dateKey || k(new Date());
     const open = openPeriod();
@@ -224,6 +252,7 @@ export function initCycle(ctx){
   }
 
   async function setLog(patch){
+    if (!canEdit()) return;
     const u = uid(); if (!u) return;
     const key = selDate || k(new Date());
     try { await update(ref(db, `cycle/${u}/logs/${key}`), patch); }
@@ -261,6 +290,7 @@ export function initCycle(ctx){
     }
     const del = e.target.closest('.cy-del');
     if (del){
+      if (!canEdit()) return;
       if (!confirm('Bu kayıt silinsin mi?')) return;
       const u = uid(); if (!u) return;
       try { await set(ref(db, `cycle/${u}/periods/${del.getAttribute('data-id')}`), null); }
@@ -269,7 +299,8 @@ export function initCycle(ctx){
   });
 
   function attach(){
-    const u = uid(); if (!u || attached) return;
+    if (attached || !auth.currentUser) return;
+    const u = OWNER_UID;
     attached = true;
     onValue(ref(db, `cycle/${u}/periods`), s => { periods = s.val() || {}; render(); },
       err => console.error('cycle read failed:', err && err.message));
