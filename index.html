@@ -145,7 +145,7 @@
   <div id="habitView">
     <button id="habitClose" class="ov-close" title="Kapat">✕</button>
     <div class="lib-inner">
-      <h2>🎯 Alışkanlıklar</h2>
+      <h2><span id="habitSigil" role="presentation">🎯</span> Alışkanlıklar</h2>
 
       <div id="habitInvites"></div>
 
@@ -153,8 +153,8 @@
         <input id="habitName" maxlength="40" placeholder="yeni alışkanlık…">
         <input id="habitEmoji" maxlength="2" value="🎯" title="emoji">
         <select id="habitType">
-          <option value="personal">Kişisel</option>
-          <option value="shared">Ortak</option>
+          <option value="personal">Alışkanlık</option>
+          <option value="shared">Balışkanlık</option>
         </select>
         <button class="primary" id="habitAdd">Ekle</button>
       </div>
@@ -162,6 +162,59 @@
 
       <div id="habitList"></div>
       <div id="habitEmpty" class="muted small" style="margin-top:14px">Henüz alışkanlık yok</div>
+    </div>
+  </div>
+
+  <div id="cycleView">
+    <button id="cycleClose" class="ov-close" title="Kapat">✕</button>
+    <div class="cy-inner">
+
+      <div class="cy-hero">
+        <svg class="cy-ring" viewBox="0 0 200 200" aria-hidden="true">
+          <circle class="cy-track" cx="100" cy="100" r="88"/>
+          <circle class="cy-prog" id="cyProg" cx="100" cy="100" r="88"/>
+        </svg>
+        <div class="cy-hero-mid">
+          <div class="cy-day" id="cyDay">—</div>
+          <div class="cy-day-lbl">döngü günü</div>
+          <div class="cy-phase" id="cyPhase"></div>
+        </div>
+      </div>
+
+      <div class="cy-next" id="cyNext"></div>
+
+      <div class="cy-actions">
+        <button class="primary" id="cyToggle">Adet başladı</button>
+        <button id="cyPickDate" title="Başka bir tarih için kaydet">Tarih seç</button>
+      </div>
+
+      <div class="cy-cal">
+        <div class="cy-cal-head">
+          <button id="cyPrev" class="cy-nav" title="Önceki ay">‹</button>
+          <span id="cyMonth"></span>
+          <button id="cyNext2" class="cy-nav" title="Sonraki ay">›</button>
+        </div>
+        <div class="cy-dow"><i>Pt</i><i>Sa</i><i>Ça</i><i>Pe</i><i>Cu</i><i>Ct</i><i>Pz</i></div>
+        <div class="cy-grid" id="cyGrid"></div>
+        <div class="cy-legend">
+          <span><i class="k-period"></i>adet</span>
+          <span><i class="k-fertile"></i>doğurgan</span>
+          <span><i class="k-ovu"></i>yumurtlama</span>
+          <span><i class="k-pred"></i>tahmini</span>
+        </div>
+      </div>
+
+      <div class="cy-stats" id="cyStats"></div>
+
+      <div class="cy-log" id="cyLogBox">
+        <div class="cy-log-title" id="cyLogTitle">Bugün</div>
+        <div class="cy-chiprow" id="cyFlow"></div>
+        <div class="cy-chiprow" id="cyMood"></div>
+        <div class="cy-chiprow" id="cySym"></div>
+      </div>
+
+      <div class="cy-history" id="cyHistory"></div>
+      <div class="cy-foot">Tahminler geçmiş döngülerden hesaplanır, tıbbi tavsiye değildir.</div>
     </div>
   </div>
 
