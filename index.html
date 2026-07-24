@@ -15,7 +15,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Çalışma Odası">
-  <link rel="stylesheet" href="/css/app.css">
+  <link rel="stylesheet" href="/css/app.css?v=6">
 </head>
 <body>
   <div class="container">
@@ -165,14 +165,14 @@
     </div>
   </div>
 
-  <div id="cycleView">
+  <div id="cycleView" hidden style="display:none">
     <button id="cycleClose" class="ov-close" title="Kapat">✕</button>
     <div class="cy-inner">
 
       <div class="cy-hero">
         <svg class="cy-ring" viewBox="0 0 200 200" aria-hidden="true">
-          <circle class="cy-track" cx="100" cy="100" r="88"/>
-          <circle class="cy-prog" id="cyProg" cx="100" cy="100" r="88"/>
+          <circle class="cy-track" cx="100" cy="100" r="88" fill="none" stroke="currentColor" stroke-width="13"/>
+          <circle class="cy-prog" id="cyProg" cx="100" cy="100" r="88" fill="none" stroke="currentColor" stroke-width="13" stroke-linecap="round"/>
         </svg>
         <div class="cy-hero-mid">
           <div class="cy-day" id="cyDay">—</div>
@@ -185,7 +185,6 @@
 
       <div class="cy-actions">
         <button class="primary" id="cyToggle">Adet başladı</button>
-        <button id="cyPickDate" title="Başka bir tarih için kaydet">Tarih seç</button>
       </div>
 
       <div class="cy-cal">
