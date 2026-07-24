@@ -210,6 +210,8 @@ function installPresence(uid) {
       const meRef = ref(db, `presence/${uid}`);
       update(meRef, { online: true, lastOnline: Date.now() });
       onDisconnect(meRef).update({ online: false, lastOnline: Date.now() });
+      // bağlantı koparsa "Çalışıyor" rozeti sonsuza kadar asılı kalmasın
+      onDisconnect(ref(db, `users/${uid}`)).update({ studying: false });
       setPresence(true);
     } else setPresence(false);
   });
@@ -256,6 +258,8 @@ onAuthStateChanged(auth, async user => {
       });
     }
 
+    await migrateSessions(user.uid);
+    await reconcileStudy(user.uid);
     attachGlobalListeners();
     attachSessions(user.uid);
     attachNudges(user.uid);
@@ -266,6 +270,7 @@ onAuthStateChanged(auth, async user => {
     startUITicker();   // live timers independent of DB changes
   } else {
     stopUITicker();
+    stopBeat();
     latestUsers = {};
     latestPresence = {};
     els.usersList.innerHTML = els.leaderboard.innerHTML = "";
@@ -297,6 +302,7 @@ function attachGlobalListeners() {
   onValue(ref(db, "users"), usersSnap => {
     latestUsers = usersSnap.val() || {};
     draw();
+    attachTheirSessions();
     if (habitsApi) habitsApi.setUsers(latestUsers);
   }, err => console.error("users read failed — check Realtime Database rules:", err && err.message));
   if (habitsApi) habitsApi.start();     // davet rozeti panel açılmadan da görünsün
@@ -308,6 +314,76 @@ function attachGlobalListeners() {
 }
 
 /* ---------------- Local 1s UI ticker ---------------- */
+/* Çalışırken 60 sn'de bir "hâlâ buradayım" damgası. Sekme kapanınca
+   bu damga durur; hem karşı taraf donmuş sayaç görmez hem de bir dahaki
+   girişte süreyi damgaya kadar sayabiliriz. */
+const BEAT_MS = 60000;
+const STALE_MS = 3 * BEAT_MS;   // 3 dk sessizlik = bağlantı kopmuş say
+let beatTimer = null;
+function startBeat(){
+  if (beatTimer) return;
+  const tick = () => {
+    const uid = (auth.currentUser || {}).uid;
+    if (!uid || !amStudying()) return;
+    update(ref(db, `users/${uid}`), { lastBeat: Date.now() }).catch(() => {});
+  };
+  tick();
+  beatTimer = setInterval(tick, BEAT_MS);
+}
+function stopBeat(){ if (beatTimer){ clearInterval(beatTimer); beatTimer = null; } }
+
+/* Bir oturum canlı mı, yoksa sekme kapanıp öylece mi kalmış? */
+function liveStudy(u){
+  if (!u || !u.studying || !u.currentStartAt) return false;
+  const beat = u.lastBeat || u.currentStartAt;
+  return (Date.now() - beat) < STALE_MS;
+}
+
+/* Girişte: yarım kalmış oturumu kapat ve süreyi son kalp atışına kadar yaz. */
+async function reconcileStudy(uid){
+  try {
+    const snap = await get(ref(db, `users/${uid}`));
+    const u = snap.val() || {};
+    /* studying bayrağına bakmıyoruz: bağlantı koptuğunda onDisconnect onu
+       zaten false yapıyor, ama süre hâlâ yazılmayı bekliyor. */
+    if (!u.currentStartAt) return;
+    const beat = u.lastBeat || u.currentStartAt;
+    if (Date.now() - beat < STALE_MS){
+      // kalp atışı taze → oturum aslında sürüyor, sadece sayfa yenilenmiş
+      await update(ref(db, `users/${uid}`), { studying: true, lastBeat: Date.now() });
+      startBeat();
+      return;
+    }
+    const endAt = Math.max(u.currentStartAt, u.lastBeat || 0);
+    const elapsed = Math.max(0, endAt - u.currentStartAt);
+    const totals = u.totals || { allTimeMs: 0, perDay: {} };
+    const perDay = totals.perDay || {};
+    const day = todayKey(new Date(u.currentStartAt));
+    perDay[day] = (perDay[day] || 0) + elapsed;
+    await update(ref(db, `users/${uid}`), {
+      studying: false, currentStartAt: null, currentSubject: null, lastBeat: null,
+      totals: { allTimeMs: (totals.allTimeMs || 0) + elapsed, perDay: prunePerDay(perDay) }
+    });
+    if (elapsed > 15000){
+      await push(ref(db, `sessions/${uid}`), {
+        subject: u.currentSubject || '', startAt: u.currentStartAt,
+        endAt, ms: elapsed, day, recovered: true
+      });
+      toast('Yarım kalan oturum kaydedildi: ' + msToHHMMSS(elapsed));
+    }
+  } catch(e){ console.error('reconcileStudy failed:', e && e.message); }
+}
+
+/* perDay sonsuza kadar büyüyordu; son 120 günü tut. */
+function prunePerDay(perDay){
+  const keys = Object.keys(perDay || {}).sort();
+  if (keys.length <= 120) return perDay;
+  const keep = keys.slice(-120);
+  const out = {};
+  keep.forEach(k => out[k] = perDay[k]);
+  return out;
+}
+
 function startUITicker(){
   if (uiTick) return;
   uiTick = setInterval(draw, 1000);
@@ -371,7 +447,7 @@ function draw(){
     const u = users[uid];
     const isOnline = !!(presence[uid] && presence[uid].online);
     const name = u.displayName || "Kullanıcı";
-    const studying = !!u.studying;
+    const studying = liveStudy(u);          // bayat (kopmuş) oturum canlı sayılmaz
     const startAt = u.currentStartAt;
     const perDay = u.totals?.perDay || {};
     const todayMsBase = perDay[today] || 0;
@@ -386,8 +462,9 @@ function draw(){
     const avatar = isAvatarSrc(u.avatar) ? u.avatar : null;
     lb.push({ uid, name: escapeHtml(name), ms: todayMs, done: pct >= 1 });
     // yapısal imza: bunlar değişmedikçe kart YENİDEN ÇİZİLMEZ (hover titremesi çözümü)
-    const sig = [name, studying, isOnline, u.currentSubject || '', u.streak || 0, targetMin, pct >= 1, avatar || '', uid !== myUid].join('¦');
-    cardData[uid] = { uid, name, studying, isOnline, currentMs, todayMs, allTimeMs, targetMin, pct, avatar, subject: u.currentSubject, streak: u.streak || 0, sig, isMe: uid === myUid };
+    const shownStreak = liveStreak(u);
+    const sig = [name, studying, isOnline, u.currentSubject || '', shownStreak, targetMin, pct >= 1, avatar || '', uid !== myUid].join('¦');
+    cardData[uid] = { uid, name, studying, isOnline, currentMs, todayMs, allTimeMs, targetMin, pct, avatar, subject: u.currentSubject, streak: shownStreak, sig, isMe: uid === myUid };
     const cardEl = listEl.querySelector(`.user-card[data-uid="${uid}"]`);
     if (!cardEl || cardEl.dataset.sig !== sig) structureChanged = true;
   });
@@ -661,7 +738,8 @@ async function toggleStudy(){
   const now = Date.now();
   if (!u.studying){
     const subj = (els.subjectSelect && els.subjectSelect.value) || '';
-    await update(uref, { studying:true, currentStartAt: now, currentSubject: subj || null });
+    await update(uref, { studying:true, currentStartAt: now, currentSubject: subj || null, lastBeat: now });
+    startBeat();
     sendPush('study');
   } else {
     const startAt = u.currentStartAt || now;
@@ -684,11 +762,13 @@ async function toggleStudy(){
       else if (diff > 1) newStreak = 1;
     }
 
+    stopBeat();
     await update(uref, {
       studying:false,
       currentStartAt:null,
       currentSubject:null,
-      totals:{ allTimeMs, perDay },
+      lastBeat:null,
+      totals:{ allTimeMs, perDay: prunePerDay(perDay) },
       lastStudyDay: stoppedDay,
       streak: newStreak
     });
@@ -696,7 +776,7 @@ async function toggleStudy(){
     // session log (skip accidental <15s taps)
     if (elapsed > 15000){
       try {
-        await push(ref(db, `users/${uid}/sessions`), {
+        await push(ref(db, `sessions/${uid}`), {
           subject: u.currentSubject || '',
           startAt, endAt: now, ms: elapsed, day
         });
@@ -1061,15 +1141,45 @@ if (els.subjectAdd) els.subjectAdd.onclick = () => { if (auth.currentUser) openS
 
 /* ---------- session log data ---------- */
 let mySessions = {};
+let theirSessions = {};
+let theirUid = null;
 let sessionsAttached = false;
 function attachSessions(uid){
   if (sessionsAttached) return;
   sessionsAttached = true;
-  onValue(query(ref(db, `users/${uid}/sessions`), limitToLast(400)), s => {
+  onValue(query(ref(db, `sessions/${uid}`), limitToLast(400)), s => {
     mySessions = s.val() || {};
     if (statsOpen){ renderSessionLog(); renderSubjBreakdown(); }
     if (typeof sdSubject !== 'undefined' && sdSubject) sdRender();
   }, err => console.error('sessions read failed:', err && err.message));
+}
+
+/* Karşı tarafın oturumları — ders karşılaştırması için. users listesi
+   gelince bir kez bağlanıyor. */
+function attachTheirSessions(){
+  const me = (auth.currentUser || {}).uid; if (!me) return;
+  const other = Object.keys(latestUsers || {}).find(u => u !== me);
+  if (!other || other === theirUid) return;
+  theirUid = other;
+  onValue(query(ref(db, `sessions/${other}`), limitToLast(400)), s => {
+    theirSessions = s.val() || {};
+    if (statsOpen) renderSubjBreakdown();
+  }, err => console.error('partner sessions read failed:', err && err.message));
+}
+
+/* Tek seferlik taşıma: eski kayıtlar users/{uid}/sessions altındaydı. */
+async function migrateSessions(uid){
+  try {
+    if (localStorage.getItem('sb_sess_migrated') === '1') return;
+    const old = await get(ref(db, `users/${uid}/sessions`));
+    if (old.exists()){
+      const cur = await get(ref(db, `sessions/${uid}`));
+      const merged = Object.assign({}, cur.val() || {}, old.val() || {});
+      await update(ref(db, `sessions/${uid}`), merged);
+      await set(ref(db, `users/${uid}/sessions`), null);
+    }
+    localStorage.setItem('sb_sess_migrated', '1');
+  } catch(e){ console.error('session migration failed:', e && e.message); }
 }
 
 /* ---------- pomodoro ---------- */
@@ -1078,6 +1188,19 @@ const pomoCfg = {
   get work(){ return Math.min(180, Math.max(1, parseInt(localStorage.getItem('sb_pomo_w') || '25', 10) || 25)); },
   get brk(){ return Math.min(60, Math.max(1, parseInt(localStorage.getItem('sb_pomo_b') || '5', 10) || 5)); }
 };
+/* Seri yalnızca oturum BİTİNCE hesaplanıyordu; araya boş günler girince
+   kartta eski (yanlış) sayı asılı kalıyordu. Çizim anında doğrula. */
+function liveStreak(u){
+  const n = (u && u.streak) || 0;
+  if (!n) return 0;
+  const last = u.lastStudyDay;
+  if (!last) return 0;
+  const t = todayKey();
+  const y = todayKey(new Date(Date.now() - 86400000));
+  if (last === t || last === y) return n;   // bugün ya da dün → seri ayakta
+  return 0;                                  // arada boş gün var → kırılmış
+}
+
 function amStudying(){
   const u = (latestUsers || {})[(auth.currentUser || {}).uid] || {};
   return !!u.studying;
@@ -1366,7 +1489,7 @@ function renderTarget(){
 function renderBadgeRow(){
   const me = (latestUsers || {})[(auth.currentUser || {}).uid] || {};
   const box = document.getElementById('badgeRow');
-  if (box) box.innerHTML = badgesHTML(me.streak || 0);
+  if (box) box.innerHTML = badgesHTML(liveStreak(me));
 }
 function animateChart(days){
   const t0 = Date.now();
@@ -1445,17 +1568,26 @@ function renderSubjBreakdown(){
   if (!box) return;
   const now = Date.now();
   const tKey = todayKey();
+  const WIN = { today: 0, week: 7, month: 30, all: 0 };
+  const inWindow = s => {
+    if (subjMode === 'today') return (s.day || todayKey(new Date(s.startAt || now))) === tKey;
+    if (subjMode === 'all') return true;
+    return (s.endAt || 0) >= now - WIN[subjMode] * 86400000;
+  };
   const agg = {}; let total = 0;
   Object.values(mySessions || {}).forEach(s => {
-    const inRange = subjMode === 'today'
-      ? (s.day || todayKey(new Date(s.startAt || now))) === tKey
-      : (s.endAt || 0) >= now - 7 * 86400000;
-    if (inRange){
+    if (inWindow(s)){
       const key = s.subject || '(dersiz)';
       agg[key] = (agg[key] || 0) + (s.ms || 0);
       total += s.ms || 0;
     }
   });
+  // karşı tarafın aynı aralıktaki dersleri (karşılaştırma satırı için)
+  const theirAgg = {};
+  Object.values(theirSessions || {}).forEach(s => {
+    if (inWindow(s)) theirAgg[s.subject || '(dersiz)'] = (theirAgg[s.subject || '(dersiz)'] || 0) + (s.ms || 0);
+  });
+  const theirName = escapeHtml(((latestUsers || {})[theirUid] || {}).displayName || 'O');
   // include the running session live
   const me = (latestUsers || {})[(auth.currentUser || {}).uid] || {};
   if (me.studying && me.currentStartAt){
@@ -1467,9 +1599,12 @@ function renderSubjBreakdown(){
   const rows = Object.entries(agg).sort((a, b) => b[1] - a[1]);
   box.innerHTML = rows.length ? rows.map(([n, ms]) => {
     const pct = total ? Math.round(ms / total * 100) : 0;
+    const t = theirAgg[n] || 0;
+    const cmp = t ? `<div class="muted small" style="margin-top:3px">${theirName}: ${msToHHMMSS(t)}</div>` : '';
     return `<button class="subj-row" data-subj="${escapeHtml(n)}" title="Günlük dökümü gör">
       <div class="spaced"><span>${escapeHtml(n)} <span class="sr-chev">›</span></span><span class="muted small">${msToHHMMSS(ms)} · %${pct}</span></div>
       <div class="progress-outer"><div class="progress-inner" style="width:${pct}%"></div></div>
+      ${cmp}
     </button>`;
   }).join('') : '<div class="muted small" style="margin-top:6px">Bu aralıkta kayıt yok.</div>';
 }
@@ -1538,8 +1673,19 @@ function setChip(onId, offId){
 }
 document.getElementById('chart7').onclick = () => { chartDays = 7; setChip('chart7','chart30'); animateChart(7); };
 document.getElementById('chart30').onclick = () => { chartDays = 30; setChip('chart30','chart7'); animateChart(30); };
-document.getElementById('subjToday').onclick = () => { subjMode = 'today'; setChip('subjToday','subjWeek'); renderSubjBreakdown(); };
-document.getElementById('subjWeek').onclick = () => { subjMode = 'week'; setChip('subjWeek','subjToday'); renderSubjBreakdown(); };
+(function(){
+  const ids = { today:'subjToday', week:'subjWeek', month:'subjMonth', all:'subjAll' };
+  Object.entries(ids).forEach(([mode, id]) => {
+    const b = document.getElementById(id); if (!b) return;
+    b.onclick = () => {
+      subjMode = mode;
+      Object.values(ids).forEach(x => {
+        const el = document.getElementById(x); if (el) el.classList.toggle('on', x === id);
+      });
+      renderSubjBreakdown();
+    };
+  });
+})();
 
 
 /* ---------- chat reactions + read state ---------- */
@@ -2359,7 +2505,7 @@ function renderProfStats(){
   const chips = [
     [msToHHMMSS(myTodayMs()), 'Bugün'],
     [msToHHMMSS(allLive), 'Toplam'],
-    [(m.streak || 0) + ' 🔥', 'Seri'],
+    [liveStreak(m) + ' 🔥', 'Seri'],
     [(m.dailyTargetMin || 120) + ' dk', 'Günlük hedef'],
     [sess, 'Kayıtlı oturum'],
     [books, 'Bitirilen kitap']
@@ -2437,7 +2583,7 @@ function saPreview(){
       const perDay = totals.perDay || {};
       perDay[day] = (perDay[day] || 0) + t.ms;
       await update(uref, { totals: { allTimeMs: (totals.allTimeMs || 0) + t.ms, perDay } });
-      await push(ref(db, `users/${uid}/sessions`), {
+      await push(ref(db, `sessions/${uid}`), {
         subject: subj, startAt: t.startAt, endAt: t.endAt, ms: t.ms, day, manual: true
       });
       close();
@@ -2558,7 +2704,7 @@ document.addEventListener('click', e => {
     const uid = (auth.currentUser || {}).uid; if (!uid) return;
     const val = b.getAttribute('data-ss');
     try {
-      await update(ref(db, `users/${uid}/sessions/${sessEditKey}`), { subject: val || null });
+      await update(ref(db, `sessions/${uid}/${sessEditKey}`), { subject: val || null });
       toast(val ? ('Ders güncellendi: ' + val + ' 📖') : 'Ders kaldırıldı');
       close();
     } catch(err){ toast(err.message); }
@@ -2598,3 +2744,4 @@ if (els.profLogout) els.profLogout.onclick = async () => {
   if (!confirm('Çıkış yapmak istediğine emin misin?')) return;
   try { closeProf(); await signOut(auth); } catch(e){ toast(e.message); }
 };
+
