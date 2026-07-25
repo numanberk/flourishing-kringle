@@ -2,10 +2,10 @@
    1) Push bildirimlerini alır ve gösterir
    2) Uygulama kabuğunu önbelleğe alır → internet yokken de açılır */
 
-const CACHE = 'co-shell-v10';
+const CACHE = 'co-shell-v11';
 const SHELL = ['/', '/index.html', '/manifest.webmanifest',
   '/icon-192.png', '/icon-512.png', '/apple-touch-icon.png',
-  '/css/app.css?v=10', '/js/app.js', '/js/habits.js', '/js/cycle.js', '/js/tier.js', '/js/costudy.js',
+  '/css/app.css?v=11', '/js/app.js', '/js/habits.js', '/js/cycle.js', '/js/tier.js', '/js/costudy.js',
   '/js/gateway.js', '/js/gallery.js', '/js/birthday.js'];
 
 self.addEventListener('install', e => {
