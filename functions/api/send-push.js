@@ -16,7 +16,8 @@ const MSGS = {
   meet:  f => ({ title: "🎥 Meet hazır!", body: f + " seni bekliyor — 🎬 sekmesinden katıl" }),
   goal:  f => ({ title: f + " hedefini tamamladı 🎉", body: "Tebrik etmeyi unutma!" }),
   habit: f => ({ title: "🎯 Ortak alışkanlık", body: f + " onayını bekliyor" }),
-  habitOk: f => ({ title: "🎯 Onaylandı!", body: f + " ortak alışkanlığı kabul etti" })
+  habitOk: f => ({ title: "🎯 Onaylandı!", body: f + " ortak alışkanlığı kabul etti" }),
+  coStudy: f => ({ title: "🤝 Birlikte çalışalım", body: f + " seni bekliyor" })
 };
 const cors = {
   "Access-Control-Allow-Origin": "*",
