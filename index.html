@@ -15,7 +15,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Çalışma Odası">
-  <link rel="stylesheet" href="/css/app.css?v=7">
+  <link rel="stylesheet" href="/css/app.css?v=9">
 </head>
 <body>
   <div class="container">
@@ -74,6 +74,7 @@
     </div>
 
     <div id="appView" style="display:none;">
+      <div id="coBanner" class="co-banner" hidden style="display:none"></div>
       <div class="grid">
         <!-- SOL: Kişiler + büyük video -->
         <div class="col-8">
@@ -165,6 +166,20 @@
     </div>
   </div>
 
+  <div id="tierView" hidden style="display:none">
+    <button id="tlClose" class="ov-close" title="Kapat">✕</button>
+    <div class="tl-inner">
+      <h2 class="tl-h2">Sıralama</h2>
+      <div class="tl-hint" id="tlHint">Bir afişe dokun, sonra sırayı seç</div>
+
+      <div id="tlRows"></div>
+
+      <div class="tl-pool-head"><span id="tlPoolCount"></span></div>
+      <div id="tlPool" class="tl-pool"></div>
+      <div class="tl-empty" id="tlEmpty">İşaretlenmiş film yok — listede bitirdiklerini işaretle.</div>
+    </div>
+  </div>
+
   <div id="cycleView" hidden style="display:none">
     <button id="cycleClose" class="ov-close" title="Kapat">✕</button>
     <div class="cy-inner">
@@ -245,6 +260,15 @@
 
       <div id="watchHome">
         <div class="stat-block first" id="meetBox"></div>
+
+        <div class="stat-block tl-entry" id="tlEntry">
+          <div class="tl-entry-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+          <div class="tl-entry-txt">
+            <b class="stat-title">Sıralama</b>
+            <span class="muted small" id="tlEntrySub">bitirdiklerimizi diz</span>
+          </div>
+          <span class="tl-entry-chev">›</span>
+        </div>
 
         <div class="stat-block" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
           <div>
