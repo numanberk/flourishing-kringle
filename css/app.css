@@ -1405,3 +1405,111 @@ button.primary:not(:disabled):hover{ filter:brightness(1.06); }
 #cycleView.cy-ro .cy-chip:hover{ transform:none; }
 #cycleView.cy-ro .cy-cell{ cursor:default; }
 #cycleView.cy-ro .cy-cell:hover{ transform:none; }
+
+/* ============================================================
+   TIER LIST — bitirilenleri sıralama
+   ============================================================ */
+/* film sekmesindeki giriş kartı */
+.tl-entry{ display:flex; align-items:center; gap:13px; cursor:pointer; transition:transform .14s ease; }
+.tl-entry:hover{ transform:translateY(-1px); }
+.tl-entry-bars{ display:flex; flex-direction:column; gap:3px; flex:none; }
+.tl-entry-bars i{ display:block; height:5px; border-radius:2px; }
+.tl-entry-bars i:nth-child(1){ width:30px; background:#ff7a7a; }
+.tl-entry-bars i:nth-child(2){ width:24px; background:#ffb066; }
+.tl-entry-bars i:nth-child(3){ width:18px; background:#ffd76a; }
+.tl-entry-bars i:nth-child(4){ width:12px; background:#8fd98f; }
+.tl-entry-txt{ flex:1; display:flex; flex-direction:column; }
+.tl-entry-chev{ color:var(--muted); font-size:20px; }
+
+#tierView{
+  position:fixed; inset:0; z-index:8300; display:none;
+  background:var(--bg); overflow-y:auto; -webkit-overflow-scrolling:touch;
+}
+#tierView[hidden]{ display:none !important; }
+#tierView.open{ display:block; }
+.tl-inner{ max-width:760px; margin:0 auto; padding:64px 16px 60px; }
+.tl-h2{ color:var(--acc); margin:0 0 4px; }
+.tl-hint{ font-size:12.5px; color:var(--muted); margin-bottom:16px; }
+.tl-hint.armed{ color:var(--acc); font-weight:600; }
+
+/* satırlar */
+.tl-row{
+  display:flex; align-items:stretch; gap:0; margin-bottom:7px;
+  border-radius:13px; overflow:hidden; border:1px solid var(--border);
+  background:var(--card); min-height:74px;
+}
+.tl-row.target{ outline:2px solid var(--acc); outline-offset:1px; }
+.tl-label{
+  flex:none; width:78px; display:flex; align-items:center; justify-content:center;
+  font-weight:800; font-size:15px; color:#2b1a12; text-align:center;
+  padding:6px 4px; cursor:pointer; user-select:none; word-break:break-word;
+  -webkit-tap-highlight-color:transparent; line-height:1.15;
+  transition:filter .15s ease;
+}
+.tl-label:active{ filter:brightness(.93); }
+.tl-label.editing{ padding:0; }
+.tl-label input{
+  width:100%; height:100%; border:0; background:rgba(255,255,255,.9);
+  text-align:center; font-weight:800; font-size:15px; color:#2b1a12;
+  padding:6px 4px; border-radius:0; outline:2px solid var(--acc); outline-offset:-2px;
+}
+.tl-drop{ flex:1; display:flex; flex-wrap:wrap; gap:6px; padding:8px; align-content:flex-start; }
+
+/* afiş karoları */
+.tl-tile{
+  position:relative; width:48px; height:68px; border-radius:7px; flex:none;
+  background:var(--tag-bg); border:1px solid var(--border); overflow:hidden;
+  cursor:pointer; padding:0; transition:transform .14s ease, box-shadow .14s ease;
+}
+.tl-tile img{ width:100%; height:100%; object-fit:cover; display:block; }
+.tl-tile span{
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  font-size:9px; font-weight:700; color:var(--text); padding:3px; text-align:center;
+  line-height:1.1; overflow:hidden;
+}
+.tl-tile:hover{ transform:translateY(-2px); }
+.tl-tile.sel{
+  transform:translateY(-5px) scale(1.06);
+  box-shadow:0 0 0 2px var(--acc), 0 8px 18px rgba(0,0,0,.35); z-index:2;
+}
+
+/* havuz */
+.tl-pool-head{ margin:18px 0 7px; font-size:12.5px; color:var(--muted); font-weight:600; }
+.tl-pool{
+  display:flex; flex-wrap:wrap; gap:6px; padding:10px; min-height:64px;
+  border:1px dashed var(--border); border-radius:13px; background:var(--card);
+}
+.tl-pool.target{ outline:2px solid var(--acc); outline-offset:1px; }
+.tl-empty{ margin-top:14px; font-size:12.5px; color:var(--muted); text-align:center; }
+@media (max-width:640px){
+  .tl-inner{ padding:58px 12px 46px; }
+  .tl-label{ width:62px; font-size:13.5px; }
+  .tl-tile{ width:44px; height:62px; }
+}
+
+/* ============================================================
+   CO-STUDY — birlikte çalışma
+   ============================================================ */
+.co-btn{ border-radius:999px; padding:4px 9px; font-size:14px; line-height:1; }
+.co-banner{
+  display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  background:linear-gradient(180deg, color-mix(in srgb, var(--acc) 16%, transparent), transparent 80%), var(--card);
+  border:1px solid var(--acc); border-radius:16px;
+  padding:13px 15px; margin-bottom:14px; box-shadow:var(--shadow);
+}
+.co-banner[hidden]{ display:none !important; }
+.co-b-txt{ flex:1; min-width:170px; }
+.co-b-title{ font-weight:700; color:var(--text); }
+.co-b-sub{ font-size:12.5px; color:var(--muted); margin-top:2px; }
+.co-clock{
+  font-variant-numeric:tabular-nums; font-weight:800; font-size:20px;
+  color:var(--acc); letter-spacing:.5px;
+}
+.co-b-acts{ display:flex; gap:7px; flex-wrap:wrap; }
+.co-b-acts button{ border-radius:11px; padding:9px 14px; font-weight:600; }
+.co-dot{
+  width:8px; height:8px; border-radius:50%; background:var(--ok);
+  display:inline-block; margin-right:6px; animation:coPulse 1.6s ease-in-out infinite;
+}
+@keyframes coPulse{ 0%,100%{ opacity:1; } 50%{ opacity:.35; } }
+@media (max-width:640px){ .co-banner{ padding:11px 12px; } .co-clock{ font-size:18px; } }
