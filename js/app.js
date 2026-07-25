@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, updateProfile, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
-import { getDatabase, ref, set, update, get, onValue, onDisconnect, push, query, limitToLast, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+import { getDatabase, ref, set, update, get, onValue, onDisconnect, push, query, limitToLast, serverTimestamp, increment } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 import { getStorage, ref as sRef, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js";
 import { initHabits } from "./habits.js";
 import { initCycle } from "./cycle.js";
@@ -345,7 +345,11 @@ function attachGlobalListeners() {
    bu damga durur; hem karşı taraf donmuş sayaç görmez hem de bir dahaki
    girişte süreyi damgaya kadar sayabiliriz. */
 const BEAT_MS = 60000;
-const STALE_MS = 3 * BEAT_MS;   // 3 dk sessizlik = bağlantı kopmuş say
+const STALE_MS = 3 * BEAT_MS;   // 3 dk sessizlik = karşı tarafta "canlı değil" göster
+/* Oturumu KAPATMAK için çok daha geniş bir pencere. Arka plandaki sekmede
+   tarayıcı zamanlayıcıları donduruyor; 3 dk'da kapatmak sekme değiştirince
+   çalışmayı sonlandırıyordu. */
+const RESUME_MS = 30 * 60 * 1000;
 let beatTimer = null;
 function startBeat(){
   if (beatTimer) return;
@@ -373,23 +377,25 @@ async function reconcileStudy(uid){
     const u = snap.val() || {};
     /* studying bayrağına bakmıyoruz: bağlantı koptuğunda onDisconnect onu
        zaten false yapıyor, ama süre hâlâ yazılmayı bekliyor. */
+    prunePerDay(uid, (u.totals || {}).perDay);   // girişte bir kez budama
     if (!u.currentStartAt) return;
     const beat = u.lastBeat || u.currentStartAt;
-    if (Date.now() - beat < STALE_MS){
-      // kalp atışı taze → oturum aslında sürüyor, sadece sayfa yenilenmiş
+    if (Date.now() - beat < RESUME_MS){
+      // yakın zamanda nefes almış → oturum sürüyor, sürdür
       await update(ref(db, `users/${uid}`), { studying: true, lastBeat: Date.now() });
       startBeat();
       return;
     }
     const endAt = Math.max(u.currentStartAt, u.lastBeat || 0);
     const elapsed = Math.max(0, endAt - u.currentStartAt);
-    const totals = u.totals || { allTimeMs: 0, perDay: {} };
-    const perDay = totals.perDay || {};
     const day = todayKey(new Date(u.currentStartAt));
-    perDay[day] = (perDay[day] || 0) + elapsed;
+    /* ÖNEMLİ: totals nesnesini komple yazmıyoruz. Önce oku-sonra-yaz
+       yapınca iki yazma çakışınca biri diğerini eziyordu ve günün
+       toplamı sıfırlanabiliyordu. increment sunucuda atomik. */
     await update(ref(db, `users/${uid}`), {
       studying: false, currentStartAt: null, currentSubject: null, lastBeat: null,
-      totals: { allTimeMs: (totals.allTimeMs || 0) + elapsed, perDay: prunePerDay(perDay) }
+      [`totals/allTimeMs`]: increment(elapsed),
+      [`totals/perDay/${day}`]: increment(elapsed)
     });
     if (elapsed > 15000){
       await push(ref(db, `sessions/${uid}`), {
@@ -401,14 +407,14 @@ async function reconcileStudy(uid){
   } catch(e){ console.error('reconcileStudy failed:', e && e.message); }
 }
 
-/* perDay sonsuza kadar büyüyordu; son 120 günü tut. */
-function prunePerDay(perDay){
+/* perDay sonsuza kadar büyüyor. Nesneyi yeniden YAZMIYORUZ (o veri
+   kaybettiriyordu) — sadece fazla eski anahtarları siliyoruz. */
+async function prunePerDay(uid, perDay){
   const keys = Object.keys(perDay || {}).sort();
-  if (keys.length <= 120) return perDay;
-  const keep = keys.slice(-120);
-  const out = {};
-  keep.forEach(k => out[k] = perDay[k]);
-  return out;
+  if (keys.length <= 120) return;
+  const upd = {};
+  keys.slice(0, keys.length - 120).forEach(k => { upd[`totals/perDay/${k}`] = null; });
+  try { await update(ref(db, `users/${uid}`), upd); } catch(e){}
 }
 
 function startUITicker(){
@@ -779,11 +785,7 @@ async function toggleStudy(){
   } else {
     const startAt = u.currentStartAt || now;
     const elapsed = Math.max(0, now - startAt);
-    const totals = u.totals || { allTimeMs:0, perDay:{} };
-    const perDay = totals.perDay || {};
     const day = todayKey(new Date(startAt));
-    perDay[day] = (perDay[day] || 0) + elapsed;
-    const allTimeMs = (totals.allTimeMs || 0) + elapsed;
 
     const stoppedDay = todayKey(new Date());
     let newStreak = u.streak || 0;
@@ -803,7 +805,10 @@ async function toggleStudy(){
       currentStartAt:null,
       currentSubject:null,
       lastBeat:null,
-      totals:{ allTimeMs, perDay: prunePerDay(perDay) },
+      /* Atomik artırma — bkz. reconcileStudy'deki not. Toplamı
+         okuyup geri yazmak çakışmada veri kaybettiriyordu. */
+      [`totals/allTimeMs`]: increment(elapsed),
+      [`totals/perDay/${day}`]: increment(elapsed),
       lastStudyDay: stoppedDay,
       streak: newStreak
     });
@@ -2269,7 +2274,7 @@ function applyWnBg(){
     board.classList.remove('custom');
   }
 }
-let wnOpenOrder = [];
+let wnOpenOrder = [];   // oklar yalnızca wnEditKey satırında görünür
 /* Taşıma: komşuyla yer değiştir, sonra tüm listeye 0,1,2… sırası yaz.
    Tek seferde yazıyoruz ki iki taraf da aynı sırayı görsün. */
 async function wnMove(key, dir){
@@ -2297,7 +2302,7 @@ function renderWatchNotes(){
   const row = (n, i, arr) => `<div class="wn-item ${n.done ? 'done' : ''}" data-key="${n.k}">
       <input type="checkbox" class="wn-check" ${n.done ? 'checked' : ''} aria-label="İşaretle">
       <div class="txt">${escapeHtml(wnItemText(n))}</div>
-      ${!n.done ? `<span class="wn-move">
+      ${(!n.done && n.k === wnEditKey) ? `<span class="wn-move">
         <button class="wn-up" title="Yukarı" ${i === 0 ? 'disabled' : ''}>▲</button>
         <button class="wn-dn" title="Aşağı" ${i === arr.length - 1 ? 'disabled' : ''}>▼</button>
       </span>` : ''}
@@ -2315,6 +2320,14 @@ function renderWatchNotes(){
     els.wnListDone.innerHTML = done.map((n, i, a) => row(n, i, a)).join('');
   } else {
     els.wnDoneWrap.style.display = 'none';
+  }
+
+  /* Satır taşınınca liste yeniden kuruluyor; düzenleme kutusunu
+     aynı satırda geri açıyoruz ki mod kapanmasın. */
+  if (wnEditKey){
+    const el = els.wnListOpen.querySelector(`.wn-item[data-key="${wnEditKey}"]`);
+    if (el) wnStartEdit(el);
+    else wnEditKey = null;
   }
 }
 async function wnAdd(text){
@@ -2353,6 +2366,7 @@ function wnStartEdit(item){
   const commit = async save => {
     if (committed) return; committed = true;
     const v = inp.value.trim();
+    wnEditKey = null;
     if (save && v && v !== wnItemText(n)){
       try { await update(ref(db, `watchlist/${key}`), { text: v, title: null, updatedAt: Date.now() }); }
       catch(e){ toast(e.message); }
@@ -2365,6 +2379,12 @@ function wnStartEdit(item){
   });
   inp.addEventListener('blur', () => commit(true));
 }
+/* Oklara basınca input blur olup düzenleme modu kapanıyordu;
+   pointerdown'da varsayılanı engelleyince odak korunuyor. */
+function wnListPointerDown(e){
+  if (e.target.closest('.wn-move')) e.preventDefault();
+}
+
 function wnListClick(e){
   const item = e.target.closest('.wn-item'); if (!item) return;
   const key = item.getAttribute('data-key');
@@ -2381,7 +2401,8 @@ function wnListClick(e){
   }
   if (e.target.closest('.wn-up')){ wnMove(key, -1); return; }
   if (e.target.closest('.wn-dn')){ wnMove(key, +1); return; }
-  if (e.target.closest('.wn-edit-btn')){ wnStartEdit(item); return; }
+
+  if (e.target.closest('.wn-edit-btn')){ wnEditKey = key; renderWatchNotes(); return; }
   if (e.target.closest('.txt')) openMovieCard(key);
 }
 
@@ -2507,6 +2528,7 @@ function pCompressTo(file, W, H, q){
     r.readAsDataURL(file);
   });
 }
+if (els.wnListOpen) els.wnListOpen.addEventListener('pointerdown', wnListPointerDown);
 if (els.wnListOpen) els.wnListOpen.addEventListener('click', wnListClick);
 if (els.wnListDone) els.wnListDone.addEventListener('click', wnListClick);
 if (els.wnDoneToggle) els.wnDoneToggle.addEventListener('click', () => {
