@@ -81,7 +81,7 @@ export function initTier(ctx){
       hint.textContent = `"${titleOf(n)}" seçildi — nereye?`;
       hint.classList.add('armed');
     } else {
-      hint.textContent = 'Bir afişe dokun, sonra sırayı seç';
+      hint.textContent = '';
       hint.classList.remove('armed');
     }
     view.querySelectorAll('.tl-row, .tl-pool').forEach(el => el.classList.toggle('target', !!picked));

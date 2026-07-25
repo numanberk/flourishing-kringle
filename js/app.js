@@ -437,7 +437,6 @@ function userCardHTML(d){
           </h4>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
-          ${!d.isMe ? `<button class="co-btn" data-uid="${d.uid}" data-name="${escapeHtml(d.name)}" title="Birlikte çalış">🤝</button>` : ''}
           ${!d.isMe ? `<button class="nudge-btn" data-uid="${d.uid}" title="Dürt">👉 Dürt</button>` : ''}
           <span class="tag"><span class="status-dot ${d.isOnline ? 'dot-on' : 'dot-off'}"></span> ${d.isOnline ? 'çevrimiçi' : 'çevrimdışı'}</span>
         </div>
@@ -838,6 +837,12 @@ function renderStartMenu(){
   }
   html += '<hr>';
   html += '<button data-sact="focus">🎯 <span>Odak modu</span></button>';
+  // birlikte çalışma: karşı taraf varsa
+  const otherUid = Object.keys(latestUsers || {}).find(u => u !== (auth.currentUser || {}).uid);
+  if (otherUid){
+    const oname = escapeHtml((latestUsers[otherUid] || {}).displayName || 'Arkadaşın');
+    html += `<button data-sact="co" data-uid="${otherUid}" data-name="${oname}">🤝 <span>${oname} ile birlikte çalış</span></button>`;
+  }
   els.startMenu.innerHTML = html;
 }
 function toggleStartMenu(force){
@@ -855,6 +860,7 @@ if (els.startMenu) els.startMenu.addEventListener('click', e => {
   if (a === 'pomo') togglePomoPanel();
   else if (a === 'pomostop') pomoStop();
   else if (a === 'focus') openFocus();
+  else if (a === 'co' && coApi) coApi.invite(b.getAttribute('data-uid'), b.getAttribute('data-name'));
 });
 document.addEventListener('click', e => {
   if (!els.startMenu || els.startMenu.style.display === 'none') return;

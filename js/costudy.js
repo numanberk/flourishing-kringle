@@ -141,12 +141,6 @@ export function initCoStudy(ctx){
     if (a === 'end') return clear('end');
   });
 
-  /* kartlardaki 🤝 düğmesi */
-  document.addEventListener('click', e => {
-    const b = e.target.closest('.co-btn'); if (!b) return;
-    invite(b.getAttribute('data-uid'), b.getAttribute('data-name'));
-  });
-
   /* ---------- bağlan ---------- */
   function attach(){
     if (attached) return; attached = true;
@@ -186,5 +180,5 @@ export function initCoStudy(ctx){
     if (co && co.status === 'active') clear('end');
   }
 
-  return { attach, onMyStudyStopped };
+  return { attach, onMyStudyStopped, invite };
 }

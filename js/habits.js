@@ -24,6 +24,8 @@ export function initHabits(ctx){
   let logs = {};        // habitLog/{uid} → { habitId: { date: ts } }
   let users = {};       // uid → displayName (ana modülden besleniyor)
   let attached = false;
+  let hbType = 'personal';        // yeni seçici için
+  let expanded = null;            // açılmış alışkanlık id'si
 
   const todayKey = (d = new Date()) =>
     d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -50,7 +52,43 @@ export function initHabits(ctx){
     return out;
   }
 
+  /* Uzun görünüm: son 12 hafta. Her gün için ikimizin durumunu ayrı
+     ayrı biliyoruz — renk kimin yaptığını gösteriyor. */
+  function longGrid(id, me, otherUid){
+    const mine = (logs[me] || {})[id] || {};
+    const theirs = otherUid ? ((logs[otherUid] || {})[id] || {}) : {};
+    const DAYS = 84;
+    const cells = [];
+    const start = new Date(); start.setDate(start.getDate() - (DAYS - 1));
+    for (let i = 0; i < DAYS; i++){
+      const d = new Date(start); d.setDate(start.getDate() + i);
+      const k = todayKey(d);
+      const a = !!mine[k], b = !!theirs[k];
+      let cls = '';
+      if (a && b) cls = 'both';
+      else if (a) cls = 'me';
+      else if (b) cls = 'them';
+      cells.push(`<i class="${cls}" title="${k}"></i>`);
+    }
+    return cells.join('');
+  }
+
   const nameOf = u => (users[u] || {}).displayName || 'Arkadaşın';
+
+  /* Kayıtlardaki en uzun kesintisiz gün dizisi. */
+  function bestStreak(entry){
+    const days = Object.keys(entry || {}).sort();
+    let best = 0, run = 0, prev = null;
+    days.forEach(d => {
+      if (prev){
+        const gap = Math.round((new Date(d + 'T12:00:00') - new Date(prev + 'T12:00:00')) / 86400000);
+        run = gap === 1 ? run + 1 : 1;
+      } else run = 1;
+      if (run > best) best = run;
+      prev = d;
+    });
+    return best;
+  }
 
   /* ---------------- render ---------------- */
   function render(){
@@ -100,16 +138,35 @@ export function initHabits(ctx){
         }
       }
 
-      return `<div class="hb-item">
+      const isOpen = expanded === id;
+      const otherUid2 = Object.keys(logs).find(u => u !== me) ||
+                        Object.keys(users).find(u => u !== me) || null;
+      const longPart = isOpen ? `
+        <div class="hb-long">
+          <div class="hb-long-grid">${longGrid(id, me, h.type === 'shared' ? otherUid2 : null)}</div>
+          <div class="hb-long-legend">
+            <span><i class="me"></i>sen</span>
+            ${h.type === 'shared' && otherUid2 ? `<span><i class="them"></i>${escapeHtml(nameOf(otherUid2))}</span><span><i class="both"></i>ikiniz</span>` : ''}
+            <span class="muted">son 12 hafta</span>
+          </div>
+          <div class="hb-long-stats">
+            <span>Toplam <b>${Object.keys(entry).length}</b> gün</span>
+            <span>En uzun seri <b>${bestStreak(entry)}</b></span>
+          </div>
+        </div>` : '';
+
+      return `<div class="hb-item ${isOpen ? 'open' : ''}">
         <div class="hb-top">
           <span style="font-size:20px">${escapeHtml(h.emoji || '🎯')}</span>
           <span class="hb-name">${escapeHtml(h.name)}</span>
-          <span class="hb-kind">${h.type === 'shared' ? 'ortak' : 'kişisel'}</span>
+          <span class="hb-kind">${h.type === 'shared' ? 'Balışkanlık' : 'Alışkanlık'}</span>
           ${h.byUid === me ? `<button class="hb-del small" data-id="${id}" title="Sil">✕</button>` : ''}
           <button class="hb-tick ${done ? 'on' : ''}" data-id="${id}">${done ? '✔' : ''}</button>
         </div>
         <div class="hb-week">${week}</div>
         <div class="hb-streak"><span>Sen: <b>${streak(entry)}</b> gün</span>${other}</div>
+        ${longPart}
+        <button class="hb-expand" data-exp="${id}">${isOpen ? 'Kapat ▲' : 'Geçmişi aç ▼'}</button>
       </div>`;
     }).join('');
   }
@@ -134,7 +191,7 @@ export function initHabits(ctx){
     const me = auth.currentUser; if (!me) return;
     const name = $('habitName').value.trim();
     if (!name){ $('habitHint').textContent = 'Bir isim yaz'; return; }
-    const type = $('habitType').value;
+    const type = hbType;
     const emoji = $('habitEmoji').value.trim() || '🎯';
 
     // ortak ise karşı tarafı bul
@@ -203,6 +260,40 @@ export function initHabits(ctx){
     });
   })();
 
+  /* tür seçici — ana sayfadaki ders seçicinin aynısı */
+  const TYPES = { personal:['🙋','Alışkanlık'], shared:['🤝','Balışkanlık'] };
+  function renderTypeMenu(){
+    const m = $('hbTypeMenu'); if (!m) return;
+    m.innerHTML = Object.entries(TYPES).map(([v,[ico,label]]) =>
+      `<button data-hbt="${v}" class="${hbType===v?'on':''}">${ico} <span>${label}</span></button>`).join('');
+  }
+  function setType(v){
+    hbType = v;
+    const [ico,label] = TYPES[v];
+    $('hbTypeIco').textContent = ico;
+    $('hbTypeLabel').textContent = label;
+    renderTypeMenu();
+  }
+  function toggleTypeMenu(force){
+    const m = $('hbTypeMenu'); if (!m) return;
+    const open = m.style.display !== 'none';
+    const next = (force === undefined) ? !open : force;
+    if (next) renderTypeMenu();
+    m.style.display = next ? '' : 'none';
+  }
+  $('hbTypeTrigger').onclick = e => { e.stopPropagation(); toggleTypeMenu(); };
+  $('hbTypeMenu').addEventListener('click', e => {
+    const b = e.target.closest('[data-hbt]'); if (!b) return;
+    setType(b.getAttribute('data-hbt'));
+    toggleTypeMenu(false);
+  });
+  document.addEventListener('click', e => {
+    const m = $('hbTypeMenu'); if (!m || m.style.display === 'none') return;
+    if (e.target.closest('#hbTypeMenu') || e.target.closest('#hbTypeTrigger')) return;
+    toggleTypeMenu(false);
+  });
+  setType('personal');
+
   $('habitAdd').onclick = addHabit;
   $('habitName').addEventListener('keydown', e => { if (e.key === 'Enter') addHabit(); });
   $('habitClose').onclick = () => { view.classList.remove('open'); document.body.style.overflow = ''; };
@@ -216,6 +307,8 @@ export function initHabits(ctx){
     const ok = e.target.closest('.hb-ok');    if (ok) return respond(ok.getAttribute('data-id'), true);
     const no = e.target.closest('.hb-no');    if (no) return respond(no.getAttribute('data-id'), false);
     const d  = e.target.closest('.hb-del');   if (d)  return removeHabit(d.getAttribute('data-id'));
+    const ex = e.target.closest('.hb-expand');
+    if (ex){ const id = ex.getAttribute('data-exp'); expanded = (expanded === id) ? null : id; render(); return; }
   });
 
   /* ana modül kullanıcı listesini besliyor; davet rozeti için
