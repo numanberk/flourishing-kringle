@@ -1825,6 +1825,26 @@ const LIB_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyzBMzAzZ1PBiIyl-z
 /* Gmail eki base64'e çevrilince ~%33 büyüyor: 25MB'lık gerçek tavan
    pratikte ~18MB'a denk geliyor. Üstü sessizce e-postada patlıyordu. */
 const LIB_MAX_BYTES = 18 * 1024 * 1024;
+
+/* PDF sayfa sayısını tarayıcıda okuyoruz. pdf.js yalnızca ilk kitap
+   eklendiğinde indiriliyor — açılışta yük getirmesin. */
+let _pdfjs = null;
+async function pdfLib(){
+  if (_pdfjs) return _pdfjs;
+  const m = await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.mjs');
+  m.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.mjs';
+  _pdfjs = m; return m;
+}
+async function pdfPageCount(file){
+  try {
+    const lib = await pdfLib();
+    const buf = await file.arrayBuffer();
+    const doc = await lib.getDocument({ data: buf }).promise;
+    const n = doc.numPages;
+    try { doc.destroy(); } catch(e){}
+    return n || null;
+  } catch(e){ console.warn('sayfa sayısı okunamadı:', e && e.message); return null; }
+}
 let latestLibrary = {};
 let libAttached = false;
 
@@ -1941,7 +1961,7 @@ function renderLibrary(){
       <div class="spaced" style="gap:8px">
         <div style="min-width:0">
           <div class="lib-title">📕 ${escapeHtml(b.title || b.filename || 'Kitap')}</div>
-          <div class="muted small">${escapeHtml(b.by || 'Biri')} ekledi · ${new Date(b.at || 0).toLocaleDateString('tr-TR')} · ${fmtSize(b.sizeKB)}${b.url ? ' · <a href="' + escapeHtml(b.url) + '" target="_blank" rel="noopener">⬇ indir</a>' : ''}${b.sent === 'pending' ? ' · <span class="lib-pending">✉️ gönderiliyor…</span>' : (b.sent === false ? ' · <span style="color:var(--danger)" title="' + escapeHtml(b.kindleError || '') + '">Kindle\u2019a gönderilemedi</span> · <button class="lib-retry small" data-key="' + b.k + '">↻ tekrar dene</button>' : '')}</div>
+          <div class="muted small">${escapeHtml(b.by || 'Biri')} ekledi · ${new Date(b.at || 0).toLocaleDateString('tr-TR')} · ${fmtSize(b.sizeKB)}${b.pages ? ' · ' + b.pages + ' sayfa' : ''}${b.url ? ' · <a href="' + escapeHtml(b.url) + '" target="_blank" rel="noopener">⬇ indir</a>' : ''}${b.sent === 'pending' ? ' · <span class="lib-pending">✉️ gönderiliyor…</span>' : (b.sent === false ? ' · <span style="color:var(--danger)" title="' + escapeHtml(b.kindleError || '') + '">Kindle\u2019a gönderilemedi</span> · <button class="lib-retry small" data-key="' + b.k + '">↻ tekrar dene</button>' : '')}</div>
         </div>
         <button class="lib-del small" data-key="${b.k}" title="Kaydı sil">✕</button>
       </div>
@@ -1966,6 +1986,8 @@ if (els.libFile) els.libFile.addEventListener('change', async () => {
   }
   const title = (els.libTitle.value || '').trim() || f.name.replace(/\.pdf$/i, '');
   const key = push(ref(db, 'library')).key;
+  libBusy(true, '📄 Sayfalar sayılıyor…');
+  const pages = await pdfPageCount(f);
   const storagePath = `library/${key}/${f.name}`;
 
   // 1) upload to Firebase Storage (this is what bypasses the old 4.5MB cap)
@@ -2018,7 +2040,7 @@ if (els.libFile) els.libFile.addEventListener('change', async () => {
   }
   try {
     await update(ref(db, `library/${key}`), {
-      title, filename: f.name, sizeKB: Math.round(f.size / 1024),
+      title, filename: f.name, sizeKB: Math.round(f.size / 1024), pages: pages || null,
       by: u.displayName || u.email, byUid: u.uid, at: Date.now(),
       sent: queued ? 'pending' : false, url, storagePath, jobId: queued ? jobId : null
     });
@@ -2247,20 +2269,42 @@ function applyWnBg(){
     board.classList.remove('custom');
   }
 }
+let wnOpenOrder = [];
+/* Taşıma: komşuyla yer değiştir, sonra tüm listeye 0,1,2… sırası yaz.
+   Tek seferde yazıyoruz ki iki taraf da aynı sırayı görsün. */
+async function wnMove(key, dir){
+  const i = wnOpenOrder.indexOf(key);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= wnOpenOrder.length) return;
+  const arr = wnOpenOrder.slice();
+  arr[i] = arr[j]; arr[j] = key;
+  const upd = {};
+  arr.forEach((k, idx) => { upd[`watchlist/${k}/ord`] = idx; });
+  try { await update(ref(db), upd); } catch(e){ toast(e.message); }
+}
+
 function renderWatchNotes(){
   if (!els.wnListOpen) return;
   applyWnBg();
   const items = wnItems();
-  const open = items.filter(n => !n.done).sort((a, b) => (a.at || 0) - (b.at || 0));
+  /* ord verilmişse ona, yoksa eklenme zamanına göre. Böylece eski
+     kayıtlar da elle sıralanana kadar yerinde kalıyor. */
+  const ordOf = n => (typeof n.ord === 'number') ? n.ord : (n.at || 0);
+  const open = items.filter(n => !n.done).sort((a, b) => ordOf(a) - ordOf(b));
   const done = items.filter(n => n.done).sort((a, b) => (b.doneAt || b.at || 0) - (a.doneAt || a.at || 0));
   const cnt = document.getElementById('wnCount');
   if (cnt) cnt.textContent = open.length;
-  const row = n => `<div class="wn-item ${n.done ? 'done' : ''}" data-key="${n.k}">
+  const row = (n, i, arr) => `<div class="wn-item ${n.done ? 'done' : ''}" data-key="${n.k}">
       <input type="checkbox" class="wn-check" ${n.done ? 'checked' : ''} aria-label="İşaretle">
       <div class="txt">${escapeHtml(wnItemText(n))}</div>
+      ${!n.done ? `<span class="wn-move">
+        <button class="wn-up" title="Yukarı" ${i === 0 ? 'disabled' : ''}>▲</button>
+        <button class="wn-dn" title="Aşağı" ${i === arr.length - 1 ? 'disabled' : ''}>▼</button>
+      </span>` : ''}
       <button class="wn-edit-btn" title="Adı düzenle">✎</button>
       <button class="wn-x" title="Sil">✕</button>
     </div>`;
+  wnOpenOrder = open.map(n => n.k);
   els.wnListOpen.innerHTML = open.map(row).join('') ||
     '<div class="wn-hint">Liste boş</div>';
   if (done.length){
@@ -2268,7 +2312,7 @@ function renderWatchNotes(){
     els.wnDoneCount.textContent = done.length + ' ';
     els.wnDoneChev.textContent = wnDoneCollapsed ? '▸ ' : '▾ ';
     els.wnListDone.style.display = wnDoneCollapsed ? 'none' : '';
-    els.wnListDone.innerHTML = done.map(row).join('');
+    els.wnListDone.innerHTML = done.map((n, i, a) => row(n, i, a)).join('');
   } else {
     els.wnDoneWrap.style.display = 'none';
   }
@@ -2335,6 +2379,8 @@ function wnListClick(e){
     update(ref(db, 'watchlist'), { [key]: null }).catch(err => toast(err.message));
     return;
   }
+  if (e.target.closest('.wn-up')){ wnMove(key, -1); return; }
+  if (e.target.closest('.wn-dn')){ wnMove(key, +1); return; }
   if (e.target.closest('.wn-edit-btn')){ wnStartEdit(item); return; }
   if (e.target.closest('.txt')) openMovieCard(key);
 }

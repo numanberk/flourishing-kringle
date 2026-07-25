@@ -26,6 +26,8 @@ export function initHabits(ctx){
   let attached = false;
   let hbType = 'personal';        // yeni seçici için
   let expanded = null;            // açılmış alışkanlık id'si
+  let filter = 'all';             // all | personal | shared
+  let doneCollapsed = true;       // bugün bitenler katlı gelsin
 
   const todayKey = (d = new Date()) =>
     d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -121,7 +123,20 @@ export function initHabits(ctx){
 
     $('habitEmpty').style.display = list.length ? 'none' : '';
 
-    $('habitList').innerHTML = list.map(([id, h]) => {
+    /* Kalabalık hissini kıran asıl şey: bugün biteni listeden çıkarmak.
+       Üstte yalnızca hâlâ yapılacaklar kalıyor. */
+    const shown = list.filter(([, h]) => filter === 'all' || h.type === filter);
+    const isDone = ([id]) => !!((mine[id] || {})[todayKey()]);
+    const todo = shown.filter(x => !isDone(x));
+    const finished = shown.filter(isDone);
+
+    // tür süzgeci — yalnızca liste büyüyünce görünsün
+    const F = [['all','Hepsi'],['personal','Alışkanlık'],['shared','Balışkanlık']];
+    $('habitFilter').innerHTML = list.length > 3
+      ? F.map(([v,t]) => `<button class="hb-fchip ${filter===v?'on':''}" data-flt="${v}">${t}</button>`).join('')
+      : '';
+
+    const card = ([id, h]) => {
       const entry = mine[id] || {};
       const done = !!entry[todayKey()];
       const week = lastSevenDays(entry).map(d => `<i class="${d ? 'done' : ''}"></i>`).join('');
@@ -168,7 +183,26 @@ export function initHabits(ctx){
         ${longPart}
         <button class="hb-expand" data-exp="${id}">${isOpen ? 'Kapat ▲' : 'Geçmişi aç ▼'}</button>
       </div>`;
-    }).join('');
+    };
+
+    const slim = ([id, h]) => `<div class="hb-slim" data-slim="${id}">
+        <span class="hb-slim-ico">${escapeHtml(h.emoji || '🎯')}</span>
+        <span class="hb-slim-name">${escapeHtml(h.name)}</span>
+        <span class="hb-slim-streak">${streak(mine[id] || {})}🔥</span>
+        <button class="hb-tick on small" data-id="${id}">✔</button>
+      </div>`;
+
+    let html = todo.map(card).join('');
+    if (finished.length){
+      html += `<button class="hb-donehead" data-donetoggle="1">
+          ${doneCollapsed ? '▸' : '▾'} Bugün tamamlanan · ${finished.length}
+        </button>
+        <div class="hb-donewrap" ${doneCollapsed ? 'hidden' : ''}>${finished.map(slim).join('')}</div>`;
+    }
+    if (!todo.length && !finished.length && list.length){
+      html += '<div class="muted small" style="margin-top:12px">Bu süzgeçte alışkanlık yok</div>';
+    }
+    $('habitList').innerHTML = html;
   }
 
   /* ---------------- actions ---------------- */
@@ -307,6 +341,10 @@ export function initHabits(ctx){
     const ok = e.target.closest('.hb-ok');    if (ok) return respond(ok.getAttribute('data-id'), true);
     const no = e.target.closest('.hb-no');    if (no) return respond(no.getAttribute('data-id'), false);
     const d  = e.target.closest('.hb-del');   if (d)  return removeHabit(d.getAttribute('data-id'));
+    const fl = e.target.closest('[data-flt]');
+    if (fl){ filter = fl.getAttribute('data-flt'); render(); return; }
+    const dh = e.target.closest('[data-donetoggle]');
+    if (dh){ doneCollapsed = !doneCollapsed; render(); return; }
     const ex = e.target.closest('.hb-expand');
     if (ex){ const id = ex.getAttribute('data-exp'); expanded = (expanded === id) ? null : id; render(); return; }
   });
