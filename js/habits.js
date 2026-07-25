@@ -145,8 +145,8 @@ export function initHabits(ctx){
         <div class="hb-long">
           <div class="hb-long-grid">${longGrid(id, me, h.type === 'shared' ? otherUid2 : null)}</div>
           <div class="hb-long-legend">
-            <span><i class="me"></i>sen</span>
-            ${h.type === 'shared' && otherUid2 ? `<span><i class="them"></i>${escapeHtml(nameOf(otherUid2))}</span><span><i class="both"></i>ikiniz</span>` : ''}
+            <span><i class="me"></i>Sen</span>
+            ${h.type === 'shared' && otherUid2 ? `<span><i class="them"></i>${escapeHtml(nameOf(otherUid2))}</span>` : ''}
             <span class="muted">son 12 hafta</span>
           </div>
           <div class="hb-long-stats">
