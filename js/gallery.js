@@ -110,7 +110,7 @@
     if (!btn || !fb) return;
     const kind = btn.getAttribute('data-kind'), key = btn.getAttribute('data-key');
     if (!kind || !key) return;
-    if (!confirm('Bunu silmek istediğine emin misin?')) return;
+    if (!await (window.ask ? window.ask : async m => window.confirm(m))('Bunu silmek istediğine emin misin?')) return;
     try { await fb.update(fb.ref(fb.db, kind), { [key]: null }); }
     catch(err){ toast('Silinemedi: ' + (err && err.message ? err.message : err)); }
   });

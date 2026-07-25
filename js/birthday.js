@@ -413,7 +413,7 @@
   async function deleteCountry(cid){
     if (!me() || !fb2){ toast('Önce giriş yapmalısın 💗'); return; }
     const c = findCountry(cid); if (!c) return;
-    if (!confirm('"' + c.name + '" ülkesini TÜM şehirleriyle silmek istediğine emin misin?')) return;
+    if (!await (window.ask ? window.ask : async m => window.confirm(m))('"' + c.name + '" ülkesini TÜM şehirleriyle silmek istediğine emin misin?')) return;
     const writes = { ['travelGuide/countries/' + cid]: null };
     cityList(c).forEach(ct => { writes['travel/' + ct.id] = null; });
     try { await fb2.update(fb2.ref(fb2.db), writes); }
@@ -422,7 +422,7 @@
   async function deleteCity(cid, ctid){
     if (!me() || !fb2){ toast('Önce giriş yapmalısın 💗'); return; }
     const f = findCity(cid, ctid); if (!f) return;
-    if (!confirm('"' + f.ct.name + '" şehrini silmek istediğine emin misin?')) return;
+    if (!await (window.ask ? window.ask : async m => window.confirm(m))('"' + f.ct.name + '" şehrini silmek istediğine emin misin?')) return;
     try {
       await fb2.update(fb2.ref(fb2.db), {
         ['travelGuide/countries/' + cid + '/cities/' + ctid]: null,
@@ -606,7 +606,7 @@
     const del = e.target.closest('.ph-del');
     if (!del) return;
     if (!me() || !fb2){ $('crNoteHint').textContent = 'Önce giriş yapmalısın 💗'; return; }
-    if (!confirm('Bu fotoğrafı silmek istediğine emin misin?')) return;
+    if (!await (window.ask ? window.ask : async m => window.confirm(m))('Bu fotoğrafı silmek istediğine emin misin?')) return;
     try {
       await fb2.update(fb2.ref(fb2.db, 'travelGuide/countries/' + curCountryId + '/cities/' + curCityId + '/photos'), { [del.getAttribute('data-k')]: null });
     } catch(err){ toast('Silinemedi: ' + err.message); }
@@ -643,7 +643,7 @@
     const phDel = e.target.closest('.ph-del');
     if (phDel){
       if (!me() || !fb2) return;
-      if (!confirm('Bu fotoğrafı silmek istediğine emin misin?')) return;
+      if (!await (window.ask ? window.ask : async m => window.confirm(m))('Bu fotoğrafı silmek istediğine emin misin?')) return;
       try {
         await fb2.update(fb2.ref(fb2.db, 'travelGuide/countries/' + curCountryId + '/cities/' + curCityId + '/places/' + phDel.getAttribute('data-p') + '/photos'), { [phDel.getAttribute('data-k')]: null });
       } catch(err){ toast('Silinemedi: ' + err.message); }
@@ -660,7 +660,7 @@
       if (a === 'del'){
         const f = findCity(curCountryId, curCityId);
         const p = f && (f.ct.places || {})[pid];
-        if (!confirm('"' + ((p && p.name) || 'Bu yeri') + '" silmek istediğine emin misin?')) return;
+        if (!await (window.ask ? window.ask : async m => window.confirm(m))('"' + ((p && p.name) || 'Bu yeri') + '" silmek istediğine emin misin?')) return;
         try {
           await fb2.update(fb2.ref(fb2.db, 'travelGuide/countries/' + curCountryId + '/cities/' + curCityId + '/places'), { [pid]: null });
           openPlaces.delete(pid);

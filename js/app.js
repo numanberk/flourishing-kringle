@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, updateProfile, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
-import { getDatabase, ref, set, update, get, onValue, onDisconnect, push, query, limitToLast, serverTimestamp, increment } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+import { getDatabase, ref, set, update, get, onValue, onDisconnect, push, query, limitToLast, serverTimestamp, increment, runTransaction, orderByKey, endBefore } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 import { getStorage, ref as sRef, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js";
 import { initHabits } from "./habits.js";
 import { initCycle } from "./cycle.js";
@@ -263,6 +263,8 @@ onAuthStateChanged(auth, async user => {
 
     await migrateSessions(user.uid);
     await reconcileStudy(user.uid);
+    trimNode('chat', 500);
+    trimNode(`sessions/${user.uid}`, 1000);
     attachGlobalListeners();
     attachSessions(user.uid);
     if (coApi) coApi.attach();
@@ -405,6 +407,49 @@ async function reconcileStudy(uid){
       toast('Yarım kalan oturum kaydedildi: ' + msToHHMMSS(elapsed));
     }
   } catch(e){ console.error('reconcileStudy failed:', e && e.message); }
+}
+
+/* Sohbet ve oturumlar okumada sınırlı ama depoda sonsuza kadar
+   büyüyor. Girişte bir kez en eskileri buda; her seferinde en çok
+   300 kayıt siliyoruz ki tek yazma devasa olmasın. */
+async function trimNode(path, keep){
+  try {
+    const newest = await get(query(ref(db, path), limitToLast(keep)));
+    const keys = Object.keys(newest.val() || {});
+    if (keys.length < keep) return;                 // toplam zaten az
+    const oldestKept = keys[0];
+    const olds = await get(query(ref(db, path), orderByKey(), endBefore(oldestKept)));
+    const dead = Object.keys(olds.val() || {}).slice(0, 300);
+    if (!dead.length) return;
+    const upd = {};
+    dead.forEach(k => { upd[k] = null; });
+    await update(ref(db, path), upd);
+    console.info(`trimmed ${dead.length} from ${path}`);
+  } catch(e){ console.warn('trim failed', path, e && e.message); }
+}
+
+/* Seri de aynı "oku-hesapla-yaz" tuzağındaydı: iki bitirme çakışırsa
+   biri diğerini eziyordu. İşlem (transaction) sunucuda kilitliyor.
+   users/{uid} artık küçük (oturumlar ayrı düğümde), bu yüzden ucuz. */
+async function bumpStreak(uid, stoppedDay){
+  try {
+    await runTransaction(ref(db, `users/${uid}`), cur => {
+      if (!cur) return cur;
+      const lastDay = cur.lastStudyDay;
+      let n = cur.streak || 0;
+      if (!lastDay) n = 1;
+      else {
+        const diff = Math.round(
+          (new Date(stoppedDay+'T12:00:00') - new Date(lastDay+'T12:00:00')) / 86400000);
+        if (diff === 1) n = n + 1;
+        else if (diff > 1) n = 1;
+        else if (diff < 0) return cur;        // geç gelen yazma, dokunma
+      }
+      cur.streak = n;
+      cur.lastStudyDay = stoppedDay;
+      return cur;
+    });
+  } catch(e){ console.error('streak update failed:', e && e.message); }
 }
 
 /* perDay sonsuza kadar büyüyor. Nesneyi yeniden YAZMIYORUZ (o veri
@@ -654,18 +699,19 @@ let collabDiscovering = false;
 let collabIdx = 0;
 let collabPlaying = false;
 
+/* Videolar artık Firebase Storage'da (depo kuralı: herkese okuma).
+   Yeni video eklersen COLLAB_COUNT'u artırman yeterli. */
+const VIDEO_BASE = 'https://firebasestorage.googleapis.com/v0/b/studywithme-6e234.firebasestorage.app/o/videos%2F';
+const COLLAB_COUNT = 4;
+const videoURL = name => VIDEO_BASE + encodeURIComponent(name) + '?alt=media';
+
 async function discoverCollabs(){
   if (collabList !== null || collabDiscovering) return;
   collabDiscovering = true;
+  /* Eskiden HEAD ile dosya arıyorduk; Storage'a fetch etmek CORS
+     gerektiriyor, oysa <video src> gerektirmiyor. O yüzden yoklama yok. */
   const found = [];
-  for (let i = 1; i <= 50; i++){
-    try {
-      const r = await fetch('/videos/collab' + i + '.mp4', { method: 'HEAD' });
-      if (!r.ok) break;
-      found.push('/videos/collab' + i + '.mp4');
-    } catch(e){ break; }
-  }
-  // numaralı dosya yoksa eski tek collab.mp4'e geri düş
+  for (let i = 1; i <= COLLAB_COUNT; i++) found.push(videoURL('collab' + i + '.mp4'));
   if (!found.length && els.collabVideo) found.push(els.collabVideo.dataset.srcCollab);
   collabList = found;
   collabDiscovering = false;
@@ -788,17 +834,6 @@ async function toggleStudy(){
     const day = todayKey(new Date(startAt));
 
     const stoppedDay = todayKey(new Date());
-    let newStreak = u.streak || 0;
-    const lastDay = u.lastStudyDay;
-    if (!lastDay) newStreak = 1;
-    else {
-      const last = new Date(lastDay+'T12:00:00');
-      const cur = new Date(stoppedDay+'T12:00:00');
-      const diff = Math.round((cur - last)/86400000);
-      if (diff === 1) newStreak = (newStreak||0) + 1;
-      else if (diff > 1) newStreak = 1;
-    }
-
     stopBeat();
     await update(uref, {
       studying:false,
@@ -808,10 +843,9 @@ async function toggleStudy(){
       /* Atomik artırma — bkz. reconcileStudy'deki not. Toplamı
          okuyup geri yazmak çakışmada veri kaybettiriyordu. */
       [`totals/allTimeMs`]: increment(elapsed),
-      [`totals/perDay/${day}`]: increment(elapsed),
-      lastStudyDay: stoppedDay,
-      streak: newStreak
+      [`totals/perDay/${day}`]: increment(elapsed)
     });
+    await bumpStreak(uid, stoppedDay);
 
     if (coApi) coApi.onMyStudyStopped();
 
@@ -978,6 +1012,37 @@ if (els.chatInput) els.chatInput.addEventListener('keydown', e => {
 function escapeHtml(s){
   return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+/* confirm() sayfayı donduruyor ve PWA'da yamalı duruyor.
+   Aynı işi yapan, söz (Promise) döndüren kendi kutumuz. */
+function ask(msg){
+  return new Promise(resolve => {
+    const box = document.getElementById('askBox');
+    if (!box) return resolve(window.confirm(msg));   // güvenli geri düşüş
+    document.getElementById('askMsg').textContent = msg;
+    box.hidden = false; box.style.display = 'flex';
+    const yes = document.getElementById('askYes');
+    const no  = document.getElementById('askNo');
+    let done = false;
+    const finish = v => {
+      if (done) return; done = true;
+      box.hidden = true; box.style.display = 'none';
+      yes.onclick = no.onclick = box.onclick = null;
+      document.removeEventListener('keydown', onKey);
+      resolve(v);
+    };
+    const onKey = e => {
+      if (e.key === 'Escape'){ e.stopPropagation(); finish(false); }
+      if (e.key === 'Enter') finish(true);
+    };
+    yes.onclick = () => finish(true);
+    no.onclick  = () => finish(false);
+    box.onclick = e => { if (e.target === box) finish(false); };
+    document.addEventListener('keydown', onKey);
+    setTimeout(() => { try { no.focus(); } catch(_){} }, 30);
+  });
+}
+window.ask = ask;
+
 function toast(msg){
   let t = document.getElementById('sbToast');
   if (!t){ t = document.createElement('div'); t.id = 'sbToast'; document.body.appendChild(t); }
@@ -1707,7 +1772,7 @@ function renderSubjManage(){
 document.getElementById('subjManage').addEventListener('click', async e => {
   const b = e.target.closest('.subj-del'); if (!b) return;
   const uid = (auth.currentUser || {}).uid; if (!uid) return;
-  if (!confirm('Bu dersi silmek istediğine emin misin? (Geçmiş kayıtlar silinmez)')) return;
+  if (!await ask('Bu dersi silmek istediğine emin misin? (Geçmiş kayıtlar silinmez)')) return;
   try {
     await update(ref(db, `users/${uid}/subjects`), { [b.getAttribute('data-key')]: null });
     setTimeout(() => { subjectsCacheJSON = ''; refreshSubjects(); renderSubjManage(); }, 350);
@@ -1884,6 +1949,12 @@ function attachLibrary(){
     latestLibrary = s.val() || {};
     renderLibrary();
     if (libFirst){ libFirst = false; reconcileKindleJobs(); }
+    // "sayfa sayılarını tamamla" yalnızca eksik varsa görünsün
+    const uid2 = (auth.currentUser || {}).uid;
+    const miss = Object.values(latestLibrary || {})
+      .filter(b => b && b.url && !b.pages && b.byUid === uid2).length;
+    const bf = document.getElementById('libBackfill');
+    if (bf) bf.style.display = miss ? '' : 'none';
   }, err => console.error('library read failed:', err && err.message));
 }
 function openLib(){
@@ -1978,6 +2049,8 @@ function renderLibrary(){
   }).join('');
 }
 
+const _bf = document.getElementById('libBackfill');
+if (_bf) _bf.onclick = backfillPages;
 if (els.libAddBtn) els.libAddBtn.onclick = () => { libHintMsg(''); els.libFile.click(); };
 if (els.libFile) els.libFile.addEventListener('change', async () => {
   const f = els.libFile.files && els.libFile.files[0];
@@ -2038,7 +2111,7 @@ if (els.libFile) els.libFile.addEventListener('change', async () => {
     } catch(e){ queued = false; errMsg = e.message; }
   }
 
-  if (!queued && !confirm('Kindle gönderimi başlatılamadı (' + errMsg + ').\nYine de kütüphaneye kaydedilsin mi? (⬇ indir bağlantısı yine de çalışır)')){
+  if (!queued && !await ask('Kindle gönderimi başlatılamadı (' + errMsg + ').\nYine de kütüphaneye kaydedilsin mi? (⬇ indir bağlantısı yine de çalışır)')){
     try { await deleteObject(sRef(storage, storagePath)); } catch(e){}
     libBusy(false); libHintMsg('Gönderilemedi: ' + errMsg);
     return;
@@ -2077,7 +2150,7 @@ if (els.libList) els.libList.addEventListener('click', async e => {
 
   const del = e.target.closest('.lib-del');
   if (del){
-    if (!confirm('Bu kitap kaydını silmek istediğine emin misin? (Depodaki PDF de silinir)')) return;
+    if (!await ask('Bu kitap kaydını silmek istediğine emin misin? (Depodaki PDF de silinir)')) return;
     const key = del.getAttribute('data-key');
     const b = latestLibrary[key] || {};
     try {
@@ -2231,7 +2304,7 @@ if (els.meetBox) els.meetBox.addEventListener('click', async e => {
   } else if (act === 'join'){
     if (latestMeet && latestMeet.url) window.open(latestMeet.url, '_blank', 'noopener');
   } else if (act === 'end'){
-    if (!confirm('Buluşmayı herkes için kapatmak istediğine emin misin?')) return;
+    if (!await ask('Buluşmayı herkes için kapatmak istediğine emin misin?')) return;
     try { await update(ref(db), { meet: null }); } catch(err){ toast(err.message); }
   }
 });
@@ -2385,7 +2458,7 @@ function wnListPointerDown(e){
   if (e.target.closest('.wn-move')) e.preventDefault();
 }
 
-function wnListClick(e){
+async function wnListClick(e){
   const item = e.target.closest('.wn-item'); if (!item) return;
   const key = item.getAttribute('data-key');
   if (e.target.classList.contains('wn-check')){
@@ -2395,7 +2468,7 @@ function wnListClick(e){
     return;
   }
   if (e.target.closest('.wn-x')){
-    if (!confirm('Bu öğeyi silmek istediğine emin misin?')) return;
+    if (!await ask('Bu öğeyi silmek istediğine emin misin?')) return;
     update(ref(db, 'watchlist'), { [key]: null }).catch(err => toast(err.message));
     return;
   }
@@ -2857,7 +2930,7 @@ if (els.profNameSave) els.profNameSave.onclick = async () => {
   } catch(e){ toast(e.message); }
 };
 if (els.profLogout) els.profLogout.onclick = async () => {
-  if (!confirm('Çıkış yapmak istediğine emin misin?')) return;
+  if (!await ask('Çıkış yapmak istediğine emin misin?')) return;
   try { closeProf(); await signOut(auth); } catch(e){ toast(e.message); }
 };
 

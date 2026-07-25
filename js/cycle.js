@@ -291,7 +291,7 @@ export function initCycle(ctx){
     const del = e.target.closest('.cy-del');
     if (del){
       if (!canEdit()) return;
-      if (!confirm('Bu kayıt silinsin mi?')) return;
+      if (!await (window.ask ? window.ask : async m => window.confirm(m))('Bu kayıt silinsin mi?')) return;
       const u = uid(); if (!u) return;
       try { await set(ref(db, `cycle/${u}/periods/${del.getAttribute('data-id')}`), null); }
       catch(err){ toast(err.message); }

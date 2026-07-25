@@ -267,7 +267,7 @@ export function initHabits(ctx){
   }
 
   async function removeHabit(id){
-    if (!confirm('Bu alışkanlık silinsin mi?')) return;
+    if (!await (window.ask ? window.ask : async m => window.confirm(m))('Bu alışkanlık silinsin mi?')) return;
     try { await set(ref(db, `habits/${id}`), null); }
     catch(e){ toast(e.message); }
   }
