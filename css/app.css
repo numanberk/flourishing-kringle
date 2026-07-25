@@ -1549,3 +1549,37 @@ button.primary:not(:disabled):hover{ filter:brightness(1.06); }
 .hb-long-legend i.both{ background:linear-gradient(135deg, var(--ok) 0 50%, var(--acc) 50% 100%); }
 .hb-long-stats{ display:flex; gap:16px; margin-top:9px; font-size:12.5px; color:var(--muted); }
 .hb-long-stats b{ color:var(--acc); }
+
+/* --- alışkanlık: süzgeç + bugün bitenler + film sırası --- */
+.hb-filter{ display:flex; gap:6px; flex-wrap:wrap; margin:14px 0 4px; }
+.hb-fchip{
+  border-radius:999px; padding:6px 13px; font-size:12.5px; font-weight:600;
+  background:var(--tag-bg); border:1px solid var(--border); color:var(--muted);
+}
+.hb-fchip.on{ background:var(--acc); border-color:var(--acc); color:#fff; }
+.hb-fchip:hover{ box-shadow:none; transform:none; }
+.hb-donehead{
+  width:100%; margin-top:14px; border-radius:12px; padding:9px;
+  font-size:12.5px; font-weight:600; color:var(--muted);
+  background:transparent; border:1px dashed var(--border); text-align:left;
+}
+.hb-donehead:hover{ color:var(--acc); border-color:var(--acc); box-shadow:none; transform:none; }
+.hb-donewrap[hidden]{ display:none; }
+.hb-slim{
+  display:flex; align-items:center; gap:10px; padding:9px 13px; margin-top:7px;
+  background:var(--card); border:1px solid var(--border); border-radius:12px; opacity:.72;
+}
+.hb-slim-ico{ font-size:16px; }
+.hb-slim-name{ flex:1; font-weight:600; font-size:13.5px; overflow-wrap:anywhere; }
+.hb-slim-streak{ font-size:12px; color:var(--muted); }
+.hb-slim .hb-tick{ width:30px; height:30px; font-size:14px; }
+
+/* film listesi sıralama okları */
+.wn-move{ display:inline-flex; flex-direction:column; gap:1px; flex:none; }
+.wn-move button{
+  padding:0 5px; font-size:9px; line-height:1.25; border-radius:5px;
+  background:transparent; border:1px solid var(--border); color:var(--muted);
+  opacity:.55; transition:opacity .15s ease;
+}
+.wn-move button:hover:not(:disabled){ opacity:1; color:var(--acc); border-color:var(--acc); box-shadow:none; transform:none; }
+.wn-move button:disabled{ opacity:.16; cursor:default; }
