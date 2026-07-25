@@ -303,12 +303,20 @@ button:hover{box-shadow:var(--hover-shadow);transform:translateY(-1px)}
   background: var(--acc);
   border-radius: 2px;
   transform-origin: bottom;
-  animation: sb-eq 900ms ease-in-out infinite;
+  animation: sb-eq 900ms linear infinite;
+  will-change: transform;
 }
-.anim-eq i:nth-child(2){ animation-delay: .12s }
-.anim-eq i:nth-child(3){ animation-delay: .24s }
+.anim-eq i:nth-child(2){ animation-delay: -.3s }
+.anim-eq i:nth-child(3){ animation-delay: -.6s }
+/* Uçlar (0% ve 100%) hem aynı değerde hem aynı yönde ilerliyor —
+   döngü başa dönerken sıçrama olmuyor. */
 @keyframes sb-eq {
-  0%{transform:scaleY(0.4)}25%{transform:scaleY(1)}50%{transform:scaleY(0.55)}75%{transform:scaleY(0.9)}100%{transform:scaleY(0.4)}
+  0%  { transform:scaleY(0.40) }
+  20% { transform:scaleY(0.85) }
+  40% { transform:scaleY(1.00) }
+  60% { transform:scaleY(0.70) }
+  80% { transform:scaleY(0.55) }
+  100%{ transform:scaleY(0.40) }
 }
 .user-card.is-studying {
   box-shadow: 0 10px 28px rgba(255, 93, 177, 0.18), var(--shadow);
@@ -328,7 +336,7 @@ button:hover{box-shadow:var(--hover-shadow);transform:translateY(-1px)}
   background: linear-gradient(135deg, hsl(var(--h1),85%,60%), hsl(var(--h1),85%,45%));
   box-shadow: 0 0 0 2px rgba(255,255,255,.1), 0 4px 14px rgba(0,0,0,.3);
   z-index: 2;
-  animation: bob 1.5s ease-in-out infinite;
+  animation: bob 1.5s linear infinite;
 }
 .collab .av.partner { --h1: var(--h2); margin-left: 36px; animation-delay: .2s; }
 .collab .wire { position:absolute; left:6px; right:6px; top:14px; height:0; z-index:1; pointer-events:none; }
@@ -336,10 +344,26 @@ button:hover{box-shadow:var(--hover-shadow);transform:translateY(-1px)}
 .collab .wire path {
   stroke: var(--line); stroke-width:3; fill:none; stroke-linecap:round; stroke-dasharray: 6 10;
   animation: dash 1.2s linear infinite;
-  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--acc) 55%, transparent));
+  will-change: stroke-dashoffset;
 }
-@keyframes dash { to { stroke-dashoffset: -16; } }
-@keyframes bob { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-3px) } }
+/* Parlama artık kıpırdamayan ayrı bir katmanda; animasyonlu path'in
+   üstündeki filtre her karede yeniden çizim yaptırıp takılmaya yol açıyordu. */
+.collab .wire::after{
+  content:''; position:absolute; left:0; right:0; top:0; height:14px;
+  pointer-events:none;
+  background:radial-gradient(60% 100% at 50% 50%,
+    color-mix(in srgb, var(--acc) 26%, transparent), transparent 70%);
+  filter:blur(4px);
+}
+/* dasharray 6+10 = 16 → tam bir periyot kaydırınca dikiş görünmez */
+@keyframes dash { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -16; } }
+@keyframes bob {
+  0%  { transform: translateY(0) }
+  25% { transform: translateY(-2.6px) }
+  50% { transform: translateY(-3px) }
+  75% { transform: translateY(-2.6px) }
+  100%{ transform: translateY(0) }
+}
 
 /* ==== Focus Video — BIG under People ==== */
 .video-card { display:none; }
