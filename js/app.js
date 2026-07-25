@@ -1,9 +1,11 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, updateProfile, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
-import { getDatabase, ref, set, update, get, onValue, onDisconnect, push, query, limitToLast } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+import { getDatabase, ref, set, update, get, onValue, onDisconnect, push, query, limitToLast, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 import { getStorage, ref as sRef, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js";
 import { initHabits } from "./habits.js";
 import { initCycle } from "./cycle.js";
+import { initTier } from "./tier.js";
+import { initCoStudy } from "./costudy.js";
 
 /* ======= Firebase ======= */
 const firebaseConfig = {
@@ -263,6 +265,7 @@ onAuthStateChanged(auth, async user => {
     await reconcileStudy(user.uid);
     attachGlobalListeners();
     attachSessions(user.uid);
+    if (coApi) coApi.attach();
     attachNudges(user.uid);
     attachWatch();
     renderNotifBtn();
@@ -295,6 +298,23 @@ let cycleApi = null;
 try {
   cycleApi = initCycle({ db, auth, ref, set, update, onValue, toast });
 } catch(e){ console.error('cycle init failed:', e && e.message); }
+
+let coApi = null;
+try {
+  coApi = initCoStudy({
+    db, auth, ref, set, update, onValue, serverTimestamp,
+    toast, notifyMe, sendPush, popSound, escapeHtml,
+    isStudying: amStudying,
+    startStudy
+  });
+} catch(e){ console.error('costudy init failed:', e && e.message); }
+
+let tierApi = null;
+try {
+  tierApi = initTier({ db, auth, ref, set, update, onValue, toast, escapeHtml });
+  const te = document.getElementById('tlEntry');
+  if (te) te.onclick = () => tierApi && tierApi.open();
+} catch(e){ console.error('tier init failed:', e && e.message); }
 
 let habitsApi = null;
 try {
@@ -417,6 +437,7 @@ function userCardHTML(d){
           </h4>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
+          ${!d.isMe ? `<button class="co-btn" data-uid="${d.uid}" data-name="${escapeHtml(d.name)}" title="Birlikte çalış">🤝</button>` : ''}
           ${!d.isMe ? `<button class="nudge-btn" data-uid="${d.uid}" title="Dürt">👉 Dürt</button>` : ''}
           <span class="tag"><span class="status-dot ${d.isOnline ? 'dot-on' : 'dot-off'}"></span> ${d.isOnline ? 'çevrimiçi' : 'çevrimdışı'}</span>
         </div>
@@ -738,6 +759,14 @@ function setVideoByState(studyingList, myUid, myEmail){
 }
 
 /* ---------------- Study toggle handler ---------------- */
+/* Ortak oturum için: zaten çalışıyorsa dokunma, çalışmıyorsa başlat. */
+async function startStudy(){
+  const uid = (auth.currentUser||{}).uid; if(!uid) return;
+  const snap = await get(ref(db, `users/${uid}`));
+  if ((snap.val() || {}).studying) return;
+  await toggleStudy();
+}
+
 async function toggleStudy(){
   const uid = (auth.currentUser||{}).uid; if(!uid) return;
   const uref = ref(db, `users/${uid}`);
@@ -779,6 +808,8 @@ async function toggleStudy(){
       lastStudyDay: stoppedDay,
       streak: newStreak
     });
+
+    if (coApi) coApi.onMyStudyStopped();
 
     // session log (skip accidental <15s taps)
     if (elapsed > 15000){
