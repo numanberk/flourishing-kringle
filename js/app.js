@@ -261,14 +261,23 @@ onAuthStateChanged(auth, async user => {
       });
     }
 
-    await migrateSessions(user.uid);
-    await reconcileStudy(user.uid);
-    await repairToday(user.uid);
-    trimNode('chat', 500);
-    trimNode(`sessions/${user.uid}`, 1000);
+    /* Dinleyiciler ÖNCE bağlanıyor. Bakım işleri (taşıma, onarım, budama)
+       art arda ağ isteği yapıyor; bunları beklerken kullanıcı listesi ve
+       film listesi boş kalıyordu — dersler görünmüyor, film sekmesi
+       açılmıyordu. Artık arka planda, arayüzü bloklamadan çalışıyorlar. */
     attachGlobalListeners();
     attachSessions(user.uid);
     if (coApi) coApi.attach();
+
+    (async () => {
+      try {
+        await migrateSessions(user.uid);
+        await reconcileStudy(user.uid);
+        await repairToday(user.uid);
+        trimNode('chat', 500);
+        trimNode(`sessions/${user.uid}`, 1000);
+      } catch(e){ console.warn('bakım işleri:', e && e.message); }
+    })();
     attachNudges(user.uid);
     attachWatch();
     renderNotifBtn();
@@ -2381,8 +2390,16 @@ async function wnMove(key, dir){
   try { await update(ref(db), upd); } catch(e){ toast(e.message); }
 }
 
+let wnRendering = false;
 function renderWatchNotes(){
   if (!els.wnListOpen) return;
+  /* Yeniden giriş koruması: innerHTML değişince açık düzenleme kutusu
+     blur olup commit ediyor, o da tekrar render çağırıyordu. */
+  if (wnRendering) return;
+  wnRendering = true;
+  try { renderWatchNotesInner(); } finally { wnRendering = false; }
+}
+function renderWatchNotesInner(){
   applyWnBg();
   const items = wnItems();
   /* ord verilmişse ona, yoksa eklenme zamanına göre. Böylece eski
