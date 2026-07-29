@@ -15,7 +15,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Çalışma Odası">
-  <link rel="stylesheet" href="/css/app.css?v=20">
+  <link rel="stylesheet" href="/css/app.css?v=22">
 </head>
 <body>
   <div class="container">
@@ -248,8 +248,9 @@
       <h2>📚 Kütüphane</h2>
       <div class="lib-topline">
         <span class="muted small">Dosya sınırı ~18 MB</span>
-        <button id="libBackfill" class="small" style="display:none">Sayfa sayılarını tamamla</button>
+        <button id="libBackfill" class="small" style="display:none">📄 Sayfa sayılarını say</button>
         <input id="libPageFile" type="file" accept="application/pdf" hidden>
+        <input id="libPagesMulti" type="file" accept="application/pdf" multiple hidden>
       </div>
       <div class="row" style="gap:8px;align-items:center">
         <input id="libTitle" placeholder="Kitap adı (boş bırakılırsa dosya adı)" maxlength="80" style="flex:1;min-width:180px">
