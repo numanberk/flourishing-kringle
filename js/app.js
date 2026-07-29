@@ -263,6 +263,7 @@ onAuthStateChanged(auth, async user => {
 
     await migrateSessions(user.uid);
     await reconcileStudy(user.uid);
+    await repairToday(user.uid);
     trimNode('chat', 500);
     trimNode(`sessions/${user.uid}`, 1000);
     attachGlobalListeners();
@@ -450,6 +451,25 @@ async function bumpStreak(uid, stoppedDay){
       return cur;
     });
   } catch(e){ console.error('streak update failed:', e && e.message); }
+}
+
+/* Eski yarış hataları günün toplamını sıfırlamış olabilir. Oturum
+   kayıtları sağlam durduğu için bugünün toplamını onlardan doğruluyoruz.
+   Sadece EKSİKSE yukarı çekiyoruz — asla azaltmıyoruz (15 sn altı
+   oturumlar kaydedilmiyor ama süreye ekleniyor). */
+async function repairToday(uid){
+  try {
+    const today = todayKey();
+    const snap = await get(query(ref(db, `sessions/${uid}`), limitToLast(200)));
+    const rows = Object.values(snap.val() || {});
+    const sum = rows.filter(r => r && (r.day === today)).reduce((a, r) => a + (r.ms || 0), 0);
+    if (!sum) return;
+    const u = (await get(ref(db, `users/${uid}/totals/perDay/${today}`))).val() || 0;
+    if (sum > u + 1000){
+      await update(ref(db, `users/${uid}`), { [`totals/perDay/${today}`]: sum });
+      console.info('bugünün toplamı onarıldı:', u, '->', sum);
+    }
+  } catch(e){ console.warn('repairToday failed:', e && e.message); }
 }
 
 /* perDay sonsuza kadar büyüyor. Nesneyi yeniden YAZMIYORUZ (o veri
@@ -2767,11 +2787,12 @@ function saPreview(){
     const day = todayKey(new Date(t.startAt));
     try {
       const uref = ref(db, `users/${uid}`);
-      const u = (await get(uref)).val() || {};
-      const totals = u.totals || { allTimeMs: 0, perDay: {} };
-      const perDay = totals.perDay || {};
-      perDay[day] = (perDay[day] || 0) + t.ms;
-      await update(uref, { totals: { allTimeMs: (totals.allTimeMs || 0) + t.ms, perDay } });
+      /* Burada da totals'ı komple yazıyorduk; aynı anda süren bir
+         oturum biterse günün toplamını siliyordu. Atomik artır. */
+      await update(uref, {
+        [`totals/allTimeMs`]: increment(t.ms),
+        [`totals/perDay/${day}`]: increment(t.ms)
+      });
       await push(ref(db, `sessions/${uid}`), {
         subject: subj, startAt: t.startAt, endAt: t.endAt, ms: t.ms, day, manual: true
       });

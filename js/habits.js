@@ -115,11 +115,16 @@ export function initHabits(ctx){
     if (dot) dot.style.display = invites.length ? '' : 'none';
 
     // 2) benim görebileceğim aktif alışkanlıklar
-    const list = Object.entries(habits).filter(([, h]) => {
-      if (!h || h.status !== 'active') return false;
-      if (h.type === 'shared') return true;
-      return h.byUid === me;                       // kişisel → sadece sahibi
-    }).sort((a, b) => (a[1].at || 0) - (b[1].at || 0));
+    /* Ortaklar + kendi kişiselim + karşı tarafın kişiselleri (salt okunur).
+       Kendi kişisellerim üstte dursun. */
+    const list = Object.entries(habits)
+      .filter(([, h]) => h && h.status === 'active')
+      .sort((a, b) => {
+        const mineA = a[1].type === 'shared' || a[1].byUid === me;
+        const mineB = b[1].type === 'shared' || b[1].byUid === me;
+        if (mineA !== mineB) return mineA ? -1 : 1;
+        return (a[1].at || 0) - (b[1].at || 0);
+      });
 
     $('habitEmpty').style.display = list.length ? 'none' : '';
 
@@ -136,8 +141,12 @@ export function initHabits(ctx){
       ? F.map(([v,t]) => `<button class="hb-fchip ${filter===v?'on':''}" data-flt="${v}">${t}</button>`).join('')
       : '';
 
+    const readOnly = h => h.type !== 'shared' && h.byUid !== me;
+
     const card = ([id, h]) => {
-      const entry = mine[id] || {};
+      const ro = readOnly(h);
+      const ownerUid = ro ? h.byUid : me;             // salt okunurken sahibin kayıtları
+      const entry = (logs[ownerUid] || {})[id] || {};
       const done = !!entry[todayKey()];
       const week = lastSevenDays(entry).map(d => `<i class="${d ? 'done' : ''}"></i>`).join('');
 
@@ -158,9 +167,9 @@ export function initHabits(ctx){
                         Object.keys(users).find(u => u !== me) || null;
       const longPart = isOpen ? `
         <div class="hb-long">
-          <div class="hb-long-grid">${longGrid(id, me, h.type === 'shared' ? otherUid2 : null)}</div>
+          <div class="hb-long-grid">${longGrid(id, ownerUid, h.type === 'shared' ? otherUid2 : null)}</div>
           <div class="hb-long-legend">
-            <span><i class="me"></i>Sen</span>
+            <span><i class="me"></i>${ro ? escapeHtml(nameOf(ownerUid)) : 'Sen'}</span>
             ${h.type === 'shared' && otherUid2 ? `<span><i class="them"></i>${escapeHtml(nameOf(otherUid2))}</span>` : ''}
             <span class="muted">son 12 hafta</span>
           </div>
@@ -170,25 +179,29 @@ export function initHabits(ctx){
           </div>
         </div>` : '';
 
-      return `<div class="hb-item ${isOpen ? 'open' : ''}">
+      return `<div class="hb-item ${isOpen ? 'open' : ''} ${ro ? 'ro' : ''}">
         <div class="hb-top">
           <span style="font-size:20px">${escapeHtml(h.emoji || '🎯')}</span>
           <span class="hb-name">${escapeHtml(h.name)}</span>
-          <span class="hb-kind">${h.type === 'shared' ? 'Balışkanlık' : 'Alışkanlık'}</span>
+          <span class="hb-kind">${h.type === 'shared' ? 'Balışkanlık' : (ro ? escapeHtml(nameOf(h.byUid)) : 'Alışkanlık')}</span>
           ${h.byUid === me ? `<button class="hb-del small" data-id="${id}" title="Sil">✕</button>` : ''}
-          <button class="hb-tick ${done ? 'on' : ''}" data-id="${id}">${done ? '✔' : ''}</button>
+          ${ro ? `<span class="hb-seen" title="${done ? 'bugün yaptı' : 'bugün yapmadı'}">${done ? '✔' : '·'}</span>`
+               : `<button class="hb-tick ${done ? 'on' : ''}" data-id="${id}">${done ? '✔' : ''}</button>`}
         </div>
         <div class="hb-week">${week}</div>
-        <div class="hb-streak"><span>Sen: <b>${streak(entry)}</b> gün</span>${other}</div>
+        <div class="hb-streak"><span>${ro ? escapeHtml(nameOf(ownerUid)) : 'Sen'}: <b>${streak(entry)}</b> gün</span>${other}</div>
         ${longPart}
         <button class="hb-expand" data-exp="${id}">${isOpen ? 'Kapat ▲' : 'Geçmişi aç ▼'}</button>
       </div>`;
     };
 
-    const slim = ([id, h]) => `<div class="hb-slim" data-slim="${id}">
+    /* Tamamlanan satır da açılabilir: üstüne dokununca tam karta dönüşüyor
+       (eskiden açılamıyordu, o günün geçmişi görünmüyordu). */
+    const slim = ([id, h]) => `<div class="hb-slim" data-exp="${id}">
         <span class="hb-slim-ico">${escapeHtml(h.emoji || '🎯')}</span>
         <span class="hb-slim-name">${escapeHtml(h.name)}</span>
         <span class="hb-slim-streak">${streak(mine[id] || {})}🔥</span>
+        <span class="hb-slim-chev">▾</span>
         <button class="hb-tick on small" data-id="${id}">✔</button>
       </div>`;
 
@@ -197,7 +210,9 @@ export function initHabits(ctx){
       html += `<button class="hb-donehead" data-donetoggle="1">
           ${doneCollapsed ? '▸' : '▾'} Bugün tamamlanan · ${finished.length}
         </button>
-        <div class="hb-donewrap" ${doneCollapsed ? 'hidden' : ''}>${finished.map(slim).join('')}</div>`;
+        <div class="hb-donewrap" ${doneCollapsed ? 'hidden' : ''}>${
+          finished.map(x => expanded === x[0] ? card(x) : slim(x)).join('')
+        }</div>`;
     }
     if (!todo.length && !finished.length && list.length){
       html += '<div class="muted small" style="margin-top:12px">Bu süzgeçte alışkanlık yok</div>';
@@ -208,6 +223,9 @@ export function initHabits(ctx){
   /* ---------------- actions ---------------- */
   async function toggleToday(id){
     const me = uid(); if (!me) return;
+    const h = habits[id];
+    if (h && h.type !== 'shared' && h.byUid !== me) return;   // başkasının kişiseli
+
     const k = todayKey();
     const on = !!((logs[me] || {})[id] || {})[k];
     try {
@@ -338,6 +356,8 @@ export function initHabits(ctx){
 
   view.addEventListener('click', e => {
     const t = e.target.closest('.hb-tick');   if (t)  return toggleToday(t.getAttribute('data-id'));
+    const sl = e.target.closest('[data-exp]');
+    if (sl){ const id = sl.getAttribute('data-exp'); expanded = (expanded === id) ? null : id; render(); return; }
     const ok = e.target.closest('.hb-ok');    if (ok) return respond(ok.getAttribute('data-id'), true);
     const no = e.target.closest('.hb-no');    if (no) return respond(no.getAttribute('data-id'), false);
     const d  = e.target.closest('.hb-del');   if (d)  return removeHabit(d.getAttribute('data-id'));
@@ -345,8 +365,6 @@ export function initHabits(ctx){
     if (fl){ filter = fl.getAttribute('data-flt'); render(); return; }
     const dh = e.target.closest('[data-donetoggle]');
     if (dh){ doneCollapsed = !doneCollapsed; render(); return; }
-    const ex = e.target.closest('.hb-expand');
-    if (ex){ const id = ex.getAttribute('data-exp'); expanded = (expanded === id) ? null : id; render(); return; }
   });
 
   /* ana modül kullanıcı listesini besliyor; davet rozeti için
