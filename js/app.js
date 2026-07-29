@@ -2051,6 +2051,30 @@ async function retryKindle(libKey){
   } catch(e){ toast('Tekrar gönderilemedi: ' + e.message); }
 }
 
+/* Eski kitaplarda sayfa sayısı yok. Storage URL'inden okuyup yazıyoruz;
+   kurallar gereği herkes yalnızca kendi eklediğini güncelleyebiliyor. */
+async function backfillPages(){
+  const uid = (auth.currentUser || {}).uid; if (!uid) return;
+  const todo = Object.entries(latestLibrary || {})
+    .filter(([, b]) => b && b.url && !b.pages && b.byUid === uid);
+  if (!todo.length){ toast('Eksik sayfa sayısı yok'); return; }
+  const btn = document.getElementById('libBackfill');
+  if (btn) btn.disabled = true;
+  let ok = 0;
+  for (const [k, b] of todo){
+    if (btn) btn.textContent = `Sayılıyor… ${ok + 1}/${todo.length}`;
+    try {
+      const lib = await pdfLib();
+      const doc = await lib.getDocument({ url: b.url }).promise;
+      const n = doc.numPages;
+      try { doc.destroy(); } catch(e){}
+      if (n){ await update(ref(db, `library/${k}`), { pages: n }); ok++; }
+    } catch(e){ console.warn('sayfa sayılamadı:', b.title, e && e.message); }
+  }
+  if (btn){ btn.disabled = false; btn.textContent = 'Sayfa sayılarını tamamla'; }
+  toast(ok ? `${ok} kitabın sayfa sayısı eklendi` : 'Sayfa sayısı okunamadı (CORS olabilir)');
+}
+
 function renderLibrary(){
   if (!els.libList) return;
   const myUid = (auth.currentUser || {}).uid;
@@ -2082,7 +2106,7 @@ function renderLibrary(){
 }
 
 const _bf = document.getElementById('libBackfill');
-if (_bf) _bf.onclick = backfillPages;
+if (_bf) _bf.onclick = () => backfillPages();
 if (els.libAddBtn) els.libAddBtn.onclick = () => { libHintMsg(''); els.libFile.click(); };
 if (els.libFile) els.libFile.addEventListener('change', async () => {
   const f = els.libFile.files && els.libFile.files[0];
