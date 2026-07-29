@@ -1629,3 +1629,13 @@ button.primary:not(:disabled):hover{ filter:brightness(1.06); }
 .ask-acts{ display:flex; gap:9px; margin-top:18px; }
 .ask-acts button{ flex:1; border-radius:12px; padding:11px; font-weight:600; }
 .lib-topline{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
+
+/* karşı tarafın kişisel alışkanlığı: görünür ama dokunulmaz */
+.hb-item.ro{ opacity:.85; border-style:dashed; }
+.hb-item.ro .hb-kind{ background:transparent; }
+.hb-seen{
+  flex:none; width:44px; height:44px; display:flex; align-items:center;
+  justify-content:center; font-size:17px; color:var(--muted);
+}
+.hb-slim{ cursor:pointer; }
+.hb-slim-chev{ color:var(--muted); font-size:13px; }
