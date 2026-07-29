@@ -598,17 +598,20 @@ function draw(){
     });
   }
 
-  lb.sort((a, b) => b.ms - a.ms);
-  const lbSig = lb.map(i => i.uid + '¦' + i.name + '¦' + (i.done ? 1 : 0)).join('||');
-  if (els.leaderboard.dataset.sig !== lbSig || !els.leaderboard.children.length){
-    els.leaderboard.dataset.sig = lbSig;
-    els.leaderboard.innerHTML = lb.map(i => `<li data-uid="${i.uid}"><span>${i.name}${i.done ? ' 🎯' : ''}</span><span data-f="t">${msToHHMMSS(i.ms)}</span></li>`).join('');
-  } else {
-    lb.forEach(i => {
-      const el = els.leaderboard.querySelector(`li[data-uid="${i.uid}"] [data-f="t"]`);
-      if (el) el.textContent = msToHHMMSS(i.ms);
-    });
-  }
+  safe('leaderboard', () => {
+    if (!els.leaderboard) return;
+    lb.sort((a, b) => b.ms - a.ms);
+    const lbSig = lb.map(i => i.uid + '¦' + i.name + '¦' + (i.done ? 1 : 0)).join('||');
+    if (els.leaderboard.dataset.sig !== lbSig || !els.leaderboard.children.length){
+      els.leaderboard.dataset.sig = lbSig;
+      els.leaderboard.innerHTML = lb.map(i => `<li data-uid="${i.uid}"><span>${i.name}${i.done ? ' 🎯' : ''}</span><span data-f="t">${msToHHMMSS(i.ms)}</span></li>`).join('');
+    } else {
+      lb.forEach(i => {
+        const el = els.leaderboard.querySelector(`li[data-uid="${i.uid}"] [data-f="t"]`);
+        if (el) el.textContent = msToHHMMSS(i.ms);
+      });
+    }
+  });
 
   // başlık çipini (avatar/ad) değişince tazele
   if (auth.currentUser && users[myUid]){
@@ -683,8 +686,8 @@ function draw(){
     }
   }
 
-  refreshSubjects();
-  renderTyping();
+  safe('subjects', refreshSubjects);
+  safe('typing', renderTyping);
 
   // header: collab avatars + status pill + video routing
   updateCollab(studyingList, myUid);
@@ -2390,6 +2393,24 @@ async function wnMove(key, dir){
   try { await update(ref(db), upd); } catch(e){ toast(e.message); }
 }
 
+/* Sessiz çökmeler yüzünden "her şey bozuldu" deneyimi yaşanıyor.
+   Yakalanmamış hatayı hem konsola hem ekrana yaz. */
+window.addEventListener('error', e => {
+  console.error('UNCAUGHT:', e.message, e.filename, e.lineno);
+  try { toast('Hata: ' + (e.message || 'bilinmeyen')); } catch(_){}
+});
+window.addEventListener('unhandledrejection', e => {
+  const m = (e.reason && (e.reason.message || e.reason)) || 'bilinmeyen';
+  console.error('UNHANDLED PROMISE:', m);
+  try { toast('Hata: ' + m); } catch(_){}
+});
+
+/* Bir bölüm patlarsa gerisini de öldürmesin. */
+function safe(label, fn){
+  try { fn(); }
+  catch(e){ console.error('[' + label + '] failed:', e && e.message, e); }
+}
+
 let wnRendering = false;
 function renderWatchNotes(){
   if (!els.wnListOpen) return;
@@ -2698,10 +2719,10 @@ function openProf(){
   els.profView.classList.add('open');
   document.body.style.overflow = 'hidden';
   els.profName.value = u.displayName || '';
-  attachLibrary();          // kitap istatistiği için
-  renderProfAvatar();
-  renderProfStats();
-  openStats();              // istatistikler artık bu sayfanın içinde
+  safe('profLibrary', attachLibrary);
+  safe('profAvatar', renderProfAvatar);
+  safe('profStats', renderProfStats);
+  safe('profOpenStats', openStats);
   els.profView.scrollTop = 0;
 }
 function closeProf(){
