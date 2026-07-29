@@ -2053,6 +2053,32 @@ async function retryKindle(libKey){
 
 /* Eski kitaplarda sayfa sayısı yok. Storage URL'inden okuyup yazıyoruz;
    kurallar gereği herkes yalnızca kendi eklediğini güncelleyebiliyor. */
+/* Storage'dan okumak CORS gerektiriyor; yerel dosyayı seçmek gerektirmiyor.
+   Kitabı diskten seç → sayfa sayısı okunup kaydedilir (yükleme yapılmaz). */
+let pageTargetKey = null;
+function askPagesFor(key){
+  pageTargetKey = key;
+  const inp = document.getElementById('libPageFile');
+  if (inp){ inp.value = ''; inp.click(); }
+}
+(function(){
+  const inp = document.getElementById('libPageFile');
+  if (!inp) return;
+  inp.addEventListener('change', async () => {
+    const f = inp.files && inp.files[0];
+    const key = pageTargetKey; pageTargetKey = null;
+    inp.value = '';
+    if (!f || !key) return;
+    toast('Sayfalar sayılıyor…');
+    const n = await pdfPageCount(f);
+    if (!n){ toast('Bu dosyadan sayfa sayısı okunamadı'); return; }
+    try {
+      await update(ref(db, `library/${key}`), { pages: n });
+      toast(n + ' sayfa kaydedildi');
+    } catch(e){ toast(e.message); }
+  });
+})();
+
 async function backfillPages(){
   const uid = (auth.currentUser || {}).uid; if (!uid) return;
   const todo = Object.entries(latestLibrary || {})
@@ -2072,7 +2098,8 @@ async function backfillPages(){
     } catch(e){ console.warn('sayfa sayılamadı:', b.title, e && e.message); }
   }
   if (btn){ btn.disabled = false; btn.textContent = 'Sayfa sayılarını tamamla'; }
-  toast(ok ? `${ok} kitabın sayfa sayısı eklendi` : 'Sayfa sayısı okunamadı (CORS olabilir)');
+  toast(ok ? `${ok} kitabın sayfa sayısı eklendi`
+           : 'Sunucudan okunamadı — satırdaki "📄 sayfa sayısı" ile dosyayı seçebilirsin');
 }
 
 function renderLibrary(){
@@ -2093,7 +2120,7 @@ function renderLibrary(){
       <div class="spaced" style="gap:8px">
         <div style="min-width:0">
           <div class="lib-title">📕 ${escapeHtml(b.title || b.filename || 'Kitap')}</div>
-          <div class="muted small">${escapeHtml(b.by || 'Biri')} ekledi · ${new Date(b.at || 0).toLocaleDateString('tr-TR')} · ${fmtSize(b.sizeKB)}${b.pages ? ' · ' + b.pages + ' sayfa' : ''}${b.url ? ' · <a href="' + escapeHtml(b.url) + '" target="_blank" rel="noopener">⬇ indir</a>' : ''}${b.sent === 'pending' ? ' · <span class="lib-pending">✉️ gönderiliyor…</span>' : (b.sent === false ? ' · <span style="color:var(--danger)" title="' + escapeHtml(b.kindleError || '') + '">Kindle\u2019a gönderilemedi</span> · <button class="lib-retry small" data-key="' + b.k + '">↻ tekrar dene</button>' : '')}</div>
+          <div class="muted small">${escapeHtml(b.by || 'Biri')} ekledi · ${new Date(b.at || 0).toLocaleDateString('tr-TR')} · ${fmtSize(b.sizeKB)}${b.pages ? ' · ' + b.pages + ' sayfa' : (b.byUid === (auth.currentUser||{}).uid ? ' · <button class="lib-pages small" data-key="' + b.k + '" title="PDF\u2019i seç, sayfa sayısı okunsun">📄 sayfa sayısı</button>' : '')}${b.url ? ' · <a href="' + escapeHtml(b.url) + '" target="_blank" rel="noopener">⬇ indir</a>' : ''}${b.sent === 'pending' ? ' · <span class="lib-pending">✉️ gönderiliyor…</span>' : (b.sent === false ? ' · <span style="color:var(--danger)" title="' + escapeHtml(b.kindleError || '') + '">Kindle\u2019a gönderilemedi</span> · <button class="lib-retry small" data-key="' + b.k + '">↻ tekrar dene</button>' : '')}</div>
         </div>
         <button class="lib-del small" data-key="${b.k}" title="Kaydı sil">✕</button>
       </div>
@@ -2201,6 +2228,9 @@ if (els.libList) els.libList.addEventListener('click', async e => {
     catch(err){ toast(err.message); }
     return;
   }
+  const pg = e.target.closest('.lib-pages');
+  if (pg){ askPagesFor(pg.getAttribute('data-key')); return; }
+
   const rt = e.target.closest('.lib-retry');
   if (rt){ retryKindle(rt.getAttribute('data-key')); return; }
 
