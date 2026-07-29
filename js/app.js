@@ -1930,12 +1930,28 @@ const LIB_MAX_BYTES = 18 * 1024 * 1024;
 
 /* PDF sayfa sayısını tarayıcıda okuyoruz. pdf.js yalnızca ilk kitap
    eklendiğinde indiriliyor — açılışta yük getirmesin. */
+/* pdf.js 3.x klasik (UMD) sürüm olarak dağıtılıyor — .mjs dosyaları
+   yalnızca 4.0'dan itibaren var. Bu yüzden dinamik import() değil,
+   script etiketiyle yükleyip window.pdfjsLib'i kullanıyoruz. */
+const PDFJS_BASE = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
 let _pdfjs = null;
+function loadScriptOnce(src){
+  return new Promise((resolve, reject) => {
+    const el = document.createElement('script');
+    el.src = src;
+    el.onload = () => resolve();
+    el.onerror = () => reject(new Error('yüklenemedi: ' + src));
+    document.head.appendChild(el);
+  });
+}
 async function pdfLib(){
   if (_pdfjs) return _pdfjs;
-  const m = await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.mjs');
-  m.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.mjs';
-  _pdfjs = m; return m;
+  if (!window.pdfjsLib) await loadScriptOnce(PDFJS_BASE + 'pdf.min.js');
+  const lib = window.pdfjsLib;
+  if (!lib) throw new Error('pdf.js yüklenemedi');
+  lib.GlobalWorkerOptions.workerSrc = PDFJS_BASE + 'pdf.worker.min.js';
+  _pdfjs = lib;
+  return lib;
 }
 async function pdfPageCount(file){
   try {
@@ -1945,7 +1961,10 @@ async function pdfPageCount(file){
     const n = doc.numPages;
     try { doc.destroy(); } catch(e){}
     return n || null;
-  } catch(e){ console.warn('sayfa sayısı okunamadı:', e && e.message); return null; }
+  } catch(e){
+    console.error('sayfa sayısı okunamadı:', e && e.message, e);
+    return null;
+  }
 }
 let latestLibrary = {};
 let libAttached = false;
@@ -1984,7 +2003,7 @@ function attachLibrary(){
     // "sayfa sayılarını tamamla" yalnızca eksik varsa görünsün
     const uid2 = (auth.currentUser || {}).uid;
     const miss = Object.values(latestLibrary || {})
-      .filter(b => b && b.url && !b.pages && b.byUid === uid2).length;
+      .filter(b => b && !b.pages && b.byUid === uid2).length;
     const bf = document.getElementById('libBackfill');
     if (bf) bf.style.display = miss ? '' : 'none';
   }, err => console.error('library read failed:', err && err.message));
@@ -2079,28 +2098,65 @@ function askPagesFor(key){
   });
 })();
 
-async function backfillPages(){
+/* Toplu sayım — tamamen yerel, CORS yok.
+   Bir kerede birden fazla PDF seç; dosya adına göre kitaplarla eşleştirip
+   sayfa sayılarını yazıyoruz. Dosyalar Storage'a YÜKLENMİYOR, sadece
+   tarayıcıda okunuyor. */
+function backfillPages(){
   const uid = (auth.currentUser || {}).uid; if (!uid) return;
   const todo = Object.entries(latestLibrary || {})
-    .filter(([, b]) => b && b.url && !b.pages && b.byUid === uid);
+    .filter(([, b]) => b && !b.pages && b.byUid === uid);
   if (!todo.length){ toast('Eksik sayfa sayısı yok'); return; }
-  const btn = document.getElementById('libBackfill');
-  if (btn) btn.disabled = true;
-  let ok = 0;
-  for (const [k, b] of todo){
-    if (btn) btn.textContent = `Sayılıyor… ${ok + 1}/${todo.length}`;
-    try {
-      const lib = await pdfLib();
-      const doc = await lib.getDocument({ url: b.url }).promise;
-      const n = doc.numPages;
-      try { doc.destroy(); } catch(e){}
-      if (n){ await update(ref(db, `library/${k}`), { pages: n }); ok++; }
-    } catch(e){ console.warn('sayfa sayılamadı:', b.title, e && e.message); }
-  }
-  if (btn){ btn.disabled = false; btn.textContent = 'Sayfa sayılarını tamamla'; }
-  toast(ok ? `${ok} kitabın sayfa sayısı eklendi`
-           : 'Sunucudan okunamadı — satırdaki "📄 sayfa sayısı" ile dosyayı seçebilirsin');
+  const inp = document.getElementById('libPagesMulti');
+  if (inp){ inp.value = ''; inp.click(); }
 }
+
+/* Eşleştirme: önce tam dosya adı, olmazsa uzantısız ad, olmazsa başlık. */
+function matchBook(file, pool){
+  const norm = x => (x || '').toLowerCase().replace(/\.pdf$/, '').replace(/[_\s-]+/g, '');
+  const fn = norm(file.name);
+  return pool.find(([, b]) => norm(b.filename) === fn)
+      || pool.find(([, b]) => norm(b.title) === fn)
+      || null;
+}
+
+(function(){
+  const inp = document.getElementById('libPagesMulti');
+  if (!inp) return;
+  inp.addEventListener('change', async () => {
+    const files = Array.from(inp.files || []);
+    inp.value = '';
+    if (!files.length) return;
+    const uid = (auth.currentUser || {}).uid; if (!uid) return;
+    const btn = document.getElementById('libBackfill');
+    if (btn) btn.disabled = true;
+
+    let pool = Object.entries(latestLibrary || {})
+      .filter(([, b]) => b && !b.pages && b.byUid === uid);
+    let ok = 0, unmatched = 0, failed = 0, i = 0;
+
+    for (const f of files){
+      i++;
+      if (btn) btn.textContent = `Sayılıyor… ${i}/${files.length}`;
+      const hit = matchBook(f, pool);
+      if (!hit){ unmatched++; continue; }
+      const n = await pdfPageCount(f);
+      if (!n){ failed++; continue; }
+      try {
+        await update(ref(db, `library/${hit[0]}`), { pages: n });
+        ok++;
+        pool = pool.filter(x => x[0] !== hit[0]);   // aynı kitabı iki kez saymayalım
+      } catch(e){ failed++; console.warn(e && e.message); }
+    }
+
+    if (btn){ btn.disabled = false; btn.textContent = '📄 Sayfa sayılarını say'; }
+    const parts = [];
+    if (ok) parts.push(ok + ' kitap kaydedildi');
+    if (unmatched) parts.push(unmatched + ' dosya eşleşmedi');
+    if (failed) parts.push(failed + ' dosya okunamadı');
+    toast(parts.length ? parts.join(' · ') : 'Değişiklik olmadı');
+  });
+})();
 
 function renderLibrary(){
   if (!els.libList) return;
