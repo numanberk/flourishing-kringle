@@ -1923,7 +1923,7 @@ function renderTyping(){
 /* Kindle gönderimi Google Apps Script üzerinden yapılır (Netlify yerine):
    6 dakika çalışma süresi → büyük PDF'ler sorunsuz gider, kredi/limit yok.
    ⬇ script.google.com'da dağıttıktan sonra çıkan ".../exec" adresini buraya yapıştır. */
-const LIB_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyzBMzAzZ1PBiIyl-z_XLNRKfBnPyKtLDSJl_sLAH36t8II5b3CZIhOubQJ0Xqmeg/exec';
+const LIB_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzuZzvSj0DWsXH2ffQidez3cjPfcidWDC4mGFfQIJSClYmS2RHxxKWDRc0JoTcufAzw/exec';
 /* Gmail eki base64'e çevrilince ~%33 büyüyor: 25MB'lık gerçek tavan
    pratikte ~18MB'a denk geliyor. Üstü sessizce e-postada patlıyordu. */
 const LIB_MAX_BYTES = 18 * 1024 * 1024;
@@ -1953,6 +1953,72 @@ async function pdfLib(){
   _pdfjs = lib;
   return lib;
 }
+/* ---- EPUB ----
+   EPUB aslında bir ZIP: içinden container.xml → .opf → başlık, kapak
+   ve bölümler çıkıyor. Sayfa kavramı yok, o yüzden kelime sayısından
+   tahmini sayfa hesaplıyoruz (~300 kelime/sayfa).                     */
+const JSZIP_URL = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+let _zip = null;
+async function zipLib(){
+  if (_zip) return _zip;
+  if (!window.JSZip) await loadScriptOnce(JSZIP_URL);
+  if (!window.JSZip) throw new Error('JSZip yüklenemedi');
+  _zip = window.JSZip;
+  return _zip;
+}
+const isEpub = f => /\.epub$/i.test(f.name || '') || f.type === 'application/epub+zip';
+
+function xml(text){ return new DOMParser().parseFromString(text, 'application/xml'); }
+function resolvePath(base, rel){
+  const parts = base.split('/'); parts.pop();
+  rel.split('/').forEach(seg => {
+    if (seg === '.' || seg === '') return;
+    if (seg === '..') parts.pop(); else parts.push(seg);
+  });
+  return parts.join('/');
+}
+
+async function epubMeta(file){
+  const JSZipCtor = await zipLib();
+  const zip = await JSZipCtor.loadAsync(file);
+
+  const container = await zip.file('META-INF/container.xml').async('string');
+  const opfPath = xml(container).querySelector('rootfile').getAttribute('full-path');
+  const opfDoc = xml(await zip.file(opfPath).async('string'));
+
+  const titleEl = opfDoc.getElementsByTagName('dc:title')[0] || opfDoc.querySelector('title');
+  const title = titleEl ? titleEl.textContent.trim() : '';
+
+  // kapak: önce properties="cover-image", olmazsa <meta name="cover">
+  const items = Array.from(opfDoc.querySelectorAll('manifest > item'));
+  let coverItem = items.find(i => (i.getAttribute('properties') || '').includes('cover-image'));
+  if (!coverItem){
+    const m = opfDoc.querySelector('metadata > meta[name="cover"]');
+    const id = m && m.getAttribute('content');
+    if (id) coverItem = items.find(i => i.getAttribute('id') === id);
+  }
+  let cover = null;
+  if (coverItem){
+    const f = zip.file(resolvePath(opfPath, coverItem.getAttribute('href')));
+    if (f) cover = await f.async('blob');
+  }
+
+  // kelime sayısı → tahmini sayfa
+  const idMap = {}; items.forEach(i => idMap[i.getAttribute('id')] = i.getAttribute('href'));
+  const spine = Array.from(opfDoc.querySelectorAll('spine > itemref'))
+    .map(r => idMap[r.getAttribute('idref')]).filter(Boolean);
+  let words = 0;
+  for (const href of spine.slice(0, 400)){
+    const f = zip.file(resolvePath(opfPath, href));
+    if (!f) continue;
+    const html = await f.async('string');
+    const text = html.replace(/<[^>]+>/g, ' ').replace(/&[a-z#0-9]+;/gi, ' ');
+    words += (text.match(/\S+/g) || []).length;
+  }
+  const pages = words ? Math.max(1, Math.round(words / 300)) : null;
+  return { pages, cover, title, words };
+}
+
 /* PDF'in ilk sayfasını kapak olarak çiziyoruz. Tamamen yerel: dosya
    zaten elimizde, ağdan bir şey okunmuyor (CORS yok). */
 async function pdfCoverBlob(file){
@@ -1976,8 +2042,7 @@ async function pdfCoverBlob(file){
   } catch(e){ console.error('kapak üretilemedi:', e && e.message); return null; }
 }
 
-async function saveCover(key, file){
-  const blob = await pdfCoverBlob(file);
+async function saveCover(key, blob){
   if (!blob) return null;
   try {
     const sr = sRef(storage, `covers/${key}.jpg`);
@@ -1989,6 +2054,19 @@ async function saveCover(key, file){
     console.error('kapak yüklenemedi:', e && e.message, e);
     toast('Kapak yüklenemedi: ' + (e && e.message ? e.message : e));
     return null;
+  }
+}
+
+/* Tek giriş noktası: PDF ya da EPUB, sonuç aynı biçimde döner. */
+async function bookMeta(file){
+  try {
+    if (isEpub(file)) return await epubMeta(file);
+    const pages = await pdfPageCount(file);
+    const cover = await pdfCoverBlob(file);
+    return { pages, cover, title: '' };
+  } catch(e){
+    console.error('kitap okunamadı:', e && e.message, e);
+    return { pages: null, cover: null, title: '' };
   }
 }
 
@@ -2128,13 +2206,13 @@ function askPagesFor(key){
     inp.value = '';
     if (!f || !key) return;
     toast('Okunuyor…');
-    const n = await pdfPageCount(f);
-    if (n){
-      try { await update(ref(db, `library/${key}`), { pages: n }); } catch(e){ toast(e.message); }
+    const m = await bookMeta(f);
+    if (m.pages){
+      try { await update(ref(db, `library/${key}`), { pages: m.pages }); } catch(e){ toast(e.message); }
     }
-    const cov = await saveCover(key, f);
-    toast(n ? (n + ' sayfa' + (cov ? ' + kapak' : '') + ' kaydedildi')
-            : (cov ? 'Kapak kaydedildi' : 'Bu dosyadan okunamadı'));
+    const cov = await saveCover(key, m.cover);
+    toast(m.pages ? (m.pages + ' sayfa' + (cov ? ' + kapak' : '') + ' kaydedildi')
+                  : (cov ? 'Kapak kaydedildi' : 'Bu dosyadan okunamadı'));
   });
 })();
 
@@ -2180,11 +2258,11 @@ function matchBook(file, pool){
       if (btn) btn.textContent = `Sayılıyor… ${i}/${files.length}`;
       const hit = matchBook(f, pool);
       if (!hit){ unmatched++; continue; }
-      const n = await pdfPageCount(f);
+      const m = await bookMeta(f);
       try {
-        if (n) await update(ref(db, `library/${hit[0]}`), { pages: n });
-        await saveCover(hit[0], f);
-        if (n) ok++; else failed++;
+        if (m.pages) await update(ref(db, `library/${hit[0]}`), { pages: m.pages });
+        await saveCover(hit[0], m.cover);
+        if (m.pages || m.cover) ok++; else failed++;
         pool = pool.filter(x => x[0] !== hit[0]);   // aynı kitabı iki kez saymayalım
       } catch(e){ failed++; console.warn(e && e.message); }
     }
@@ -2311,22 +2389,24 @@ if (els.libFile) els.libFile.addEventListener('change', async () => {
   els.libFile.value = '';
   const u = auth.currentUser;
   if (!f || !u) return;
-  if (!/\.pdf$/i.test(f.name)){ libHintMsg('Sadece PDF gönderilebilir'); return; }
+  if (!/\.(pdf|epub)$/i.test(f.name)){ libHintMsg('Sadece PDF veya EPUB gönderilebilir'); return; }
   if (f.size > LIB_MAX_BYTES){
     libHintMsg('Bu PDF çok büyük (' + (f.size / 1048576).toFixed(1) + ' MB). E-posta yolunun tavanı ~25 MB — daha büyükleri amazon.com/sendtokindle ile gönderebilirsin.');
     return;
   }
   const title = (els.libTitle.value || '').trim() || f.name.replace(/\.pdf$/i, '');
   const key = push(ref(db, 'library')).key;
-  libBusy(true, '📄 Sayfalar sayılıyor…');
-  const pages = await pdfPageCount(f);
+  libBusy(true, '📄 Kitap okunuyor…');
+  const meta = await bookMeta(f);
+  const pages = meta.pages;
   const storagePath = `library/${key}/${f.name}`;
 
   // 1) upload to Firebase Storage (this is what bypasses the old 4.5MB cap)
   libBusy(true, '⏫ Yükleniyor… %0');
   let url = '';
   try {
-    const task = uploadBytesResumable(sRef(storage, storagePath), f, { contentType: 'application/pdf' });
+    const ctype = isEpub(f) ? 'application/epub+zip' : 'application/pdf';
+    const task = uploadBytesResumable(sRef(storage, storagePath), f, { contentType: ctype });
     await new Promise((res, rej) => {
       task.on('state_changed',
         snap => libBusy(true, '⏫ Yükleniyor… %' + Math.round(snap.bytesTransferred / snap.totalBytes * 100)),
@@ -2376,7 +2456,7 @@ if (els.libFile) els.libFile.addEventListener('change', async () => {
       by: u.displayName || u.email, byUid: u.uid, at: Date.now(),
       sent: queued ? 'pending' : false, url, storagePath, jobId: queued ? jobId : null
     });
-    saveCover(key, f);          // kapak arka planda üretilsin, yüklemeyi bekletmesin
+    saveCover(key, meta.cover);   // kapak arka planda yüklensin
     els.libTitle.value = '';
     libHintMsg('');
     toast(queued
