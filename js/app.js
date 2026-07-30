@@ -1953,6 +1953,41 @@ async function pdfLib(){
   _pdfjs = lib;
   return lib;
 }
+/* PDF'in ilk sayfasını kapak olarak çiziyoruz. Tamamen yerel: dosya
+   zaten elimizde, ağdan bir şey okunmuyor (CORS yok). */
+async function pdfCoverBlob(file){
+  try {
+    const lib = await pdfLib();
+    const buf = await file.arrayBuffer();
+    const doc = await lib.getDocument({ data: buf }).promise;
+    const page = await doc.getPage(1);
+    const W = 300;                                  // kapak genişliği
+    const v0 = page.getViewport({ scale: 1 });
+    const viewport = page.getViewport({ scale: W / v0.width });
+    const c = document.createElement('canvas');
+    c.width = Math.round(viewport.width);
+    c.height = Math.round(viewport.height);
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, c.width, c.height);
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    try { doc.destroy(); } catch(e){}
+    return await new Promise(res => c.toBlob(b => res(b), 'image/jpeg', .8));
+  } catch(e){ console.error('kapak üretilemedi:', e && e.message); return null; }
+}
+
+async function saveCover(key, file){
+  const blob = await pdfCoverBlob(file);
+  if (!blob) return null;
+  try {
+    const sr = sRef(storage, `covers/${key}.jpg`);
+    await uploadBytesResumable(sr, blob, { contentType: 'image/jpeg', cacheControl: 'public,max-age=604800' });
+    const url = await getDownloadURL(sr);
+    await update(ref(db, `library/${key}`), { cover: url });
+    return url;
+  } catch(e){ console.error('kapak yüklenemedi:', e && e.message); return null; }
+}
+
 async function pdfPageCount(file){
   try {
     const lib = await pdfLib();
@@ -2088,13 +2123,14 @@ function askPagesFor(key){
     const key = pageTargetKey; pageTargetKey = null;
     inp.value = '';
     if (!f || !key) return;
-    toast('Sayfalar sayılıyor…');
+    toast('Okunuyor…');
     const n = await pdfPageCount(f);
-    if (!n){ toast('Bu dosyadan sayfa sayısı okunamadı'); return; }
-    try {
-      await update(ref(db, `library/${key}`), { pages: n });
-      toast(n + ' sayfa kaydedildi');
-    } catch(e){ toast(e.message); }
+    if (n){
+      try { await update(ref(db, `library/${key}`), { pages: n }); } catch(e){ toast(e.message); }
+    }
+    const cov = await saveCover(key, f);
+    toast(n ? (n + ' sayfa' + (cov ? ' + kapak' : '') + ' kaydedildi')
+            : (cov ? 'Kapak kaydedildi' : 'Bu dosyadan okunamadı'));
   });
 })();
 
@@ -2141,10 +2177,10 @@ function matchBook(file, pool){
       const hit = matchBook(f, pool);
       if (!hit){ unmatched++; continue; }
       const n = await pdfPageCount(f);
-      if (!n){ failed++; continue; }
       try {
-        await update(ref(db, `library/${hit[0]}`), { pages: n });
-        ok++;
+        if (n) await update(ref(db, `library/${hit[0]}`), { pages: n });
+        await saveCover(hit[0], f);
+        if (n) ok++; else failed++;
         pool = pool.filter(x => x[0] !== hit[0]);   // aynı kitabı iki kez saymayalım
       } catch(e){ failed++; console.warn(e && e.message); }
     }
@@ -2158,12 +2194,37 @@ function matchBook(file, pool){
   });
 })();
 
+let libGrid = localStorage.getItem('sb_libgrid') !== '0';   // varsayılan: ızgara
+function libCard(b){
+  const t = escapeHtml(b.title || b.filename || '');
+  const fin = b.finished && Object.keys(b.finished).length;
+  const art = b.cover
+    ? `<img src="${escapeHtml(b.cover)}" alt="${t}" loading="lazy">`
+    : `<span class="lg-fallback">${t}</span>`;
+  return `<button class="lg-card" data-key="${b.k}" title="${t}">
+    <span class="lg-art">${art}${fin ? '<i class="lg-fin">✔</i>' : ''}</span>
+    <span class="lg-title">${t}</span>
+    <span class="lg-meta">${b.pages ? b.pages + ' s.' : ''}</span>
+  </button>`;
+}
+
 function renderLibrary(){
   if (!els.libList) return;
   const myUid = (auth.currentUser || {}).uid;
   const items = Object.entries(latestLibrary).map(([k, v]) => Object.assign({ k }, v)).sort((a, b) => (b.at || 0) - (a.at || 0));
   if (els.libEmpty) els.libEmpty.style.display = items.length ? 'none' : '';
   const userIds = Object.keys(latestUsers || {});
+
+  // görünüm anahtarı
+  const tg = document.getElementById('libViewToggle');
+  if (tg) tg.textContent = libGrid ? '☰ Liste' : '▦ Kapaklar';
+  els.libList.classList.toggle('lib-gridwrap', libGrid);
+
+  if (libGrid){
+    els.libList.innerHTML = items.map(libCard).join('');
+    return;
+  }
+
   els.libList.innerHTML = items.map(b => {
     const fin = b.finished || {};
     const chips = userIds.map(uid => {
@@ -2172,7 +2233,7 @@ function renderLibrary(){
       return `<span class="tag">${f ? '✅' : '📖'} ${nm}: ${f ? new Date(f.at).toLocaleDateString('tr-TR') : '—'}</span>`;
     }).join('');
     const mine = !!fin[myUid];
-    return `<div class="lib-item">
+    return `<div class="lib-item" data-key="${b.k}">
       <div class="spaced" style="gap:8px">
         <div style="min-width:0">
           <div class="lib-title">📕 ${escapeHtml(b.title || b.filename || 'Kitap')}</div>
@@ -2188,6 +2249,8 @@ function renderLibrary(){
   }).join('');
 }
 
+const _vt = document.getElementById('libViewToggle');
+if (_vt) _vt.onclick = () => { libGrid = !libGrid; localStorage.setItem('sb_libgrid', libGrid ? '1' : '0'); renderLibrary(); };
 const _bf = document.getElementById('libBackfill');
 if (_bf) _bf.onclick = () => backfillPages();
 if (els.libAddBtn) els.libAddBtn.onclick = () => { libHintMsg(''); els.libFile.click(); };
@@ -2261,6 +2324,7 @@ if (els.libFile) els.libFile.addEventListener('change', async () => {
       by: u.displayName || u.email, byUid: u.uid, at: Date.now(),
       sent: queued ? 'pending' : false, url, storagePath, jobId: queued ? jobId : null
     });
+    saveCover(key, f);          // kapak arka planda üretilsin, yüklemeyi bekletmesin
     els.libTitle.value = '';
     libHintMsg('');
     toast(queued
@@ -2284,6 +2348,12 @@ if (els.libList) els.libList.addEventListener('click', async e => {
     catch(err){ toast(err.message); }
     return;
   }
+  const card = e.target.closest('.lg-card');
+  if (card){ libGrid = false; localStorage.setItem('sb_libgrid','0'); renderLibrary();
+    const el = els.libList.querySelector(`.lib-item[data-key="${card.getAttribute('data-key')}"]`);
+    if (el) el.scrollIntoView({ block:'center' });
+    return; }
+
   const pg = e.target.closest('.lib-pages');
   if (pg){ askPagesFor(pg.getAttribute('data-key')); return; }
 
