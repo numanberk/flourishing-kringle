@@ -1985,7 +1985,11 @@ async function saveCover(key, file){
     const url = await getDownloadURL(sr);
     await update(ref(db, `library/${key}`), { cover: url });
     return url;
-  } catch(e){ console.error('kapak yüklenemedi:', e && e.message); return null; }
+  } catch(e){
+    console.error('kapak yüklenemedi:', e && e.message, e);
+    toast('Kapak yüklenemedi: ' + (e && e.message ? e.message : e));
+    return null;
+  }
 }
 
 async function pdfPageCount(file){
@@ -2039,6 +2043,7 @@ function attachLibrary(){
     const uid2 = (auth.currentUser || {}).uid;
     const miss = Object.values(latestLibrary || {})
       .filter(b => b && !b.pages && b.byUid === uid2).length;
+    if (bmKey) renderBookModal();
     const bf = document.getElementById('libBackfill');
     if (bf) bf.style.display = miss ? '' : 'none';
   }, err => console.error('library read failed:', err && err.message));
@@ -2208,6 +2213,54 @@ function libCard(b){
   </button>`;
 }
 
+let bmKey = null;
+function renderBookModal(){
+  const box = document.getElementById('bookModal');
+  const body = document.getElementById('bmBody');
+  if (!box || !body) return;
+  const b = latestLibrary[bmKey];
+  if (!bmKey || !b){ closeBookModal(); return; }
+  const myUid = (auth.currentUser || {}).uid;
+  const fin = b.finished || {};
+  const mine = !!fin[myUid];
+  const chips = Object.keys(latestUsers || {}).map(uid => {
+    const nm = escapeHtml((latestUsers[uid] || {}).displayName || 'Kullanıcı');
+    const f = fin[uid];
+    return `<span class="tag">${f ? '✅' : '📖'} ${nm}: ${f ? new Date(f.at).toLocaleDateString('tr-TR') : '—'}</span>`;
+  }).join('');
+  const t = escapeHtml(b.title || b.filename || 'Kitap');
+  const art = b.cover ? `<img src="${escapeHtml(b.cover)}" alt="${t}">`
+                      : `<span class="lg-fallback">${t}</span>`;
+  body.innerHTML = `
+    <div class="bm-top">
+      <span class="bm-art">${art}</span>
+      <div class="bm-info">
+        <div class="bm-title">${t}</div>
+        <div class="muted small bm-meta">
+          ${escapeHtml(b.by || 'Biri')} ekledi · ${new Date(b.at || 0).toLocaleDateString('tr-TR')}<br>
+          ${fmtSize(b.sizeKB)}${b.pages ? ' · ' + b.pages + ' sayfa' : ''}
+        </div>
+        ${b.sent === 'pending' ? '<div class="lib-pending small">✉️ gönderiliyor…</div>' : ''}
+        ${b.sent === false ? `<div class="small" style="color:var(--danger)">Kindle\u2019a gönderilemedi</div>` : ''}
+      </div>
+    </div>
+    <div class="row bm-chips">${chips}</div>
+    <div class="bm-acts">
+      <button class="lib-fin ${mine ? '' : 'primary'}" data-key="${b.k || bmKey}">${mine ? '↺ Bitirmedim' : '✔ Bitirdim'}</button>
+      ${b.url ? `<a class="bm-dl" href="${escapeHtml(b.url)}" target="_blank" rel="noopener">⬇ indir</a>` : ''}
+      ${(!b.pages || !b.cover) && b.byUid === myUid ? `<button class="lib-pages" data-key="${bmKey}">📄 sayfa + kapak</button>` : ''}
+      ${b.sent === false ? `<button class="lib-retry" data-key="${bmKey}">↻ tekrar gönder</button>` : ''}
+      ${b.byUid === myUid ? `<button class="lib-del" data-key="${bmKey}">✕ sil</button>` : ''}
+    </div>`;
+  box.hidden = false; box.style.display = 'flex';
+}
+function openBookModal(key){ bmKey = key; renderBookModal(); }
+function closeBookModal(){
+  bmKey = null;
+  const box = document.getElementById('bookModal');
+  if (box){ box.hidden = true; box.style.display = 'none'; }
+}
+
 function renderLibrary(){
   if (!els.libList) return;
   const myUid = (auth.currentUser || {}).uid;
@@ -2335,7 +2388,9 @@ if (els.libFile) els.libFile.addEventListener('change', async () => {
   libBusy(false);
 });
 
-if (els.libList) els.libList.addEventListener('click', async e => {
+/* Aynı eylemler hem listede hem ayrıntı penceresinde. Tek işleyici,
+   iki yere bağlanıyor. */
+async function libActionClick(e){
   const uid = (auth.currentUser || {}).uid; if (!uid) return;
   const fin = e.target.closest('.lib-fin');
   if (fin){
@@ -2349,10 +2404,7 @@ if (els.libList) els.libList.addEventListener('click', async e => {
     return;
   }
   const card = e.target.closest('.lg-card');
-  if (card){ libGrid = false; localStorage.setItem('sb_libgrid','0'); renderLibrary();
-    const el = els.libList.querySelector(`.lib-item[data-key="${card.getAttribute('data-key')}"]`);
-    if (el) el.scrollIntoView({ block:'center' });
-    return; }
+  if (card){ openBookModal(card.getAttribute('data-key')); return; }
 
   const pg = e.target.closest('.lib-pages');
   if (pg){ askPagesFor(pg.getAttribute('data-key')); return; }
@@ -2363,15 +2415,29 @@ if (els.libList) els.libList.addEventListener('click', async e => {
   const del = e.target.closest('.lib-del');
   if (del){
     if (!await ask('Bu kitap kaydını silmek istediğine emin misin? (Depodaki PDF de silinir)')) return;
+    closeBookModal();
     const key = del.getAttribute('data-key');
     const b = latestLibrary[key] || {};
     try {
       await update(ref(db, 'library'), { [key]: null });
       if (b.storagePath){ try { await deleteObject(sRef(storage, b.storagePath)); } catch(e){} }
+      try { await deleteObject(sRef(storage, `covers/${key}.jpg`)); } catch(e){}
     }
     catch(err){ toast(err.message); }
   }
-});
+}
+if (els.libList) els.libList.addEventListener('click', libActionClick);
+(function(){
+  const box = document.getElementById('bookModal');
+  if (!box) return;
+  box.addEventListener('click', e => {
+    if (e.target === box || e.target.closest('#bmClose')){ closeBookModal(); return; }
+    libActionClick(e);
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && bmKey) closeBookModal();
+  });
+})();
 
 /* ================================================================
    MOVIE NIGHT — izlenecekler (Keep tarzı), "bişeyler izleyelim"
