@@ -1639,3 +1639,50 @@ button.primary:not(:disabled):hover{ filter:brightness(1.06); }
 }
 .hb-slim{ cursor:pointer; }
 .hb-slim-chev{ color:var(--muted); font-size:13px; }
+
+/* ============================================================
+   LIBRARY — kapak ızgarası
+   ============================================================ */
+.lib-gridwrap{
+  display:grid; grid-template-columns:repeat(auto-fill, minmax(104px, 1fr));
+  gap:16px 12px; margin-top:16px;
+}
+.lg-card{
+  display:flex; flex-direction:column; gap:6px; padding:0; text-align:left;
+  background:transparent; border:0; cursor:pointer; box-shadow:none;
+  transition:transform .16s cubic-bezier(.34,1.3,.5,1);
+}
+.lg-card:hover{ transform:translateY(-4px); box-shadow:none; }
+.lg-art{
+  position:relative; display:block; width:100%; aspect-ratio:1/1.45;
+  border-radius:9px; overflow:hidden; background:var(--tag-bg);
+  border:1px solid var(--border);
+  box-shadow:0 6px 16px rgba(0,0,0,.28), inset -6px 0 12px rgba(0,0,0,.10);
+}
+.lg-art img{ width:100%; height:100%; object-fit:cover; display:block; }
+.lg-fallback{
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  padding:10px; font-size:11.5px; font-weight:700; line-height:1.25;
+  color:var(--text); text-align:center; overflow:hidden;
+  background:linear-gradient(150deg, color-mix(in srgb, var(--acc) 22%, transparent), transparent 70%);
+}
+/* sırt payı — kapak gibi dursun */
+.lg-art::before{
+  content:''; position:absolute; left:0; top:0; bottom:0; width:7px;
+  background:linear-gradient(90deg, rgba(0,0,0,.30), rgba(0,0,0,0));
+  pointer-events:none;
+}
+.lg-fin{
+  position:absolute; right:5px; top:5px; width:20px; height:20px; border-radius:50%;
+  background:var(--ok); color:#0c2a17; font-style:normal; font-size:12px; font-weight:800;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 2px 6px rgba(0,0,0,.35);
+}
+.lg-title{
+  font-size:12px; font-weight:600; line-height:1.3; color:var(--text);
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+}
+.lg-meta{ font-size:11px; color:var(--muted); }
+@media (max-width:640px){
+  .lib-gridwrap{ grid-template-columns:repeat(auto-fill, minmax(92px, 1fr)); gap:14px 10px; }
+}
