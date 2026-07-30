@@ -15,7 +15,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Çalışma Odası">
-  <link rel="stylesheet" href="/css/app.css?v=23">
+  <link rel="stylesheet" href="/css/app.css?v=24">
 </head>
 <body>
   <div class="container">
@@ -164,6 +164,13 @@
       <div id="habitFilter" class="hb-filter"></div>
       <div id="habitList"></div>
       <div id="habitEmpty" class="muted small" style="margin-top:14px">Henüz alışkanlık yok</div>
+    </div>
+  </div>
+
+  <div id="bookModal" class="bm-wrap" hidden style="display:none">
+    <div class="bm-card">
+      <button class="bm-x" id="bmClose" title="Kapat">✕</button>
+      <div class="bm-body" id="bmBody"></div>
     </div>
   </div>
 
