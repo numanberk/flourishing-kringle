@@ -2042,7 +2042,7 @@ function attachLibrary(){
     // "sayfa sayılarını tamamla" yalnızca eksik varsa görünsün
     const uid2 = (auth.currentUser || {}).uid;
     const miss = Object.values(latestLibrary || {})
-      .filter(b => b && !b.pages && b.byUid === uid2).length;
+      .filter(b => b && (!b.pages || !b.cover)).length;
     if (bmKey) renderBookModal();
     const bf = document.getElementById('libBackfill');
     if (bf) bf.style.display = miss ? '' : 'none';
@@ -2082,7 +2082,6 @@ async function reconcileKindleJobs(){
   const now = Date.now();
   for (const [k, v] of Object.entries(latestLibrary || {})){
     if (!v || v.sent !== 'pending') continue;
-    if (v.byUid !== uid) continue;                 // kural gereği sadece kendi kaydımızı düzeltebiliriz
     if (now - (v.at || 0) < LIB_STALE_MS) continue;
     try {
       await update(ref(db, `library/${k}`), { sent: false, kindleError: 'yanıt alınamadı (zaman aşımı)' });
@@ -2146,8 +2145,8 @@ function askPagesFor(key){
 function backfillPages(){
   const uid = (auth.currentUser || {}).uid; if (!uid) return;
   const todo = Object.entries(latestLibrary || {})
-    .filter(([, b]) => b && !b.pages && b.byUid === uid);
-  if (!todo.length){ toast('Eksik sayfa sayısı yok'); return; }
+    .filter(([, b]) => b && (!b.pages || !b.cover));
+  if (!todo.length){ toast('Eksik sayfa/kapak yok'); return; }
   const inp = document.getElementById('libPagesMulti');
   if (inp){ inp.value = ''; inp.click(); }
 }
@@ -2173,7 +2172,7 @@ function matchBook(file, pool){
     if (btn) btn.disabled = true;
 
     let pool = Object.entries(latestLibrary || {})
-      .filter(([, b]) => b && !b.pages && b.byUid === uid);
+      .filter(([, b]) => b && (!b.pages || !b.cover));
     let ok = 0, unmatched = 0, failed = 0, i = 0;
 
     for (const f of files){
@@ -2248,7 +2247,7 @@ function renderBookModal(){
     <div class="bm-acts">
       <button class="lib-fin ${mine ? '' : 'primary'}" data-key="${b.k || bmKey}">${mine ? '↺ Bitirmedim' : '✔ Bitirdim'}</button>
       ${b.url ? `<a class="bm-dl" href="${escapeHtml(b.url)}" target="_blank" rel="noopener">⬇ indir</a>` : ''}
-      ${(!b.pages || !b.cover) && b.byUid === myUid ? `<button class="lib-pages" data-key="${bmKey}">📄 sayfa + kapak</button>` : ''}
+      ${(!b.pages || !b.cover) ? `<button class="lib-pages" data-key="${bmKey}">📄 sayfa + kapak</button>` : ''}
       ${b.sent === false ? `<button class="lib-retry" data-key="${bmKey}">↻ tekrar gönder</button>` : ''}
       ${b.byUid === myUid ? `<button class="lib-del" data-key="${bmKey}">✕ sil</button>` : ''}
     </div>`;
@@ -2290,7 +2289,7 @@ function renderLibrary(){
       <div class="spaced" style="gap:8px">
         <div style="min-width:0">
           <div class="lib-title">📕 ${escapeHtml(b.title || b.filename || 'Kitap')}</div>
-          <div class="muted small">${escapeHtml(b.by || 'Biri')} ekledi · ${new Date(b.at || 0).toLocaleDateString('tr-TR')} · ${fmtSize(b.sizeKB)}${b.pages ? ' · ' + b.pages + ' sayfa' : (b.byUid === (auth.currentUser||{}).uid ? ' · <button class="lib-pages small" data-key="' + b.k + '" title="PDF\u2019i seç, sayfa sayısı okunsun">📄 sayfa sayısı</button>' : '')}${b.url ? ' · <a href="' + escapeHtml(b.url) + '" target="_blank" rel="noopener">⬇ indir</a>' : ''}${b.sent === 'pending' ? ' · <span class="lib-pending">✉️ gönderiliyor…</span>' : (b.sent === false ? ' · <span style="color:var(--danger)" title="' + escapeHtml(b.kindleError || '') + '">Kindle\u2019a gönderilemedi</span> · <button class="lib-retry small" data-key="' + b.k + '">↻ tekrar dene</button>' : '')}</div>
+          <div class="muted small">${escapeHtml(b.by || 'Biri')} ekledi · ${new Date(b.at || 0).toLocaleDateString('tr-TR')} · ${fmtSize(b.sizeKB)}${b.pages ? ' · ' + b.pages + ' sayfa' : ' · <button class="lib-pages small" data-key="' + b.k + '" title="PDF\u2019i seç, sayfa sayısı okunsun">📄 sayfa sayısı</button>'}${b.url ? ' · <a href="' + escapeHtml(b.url) + '" target="_blank" rel="noopener">⬇ indir</a>' : ''}${b.sent === 'pending' ? ' · <span class="lib-pending">✉️ gönderiliyor…</span>' : (b.sent === false ? ' · <span style="color:var(--danger)" title="' + escapeHtml(b.kindleError || '') + '">Kindle\u2019a gönderilemedi</span> · <button class="lib-retry small" data-key="' + b.k + '">↻ tekrar dene</button>' : '')}</div>
         </div>
         <button class="lib-del small" data-key="${b.k}" title="Kaydı sil">✕</button>
       </div>
