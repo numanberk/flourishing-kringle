@@ -14,7 +14,7 @@
    watchlist'teki "üstten inen izin" sorunu burada oluşmuyor.        */
 
 export function initHabits(ctx){
-  const { db, auth, ref, set, update, onValue, toast, confetti, sendPush, escapeHtml, openCycle } = ctx;
+  const { db, auth, ref, set, update, onValue, toast, confetti, sendPush, escapeHtml, openCycle, notifyMe } = ctx;
 
   const $ = id => document.getElementById(id);
   const view = $('habitView');
@@ -28,6 +28,7 @@ export function initHabits(ctx){
   let expanded = null;            // açılmış alışkanlık id'si
   let filter = 'all';             // all | personal | shared
   let doneCollapsed = true;       // bugün bitenler katlı gelsin
+  let reminders = {};             // { habitId: 'HH:MM' } — kişiye özel
 
   const todayKey = (d = new Date()) =>
     d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -191,6 +192,12 @@ export function initHabits(ctx){
         <div class="hb-week">${week}</div>
         <div class="hb-streak"><span>${ro ? escapeHtml(nameOf(ownerUid)) : 'Sen'}: <b>${streak(entry)}</b> gün</span>${other}</div>
         ${longPart}
+        ${!ro ? `<div class="hb-remind">
+          <button class="hb-bell ${reminders[id] ? 'on' : ''}" data-bell="${id}" title="Günlük hatırlatma">🔔</button>
+          ${reminders[id] ? `<input type="time" class="hb-time" data-time="${id}" value="${reminders[id]}">
+             <button class="hb-bell-off" data-belloff="${id}" title="Kapat">✕</button>`
+            : '<span class="muted small">hatırlatma yok</span>'}
+        </div>` : ''}
         <button class="hb-expand" data-exp="${id}">${isOpen ? 'Kapat ▲' : 'Geçmişi aç ▼'}</button>
       </div>`;
     };
@@ -297,6 +304,9 @@ export function initHabits(ctx){
       err => console.error('habits read failed:', err && err.message));
     onValue(ref(db, 'habitLog'), s => { logs = s.val() || {}; render(); },
       err => console.error('habitLog read failed:', err && err.message));
+    const me = uid();
+    if (me) onValue(ref(db, `habitRemind/${me}`), s => { reminders = s.val() || {}; render(); checkReminders(); },
+      err => console.error('habitRemind read failed:', err && err.message));
   }
 
   /* Başlıktaki 🎯 üç kez arka arkaya dokunulursa döngü takibi açılır.
@@ -346,12 +356,69 @@ export function initHabits(ctx){
   });
   setType('personal');
 
+  view.addEventListener('change', e => {
+    const t = e.target.closest('[data-time]');
+    if (t) setRemind(t.getAttribute('data-time'), t.value || null);
+  });
+
+  async function setRemind(id, hhmm){
+    const me = uid(); if (!me) return;
+    try { await update(ref(db, `habitRemind/${me}`), { [id]: hhmm }); }
+    catch(e){ toast(e.message); }
+  }
+
+  /* Hatırlatma tamamen isteğe bağlı. Uygulama açıkken dakikada bir
+     bakıyoruz; saati geçmiş ve o gün yapılmamışsa bir kez bildirim.
+     (Arka planda çalışması için sunucu tarafı zamanlayıcı gerekir —
+     bu sürüm yalnızca uygulama açıkken/arka planda diriyken çalışır.) */
+  function checkReminders(){
+    const me = uid(); if (!me) return;
+    const now = new Date();
+    const cur = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+    const today = todayKey();
+    Object.entries(reminders).forEach(([id, hhmm]) => {
+      if (!hhmm || hhmm > cur) return;
+      const h = habits[id]; if (!h || h.status !== 'active') return;
+      if (((logs[me] || {})[id] || {})[today]) return;          // zaten yapılmış
+      const flag = 'sb_rem_' + id + '_' + today;
+      if (localStorage.getItem(flag)) return;                    // bugün bildirildi
+      localStorage.setItem(flag, '1');
+      notifyMe('🔔 ' + (h.emoji || '🎯') + ' ' + h.name, 'Bugün henüz işaretlemedin');
+      toast('Hatırlatma: ' + h.name);
+    });
+  }
+  setInterval(checkReminders, 60000);
+
+  /* sekmeler — kayan alt çizgi + yumuşak geçiş */
+  (function(){
+    const tabs = Array.from(view.querySelectorAll('.hb-tab'));
+    const ink = $('hbInk');
+    function moveInk(btn){
+      if (!ink || !btn) return;
+      ink.style.width = btn.offsetWidth + 'px';
+      ink.style.transform = 'translateX(' + btn.offsetLeft + 'px)';
+    }
+    function show(name){
+      tabs.forEach(b => b.classList.toggle('on', b.getAttribute('data-pane') === name));
+      view.querySelectorAll('.hb-pane').forEach(p => {
+        p.classList.toggle('on', p.id === (name === 'habits' ? 'paneHabits' : 'paneCourse'));
+      });
+      moveInk(tabs.find(b => b.getAttribute('data-pane') === name));
+      if (name === 'course' && ctx.openCourse) ctx.openCourse();
+    }
+    tabs.forEach(b => b.onclick = () => show(b.getAttribute('data-pane')));
+    view._showPane = show;
+    window.addEventListener('resize', () => moveInk(tabs.find(b => b.classList.contains('on'))));
+  })();
+
   $('habitAdd').onclick = addHabit;
   $('habitName').addEventListener('keydown', e => { if (e.key === 'Enter') addHabit(); });
   $('habitClose').onclick = () => { view.classList.remove('open'); document.body.style.overflow = ''; };
   $('habitBtn').onclick = () => {
     view.classList.add('open'); document.body.style.overflow = 'hidden';
     attach(); render();
+    // alt çizgiyi panel görünür olduktan sonra yerleştir (genişlik 0 olmasın)
+    setTimeout(() => { if (view._showPane) view._showPane('habits'); }, 20);
   };
 
   view.addEventListener('click', e => {
@@ -361,6 +428,11 @@ export function initHabits(ctx){
     const ok = e.target.closest('.hb-ok');    if (ok) return respond(ok.getAttribute('data-id'), true);
     const no = e.target.closest('.hb-no');    if (no) return respond(no.getAttribute('data-id'), false);
     const d  = e.target.closest('.hb-del');   if (d)  return removeHabit(d.getAttribute('data-id'));
+    const bl = e.target.closest('[data-bell]');
+    if (bl){ setRemind(bl.getAttribute('data-bell'), reminders[bl.getAttribute('data-bell')] ? null : '20:00'); return; }
+    const bo = e.target.closest('[data-belloff]');
+    if (bo){ setRemind(bo.getAttribute('data-belloff'), null); return; }
+
     const fl = e.target.closest('[data-flt]');
     if (fl){ filter = fl.getAttribute('data-flt'); render(); return; }
     const dh = e.target.closest('[data-donetoggle]');

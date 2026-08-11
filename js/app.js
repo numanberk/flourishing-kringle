@@ -6,6 +6,7 @@ import { initHabits } from "./habits.js";
 import { initCycle } from "./cycle.js";
 import { initTier } from "./tier.js";
 import { initCoStudy } from "./costudy.js";
+import { initCourse } from "./course.js";
 
 /* ======= Firebase ======= */
 const firebaseConfig = {
@@ -328,12 +329,18 @@ try {
   if (te) te.onclick = () => tierApi && tierApi.open();
 } catch(e){ console.error('tier init failed:', e && e.message); }
 
+let courseApi = null;
+try {
+  courseApi = initCourse({ db, auth, ref, set, update, onValue, toast, escapeHtml });
+} catch(e){ console.error('course init failed:', e && e.message); }
+
 let habitsApi = null;
 try {
   habitsApi = initHabits({
     db, auth, ref, set, update, onValue,
-    toast, confetti, sendPush, escapeHtml,
-    openCycle: () => cycleApi && cycleApi.open()
+    toast, confetti, sendPush, escapeHtml, notifyMe,
+    openCycle: () => cycleApi && cycleApi.open(),
+    openCourse: () => courseApi && courseApi.attach()
   });
 } catch(e){ console.error('habits init failed:', e && e.message); }
 
@@ -343,6 +350,7 @@ function attachGlobalListeners() {
     draw();
     attachTheirSessions();
     if (habitsApi) habitsApi.setUsers(latestUsers);
+    if (courseApi) courseApi.setUsers(latestUsers);
   }, err => console.error("users read failed — check Realtime Database rules:", err && err.message));
   if (habitsApi) habitsApi.start();     // davet rozeti panel açılmadan da görünsün
   onValue(ref(db, "presence"), presenceSnap => {
