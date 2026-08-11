@@ -15,7 +15,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Çalışma Odası">
-  <link rel="stylesheet" href="/css/app.css?v=27">
+  <link rel="stylesheet" href="/css/app.css?v=28">
 </head>
 <body>
   <div class="container">
@@ -144,6 +144,14 @@
     <div class="lib-inner">
       <h2><span id="habitSigil" role="presentation">🎯</span> Alışkanlıklar</h2>
 
+      <div class="hb-tabs" role="tablist">
+        <button class="hb-tab on" data-pane="habits">🎯 Alışkanlıklar</button>
+        <button class="hb-tab" data-pane="course">🎓 Kurs</button>
+        <span class="hb-tab-ink" id="hbInk"></span>
+      </div>
+
+      <div class="hb-panes">
+      <div class="hb-pane on" id="paneHabits">
       <div id="habitInvites"></div>
 
       <div class="hb-add">
@@ -164,6 +172,19 @@
       <div id="habitFilter" class="hb-filter"></div>
       <div id="habitList"></div>
       <div id="habitEmpty" class="muted small" style="margin-top:14px">Henüz alışkanlık yok</div>
+      </div>
+
+      <div class="hb-pane" id="paneCourse">
+        <div class="cs-add">
+          <input id="csName" maxlength="60" placeholder="kurs adı">
+          <input id="csTotal" type="number" min="1" max="999" placeholder="bölüm">
+          <button class="primary" id="csAdd">Ekle</button>
+        </div>
+        <div id="csHint" class="muted small"></div>
+        <div id="csList"></div>
+        <div id="csEmpty" class="muted small" style="margin-top:14px">Henüz kurs yok</div>
+      </div>
+      </div>
     </div>
   </div>
 
