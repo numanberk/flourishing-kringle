@@ -1726,3 +1726,90 @@ button.primary:not(:disabled):hover{ filter:brightness(1.06); }
 }
 .bm-dl:hover{ border-color:var(--acc); color:var(--acc); }
 @media (max-width:640px){ .bm-card{ padding:16px; } .bm-art{ width:88px; } }
+
+/* ============================================================
+   HABITS — sekmeler, hatırlatma, kurs takibi
+   ============================================================ */
+.hb-tabs{
+  position:relative; display:flex; gap:4px; margin:4px 0 6px;
+  border-bottom:1px solid var(--border);
+}
+.hb-tab{
+  background:transparent; border:0; box-shadow:none;
+  padding:11px 15px; font-size:14px; font-weight:600; color:var(--muted);
+  border-radius:10px 10px 0 0; transition:color .2s ease;
+}
+.hb-tab:hover{ color:var(--text); box-shadow:none; transform:none; }
+.hb-tab.on{ color:var(--acc); }
+.hb-tab-ink{
+  position:absolute; left:0; bottom:-1px; height:2px; width:0;
+  background:var(--acc); border-radius:2px;
+  transition:transform .28s cubic-bezier(.4,0,.2,1), width .28s cubic-bezier(.4,0,.2,1);
+}
+.hb-panes{ position:relative; }
+.hb-pane{
+  display:none; opacity:0; transform:translateY(6px);
+  transition:opacity .22s ease, transform .22s ease;
+}
+.hb-pane.on{ display:block; opacity:1; transform:none; }
+
+/* hatırlatma satırı */
+.hb-remind{ display:flex; align-items:center; gap:8px; margin-top:11px; }
+.hb-bell{
+  border-radius:999px; padding:5px 10px; font-size:14px; line-height:1;
+  background:var(--tag-bg); border:1px solid var(--border); opacity:.6;
+}
+.hb-bell.on{ opacity:1; border-color:var(--acc); background:color-mix(in srgb, var(--acc) 16%, transparent); }
+.hb-bell:hover{ opacity:1; box-shadow:none; transform:none; }
+.hb-time{
+  padding:5px 9px; border-radius:9px; font-size:13px;
+  background:var(--bg); border:1px solid var(--border); color:var(--text);
+}
+.hb-bell-off{ border-radius:999px; padding:4px 9px; font-size:12px; opacity:.6; background:transparent; border:1px solid var(--border); }
+.hb-bell-off:hover{ opacity:1; color:var(--danger); border-color:var(--danger); box-shadow:none; transform:none; }
+
+/* kurs */
+.cs-add{ display:flex; gap:8px; flex-wrap:wrap; margin:14px 0 6px; }
+.cs-add #csName{ flex:1; min-width:150px; }
+.cs-add #csTotal{ width:96px; }
+.cs-item{
+  background:var(--card); border:1px solid var(--border); border-radius:16px;
+  padding:15px; margin-top:12px; box-shadow:var(--shadow);
+}
+.cs-top{ display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+.cs-name{ flex:1; font-weight:700; font-size:15px; overflow-wrap:anywhere; }
+.cs-del{ flex:none; border-radius:999px; padding:4px 10px; opacity:.55; }
+.cs-del:hover{ opacity:1; color:var(--danger); box-shadow:none; transform:none; }
+.cs-row{ display:flex; align-items:center; gap:10px; margin-top:8px; font-size:13px; }
+.cs-who{ width:62px; flex:none; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cs-row.me .cs-who{ color:var(--text); font-weight:600; }
+.cs-bar{
+  flex:1; height:9px; border-radius:6px; background:var(--tag-bg);
+  border:1px solid var(--border); overflow:hidden;
+}
+.cs-bar i{
+  display:block; height:100%; border-radius:6px;
+  background:linear-gradient(90deg, color-mix(in srgb, var(--acc) 65%, transparent), var(--acc));
+  transition:width .45s cubic-bezier(.3,.9,.4,1);
+}
+.cs-row.me .cs-bar i{ background:linear-gradient(90deg, var(--ok), color-mix(in srgb, var(--ok) 70%, var(--acc))); }
+.cs-ep{ width:62px; flex:none; text-align:right; font-variant-numeric:tabular-nums; color:var(--muted); }
+.cs-ctrl{ display:flex; align-items:center; gap:8px; margin-top:11px; }
+.cs-ctrl button{
+  width:38px; height:38px; border-radius:11px; font-size:19px; line-height:1; padding:0; flex:none;
+}
+.cs-jump{
+  width:74px; text-align:center; padding:8px; border-radius:10px;
+  background:var(--bg); border:1px solid var(--border); color:var(--text);
+  font-variant-numeric:tabular-nums;
+}
+.cs-pct{ font-size:12.5px; color:var(--muted); margin-left:auto; }
+.cs-diff{ margin-top:4px; padding-left:72px; font-size:11.5px; }
+.cs-ahead{ color:var(--ok); }
+.cs-behind{ color:var(--acc); }
+.cs-even{ color:var(--muted); }
+@media (max-width:640px){
+  .cs-add #csName{ min-width:100%; }
+  .cs-who{ width:52px; font-size:12px; }
+  .cs-diff{ padding-left:62px; }
+}
