@@ -34,7 +34,10 @@
           else if (h > maxDim){ w = Math.round(w * maxDim / h); h = maxDim; }
           const c = document.createElement('canvas'); c.width = w; c.height = h;
           c.getContext('2d').drawImage(img, 0, 0, w, h);
-          resolve(c.toDataURL('image/jpeg', quality));
+          /* Blob → Storage'a yükleniyor. Eskiden base64 olarak veritabanına
+             yazılıyordu; o zaman dinleyici her değişiklikte TÜM albümü
+             yeniden indiriyordu. Artık veritabanında sadece adres var. */
+          c.toBlob(b => b ? resolve(b) : reject(new Error('Görsel işlenemedi')), 'image/jpeg', quality);
         };
         img.onerror = reject; img.src = e.target.result;
       };
@@ -55,12 +58,13 @@
 
   function renderGallery(val){
     photos = Object.entries(val || {}).map(([k,v]) => Object.assign({ k }, v))
-              .filter(it => it.img && /^data:image\//.test(it.img))
+              .map(it => Object.assign(it, { src: it.url || (/^data:image\//.test(it.img || '') ? it.img : '') }))
+              .filter(it => it.src)
               .sort((a,b) => (b.at||0)-(a.at||0));
     galleryEmpty.style.display = photos.length ? 'none' : '';
     galleryGrid.innerHTML = photos.map((it, i) =>
       '<button class="pola" data-k="' + it.k + '" style="--tilt:' + TILT[i % TILT.length] + 'deg">'
-      + '<span class="pola-frame"><img loading="lazy" src="' + it.img + '" alt="Fotoğraf"></span>'
+      + '<span class="pola-frame"><img loading="lazy" src="' + it.src + '" alt="Fotoğraf"></span>'
       + '<span class="pola-strip"></span>'
       + '</button>').join('');
     if (lbKey) openLb(lbKey, true);      // açık kutu varsa tazele
@@ -81,7 +85,7 @@
     const canEdit = me && (me.uid === it.byUid || isNuman(me));
     const i = photos.indexOf(it);
 
-    $('glImg').src = it.img;
+    $('glImg').src = it.src;
     $('glMeta').textContent = (esc(it.by) || 'Biri') + ' • ' + fmtDate(it.at);
     $('glCount').textContent = (i + 1) + ' / ' + photos.length;
 
@@ -175,10 +179,14 @@
     busy = true;
     const label = photoAddBtn.textContent; photoAddBtn.textContent = 'Yükleniyor…'; photoAddBtn.disabled = true;
     try {
-      const img = await compress(file, 1280, 0.82);
+      const blob = await compress(file, 1600, 0.84);
       const key = Date.now() + '-' + Math.random().toString(36).slice(2,8);
+      const sr = fb.sRef(fb.storage, 'gallery/' + key + '.jpg');
+      await fb.uploadBytesResumable(sr, blob, { contentType:'image/jpeg', cacheControl:'public,max-age=604800' });
+      const url = await fb.getDownloadURL(sr);
       await fb.update(fb.ref(fb.db, 'gallery/' + key), {
-        img: img, caption: (photoCaption.value || '').trim(),
+        url: url, path: 'gallery/' + key + '.jpg',
+        caption: (photoCaption.value || '').trim(),
         by: u.displayName || u.email, byUid: u.uid, at: Date.now()
       });
       photoCaption.value = ''; photoHint.textContent = '';
@@ -193,7 +201,14 @@
     const kind = btn.getAttribute('data-kind'), key = btn.getAttribute('data-key');
     if (!kind || !key) return;
     if (!await (window.ask ? window.ask : async m => window.confirm(m))('Bunu silmek istediğine emin misin?')) return;
-    try { await fb.update(fb.ref(fb.db, kind), { [key]: null }); }
+    try {
+      const it = photos.find(p => p.k === key);
+      await fb.update(fb.ref(fb.db, kind), { [key]: null });
+      if (it && it.path && fb.deleteObject){
+        try { await fb.deleteObject(fb.sRef(fb.storage, it.path)); } catch(e){}
+      }
+      if (typeof closeLb === 'function') closeLb();
+    }
     catch(err){ toast('Silinemedi: ' + (err && err.message ? err.message : err)); }
   });
 })();

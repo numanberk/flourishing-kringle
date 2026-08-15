@@ -24,7 +24,9 @@ const db = getDatabase(app);
 const storage = getStorage(app);
 
 /* ---- bridge: let the birthday album/notes (classic script below) reuse Firebase ---- */
-window.fb = { db, auth, ref, update, get, onValue };
+/* gallery.js gibi modül olmayan betikler de Storage'a yazabilsin */
+window.fb = { db, auth, ref, update, get, onValue, set,
+              storage, sRef, uploadBytesResumable, getDownloadURL, deleteObject };
 window.dispatchEvent(new Event('fb-ready'));
 onAuthStateChanged(auth, function (u) {
   window.dispatchEvent(new CustomEvent('sb-auth', { detail: { uid: u ? u.uid : null, email: u ? u.email : null } }));
