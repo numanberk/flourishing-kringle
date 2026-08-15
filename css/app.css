@@ -1602,7 +1602,9 @@ button.primary:not(:disabled):hover{ filter:brightness(1.06); }
    ASK — confirm() yerine geçen kendi onay kutumuz
    ============================================================ */
 .ask-wrap{
-  position:fixed; inset:0; z-index:9600; display:flex;
+  /* doğum günü ekranı 10000, ışık kutusu 11500 — onay kutusu HEPSİNİN
+     üstünde durmalı, yoksa altta kalıp görünmüyordu */
+  position:fixed; inset:0; z-index:12000; display:flex;
   align-items:center; justify-content:center; padding:20px;
   background:rgba(0,0,0,.45); backdrop-filter:blur(3px);
   animation:askFade .16s ease;
@@ -1849,7 +1851,7 @@ button.primary:not(:disabled):hover{ filter:brightness(1.06); }
 
 /* --- büyütme --- */
 .gl-wrap{
-  position:fixed; inset:0; z-index:9700; display:flex;
+  position:fixed; inset:0; z-index:11000; display:flex;
   align-items:center; justify-content:center; padding:22px;
   background:rgba(8,5,10,.82); backdrop-filter:blur(6px);
   animation:askFade .18s ease;
