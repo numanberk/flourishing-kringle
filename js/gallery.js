@@ -9,7 +9,6 @@
   const $ = id => document.getElementById(id);
 
   const photoFile = $('photoFile'), photoCaption = $('photoCaption'), photoAddBtn = $('photoAddBtn'),
-        photoMigrate = $('photoMigrate'),
         photoHint = $('photoHint'), galleryGrid = $('galleryGrid'), galleryEmpty = $('galleryEmpty');
 
   let fb = null, inited = false, busy = false;
@@ -71,11 +70,7 @@
     if (lbKey) openLb(lbKey, true);      // açık kutu varsa tazele
     // veritabanında hâlâ base64 duran kayıt var mı?
     const legacy = photos.filter(p => !p.url && p.img).length;
-    if (photoMigrate){
-      photoMigrate.style.display = legacy ? '' : 'none';
-      photoMigrate.textContent = legacy ? ('⬆ Eski fotoğrafları taşı (' + legacy + ')')
-                                        : '⬆ Eski fotoğrafları taşı';
-    }
+    if (legacy) console.info('[galeri] hâlâ base64 duran kayıt:', legacy);
   }
 
   /* ---------- büyütme kutusu ---------- */
@@ -200,77 +195,6 @@
       photoCaption.value = ''; photoHint.textContent = '';
     } catch(err){ photoHint.textContent = 'Yükleme başarısız: ' + (err && err.message ? err.message : err); }
     finally { busy = false; photoFile.value = ''; photoAddBtn.textContent = label; photoAddBtn.disabled = false; }
-  });
-
-  /* ---------- tek seferlik taşıma: base64 → Storage ----------
-     Eski kayıtlar fotoğrafı veritabanında düz metin olarak tutuyordu;
-     bu yüzden her değişiklikte bütün albüm yeniden iniyordu. Burada
-     her birini Storage'a yükleyip veritabanında sadece adresi bırakıyoruz.
-     Kural gereği herkes yalnızca kendi eklediğini taşıyabilir.          */
-  function dataUrlToBlob(dataUrl){
-    const [head, b64] = dataUrl.split(',');
-    const mime = (head.match(/:(.*?);/) || [])[1] || 'image/jpeg';
-    const bin = atob(b64);
-    const arr = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
-    return new Blob([arr], { type: mime });
-  }
-
-  if (photoMigrate) photoMigrate.addEventListener('click', async () => {
-    console.log('[migrate] tıklandı');
-    /* fb yerelde boşsa köprüden al — bu ekran açılmadan da çalışsın */
-    if (!fb && window.fb) fb = window.fb;
-    if (!fb){ photoHint.textContent = 'Veritabanı bağlantısı hazır değil, sayfayı yenile.'; console.warn('[migrate] fb yok'); return; }
-    if (!fb.sRef || !fb.storage){
-      photoHint.textContent = 'Depo bağlantısı yok — js/app.js güncel mi?';
-      console.warn('[migrate] fb.storage/sRef eksik — eski app.js olabilir'); return;
-    }
-    const u = user();
-    if (!u){ photoHint.textContent = 'Önce giriş yapmalısın.'; console.warn('[migrate] kullanıcı yok'); return; }
-
-    /* photos boş olabilir (liste henüz çizilmediyse) → doğrudan oku */
-    let pool = photos;
-    if (!pool.length){
-      try {
-        const snap = await fb.get(fb.ref(fb.db, 'gallery'));
-        pool = Object.entries(snap.val() || {}).map(([k,v]) => Object.assign({ k }, v));
-        console.log('[migrate] veritabanından okundu:', pool.length);
-      } catch(e){ photoHint.textContent = 'Albüm okunamadı: ' + e.message; return; }
-    }
-
-    const legacyAll = pool.filter(p => !p.url && p.img);
-    const mine = legacyAll.filter(p => p.byUid === u.uid || isNuman(u));
-    console.log('[migrate] eski toplam:', legacyAll.length, '· benim:', mine.length);
-    if (!mine.length){
-      photoHint.textContent = legacyAll.length
-        ? legacyAll.length + ' eski fotoğraf var ama hiçbiri senin eklediğin değil.'
-        : 'Taşınacak eski fotoğraf yok.';
-      return;
-    }
-    if (!await (window.ask ? window.ask : async m => window.confirm(m))(
-      mine.length + ' fotoğraf depoya taşınacak. Devam edilsin mi?')) return;
-
-    const label = photoMigrate.textContent;
-    photoMigrate.disabled = true;
-    let ok = 0, bad = 0;
-    for (let i = 0; i < mine.length; i++){
-      const it = mine[i];
-      photoMigrate.textContent = 'Taşınıyor… ' + (i + 1) + '/' + mine.length;
-      try {
-        const blob = dataUrlToBlob(it.img);
-        const path = 'gallery/' + it.k + '.jpg';
-        const sr = fb.sRef(fb.storage, path);
-        await fb.uploadBytesResumable(sr, blob, { contentType:'image/jpeg', cacheControl:'public,max-age=604800' });
-        const url = await fb.getDownloadURL(sr);
-        // önce adresi yaz, SONRA base64'ü sil — arada bir hata olursa
-        // fotoğraf kaybolmasın
-        await fb.update(fb.ref(fb.db, 'gallery/' + it.k), { url: url, path: path });
-        await fb.update(fb.ref(fb.db, 'gallery/' + it.k), { img: null });
-        ok++;
-      } catch(err){ bad++; console.error('taşınamadı:', it.k, err && err.message); }
-    }
-    photoMigrate.disabled = false; photoMigrate.textContent = label;
-    photoHint.textContent = ok + ' taşındı' + (bad ? ' · ' + bad + ' başarısız' : '');
   });
 
   /* delete (a photo's uploader, or Numan for anything) */
