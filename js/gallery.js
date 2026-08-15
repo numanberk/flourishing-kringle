@@ -9,6 +9,7 @@
   const $ = id => document.getElementById(id);
 
   const photoFile = $('photoFile'), photoCaption = $('photoCaption'), photoAddBtn = $('photoAddBtn'),
+        photoMigrate = $('photoMigrate'),
         photoHint = $('photoHint'), galleryGrid = $('galleryGrid'), galleryEmpty = $('galleryEmpty');
 
   let fb = null, inited = false, busy = false;
@@ -68,6 +69,9 @@
       + '<span class="pola-strip"></span>'
       + '</button>').join('');
     if (lbKey) openLb(lbKey, true);      // açık kutu varsa tazele
+    // veritabanında hâlâ base64 duran kayıt var mı?
+    const legacy = photos.filter(p => !p.url && p.img).length;
+    if (photoMigrate) photoMigrate.style.display = legacy ? '' : 'none';
   }
 
   /* ---------- büyütme kutusu ---------- */
@@ -192,6 +196,50 @@
       photoCaption.value = ''; photoHint.textContent = '';
     } catch(err){ photoHint.textContent = 'Yükleme başarısız: ' + (err && err.message ? err.message : err); }
     finally { busy = false; photoFile.value = ''; photoAddBtn.textContent = label; photoAddBtn.disabled = false; }
+  });
+
+  /* ---------- tek seferlik taşıma: base64 → Storage ----------
+     Eski kayıtlar fotoğrafı veritabanında düz metin olarak tutuyordu;
+     bu yüzden her değişiklikte bütün albüm yeniden iniyordu. Burada
+     her birini Storage'a yükleyip veritabanında sadece adresi bırakıyoruz.
+     Kural gereği herkes yalnızca kendi eklediğini taşıyabilir.          */
+  function dataUrlToBlob(dataUrl){
+    const [head, b64] = dataUrl.split(',');
+    const mime = (head.match(/:(.*?);/) || [])[1] || 'image/jpeg';
+    const bin = atob(b64);
+    const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new Blob([arr], { type: mime });
+  }
+
+  if (photoMigrate) photoMigrate.addEventListener('click', async () => {
+    const u = user(); if (!u || !fb) return;
+    const mine = photos.filter(p => !p.url && p.img && (p.byUid === u.uid || isNuman(u)));
+    if (!mine.length){ photoHint.textContent = 'Taşınacak (senin eklediğin) eski fotoğraf yok.'; return; }
+    if (!await (window.ask ? window.ask : async m => window.confirm(m))(
+      mine.length + ' fotoğraf depoya taşınacak. Devam edilsin mi?')) return;
+
+    const label = photoMigrate.textContent;
+    photoMigrate.disabled = true;
+    let ok = 0, bad = 0;
+    for (let i = 0; i < mine.length; i++){
+      const it = mine[i];
+      photoMigrate.textContent = 'Taşınıyor… ' + (i + 1) + '/' + mine.length;
+      try {
+        const blob = dataUrlToBlob(it.img);
+        const path = 'gallery/' + it.k + '.jpg';
+        const sr = fb.sRef(fb.storage, path);
+        await fb.uploadBytesResumable(sr, blob, { contentType:'image/jpeg', cacheControl:'public,max-age=604800' });
+        const url = await fb.getDownloadURL(sr);
+        // önce adresi yaz, SONRA base64'ü sil — arada bir hata olursa
+        // fotoğraf kaybolmasın
+        await fb.update(fb.ref(fb.db, 'gallery/' + it.k), { url: url, path: path });
+        await fb.update(fb.ref(fb.db, 'gallery/' + it.k), { img: null });
+        ok++;
+      } catch(err){ bad++; console.error('taşınamadı:', it.k, err && err.message); }
+    }
+    photoMigrate.disabled = false; photoMigrate.textContent = label;
+    photoHint.textContent = ok + ' taşındı' + (bad ? ' · ' + bad + ' başarısız' : '');
   });
 
   /* delete (a photo's uploader, or Numan for anything) */
