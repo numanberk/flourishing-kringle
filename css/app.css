@@ -1818,7 +1818,9 @@ button.primary:not(:disabled):hover{ filter:brightness(1.06); }
 }
 .pola{
   /* kağıt hissi: hafif krem zemin, alt kenarda geniş pay */
-  display:block; width:100%; padding:9px 9px 30px; border:0; cursor:pointer;
+  /* Kenar payları TİLE GENİŞLİĞİNE oranlı — küçük karolarda alt boşluk
+     kocaman görünüyordu. Gerçek polaroid oranı: yanlar ince, alt ~2 katı. */
+  display:block; width:100%; padding:5.5% 5.5% 13%; border:0; cursor:pointer;
   background:linear-gradient(178deg,#fdfbf6 0%, #f6f1e6 100%);
   border-radius:3px;
   box-shadow:0 1px 2px rgba(0,0,0,.22), 0 8px 18px rgba(0,0,0,.30);
@@ -1838,13 +1840,13 @@ button.primary:not(:disabled):hover{ filter:brightness(1.06); }
 }
 .pola-frame img{
   width:100%; height:100%; object-fit:cover; display:block;
-  /* hafif eskitme — fazla parlak durmasın */
-  filter:saturate(.92) contrast(1.03) sepia(.06);
+  filter:saturate(.96) contrast(1.02);
 }
-/* kağıt üstünde ince bir doku çizgisi */
+/* kağıdın alt payında çok hafif bir gölge — düz beyaz durmasın */
 .pola-strip{
-  position:absolute; left:9px; right:9px; bottom:11px; height:1px;
-  background:rgba(0,0,0,.07);
+  position:absolute; left:0; right:0; bottom:0; height:13%;
+  background:linear-gradient(180deg, rgba(0,0,0,.035), transparent 60%);
+  pointer-events:none;
 }
 
 /* --- büyütme --- */
@@ -1906,7 +1908,7 @@ button.primary:not(:disabled):hover{ filter:brightness(1.06); }
 .gl-nav.prev:hover, .gl-nav.next:hover{ transform:translateY(-50%) scale(1.06); }
 @media (max-width:640px){
   #birthdayView .gallery{ grid-template-columns:repeat(auto-fill, minmax(120px,1fr)); gap:18px 12px; }
-  .pola{ padding:7px 7px 24px; }
+  .pola{ padding:5% 5% 12%; }
   .gl-wrap{ padding:12px; }
   .gl-nav{ width:36px; height:36px; font-size:17px; }
   .gl-nav.prev{ left:6px; } .gl-nav.next{ right:6px; }
