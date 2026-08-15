@@ -48,22 +48,104 @@
   }
   window.addEventListener('sb-auth', refreshAuthUI);
 
+  /* Önizleme: her fotoğraf AYNI alanı kaplıyor, not/tarih görünmüyor —
+     sade bir polaroid duvarı. Ayrıntılar büyütünce çıkıyor.            */
+  let photos = [];          // en yeni önce
+  const TILT = [-1.6, 1.1, -0.7, 1.8, -1.2, 0.6];   // hafif, düzensiz eğim
+
   function renderGallery(val){
-    const items = Object.entries(val || {}).map(([k,v]) => Object.assign({ k }, v)).sort((a,b) => (b.at||0)-(a.at||0));
-    const me = user();
-    galleryEmpty.style.display = items.length ? 'none' : '';
-    galleryGrid.innerHTML = items.map(it => {
-      const safe = (it.img && /^data:image\//.test(it.img)) ? it.img : '';
-      if (!safe) return '';
-      const canDel = me && (me.uid === it.byUid || isNuman(me));
-      return '<div class="photo-card">'
-        + (canDel ? '<button class="item-del" data-kind="gallery" data-key="' + it.k + '" title="Sil">✕</button>' : '')
-        + '<img loading="lazy" src="' + safe + '" alt="' + (esc(it.caption) || 'Fotoğraf') + '">'
-        + (it.caption ? '<div class="photo-cap">' + esc(it.caption) + '</div>' : '')
-        + '<div class="photo-meta">' + (esc(it.by) || 'Biri') + ' • ' + fmtDate(it.at) + '</div>'
-        + '</div>';
-    }).join('');
+    photos = Object.entries(val || {}).map(([k,v]) => Object.assign({ k }, v))
+              .filter(it => it.img && /^data:image\//.test(it.img))
+              .sort((a,b) => (b.at||0)-(a.at||0));
+    galleryEmpty.style.display = photos.length ? 'none' : '';
+    galleryGrid.innerHTML = photos.map((it, i) =>
+      '<button class="pola" data-k="' + it.k + '" style="--tilt:' + TILT[i % TILT.length] + 'deg">'
+      + '<span class="pola-frame"><img loading="lazy" src="' + it.img + '" alt="Fotoğraf"></span>'
+      + '<span class="pola-strip"></span>'
+      + '</button>').join('');
+    if (lbKey) openLb(lbKey, true);      // açık kutu varsa tazele
   }
+
+  /* ---------- büyütme kutusu ---------- */
+  let lbKey = null, lbEditing = false;
+  const lb = $('galleryLb');
+
+  function findPhoto(k){ return photos.find(p => p.k === k); }
+
+  function openLb(k, keepState){
+    const it = findPhoto(k);
+    if (!it || !lb){ closeLb(); return; }
+    lbKey = k;
+    if (!keepState) lbEditing = false;
+    const me = user();
+    const canEdit = me && (me.uid === it.byUid || isNuman(me));
+    const i = photos.indexOf(it);
+
+    $('glImg').src = it.img;
+    $('glMeta').textContent = (esc(it.by) || 'Biri') + ' • ' + fmtDate(it.at);
+    $('glCount').textContent = (i + 1) + ' / ' + photos.length;
+
+    const capBox = $('glCapBox');
+    if (lbEditing && canEdit){
+      capBox.innerHTML = '<textarea id="glCapInput" maxlength="200" rows="2" '
+        + 'placeholder="bir not ekle…">' + esc(it.caption || '') + '</textarea>'
+        + '<div class="gl-caprow"><button id="glCapSave" class="primary">Kaydet</button>'
+        + '<button id="glCapCancel">Vazgeç</button></div>';
+      setTimeout(() => { const t = $('glCapInput'); if (t){ t.focus(); t.setSelectionRange(t.value.length, t.value.length); } }, 20);
+    } else {
+      capBox.innerHTML = '<div class="gl-cap' + (it.caption ? '' : ' empty') + '">'
+        + (it.caption ? esc(it.caption) : (canEdit ? 'not ekle…' : ''))
+        + (canEdit ? ' <button id="glCapEdit" title="Notu düzenle">✎</button>' : '')
+        + '</div>';
+    }
+    $('glDel').style.display = canEdit ? '' : 'none';
+    $('glDel').setAttribute('data-key', k);
+    lb.hidden = false; lb.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+  function closeLb(){
+    lbKey = null; lbEditing = false;
+    if (lb){ lb.hidden = true; lb.style.display = 'none'; }
+    document.body.style.overflow = '';
+  }
+  function step(d){
+    if (!lbKey) return;
+    const i = photos.findIndex(p => p.k === lbKey);
+    if (i < 0) return;
+    const n = photos[(i + d + photos.length) % photos.length];
+    if (n) openLb(n.k);
+  }
+
+  async function saveCaption(){
+    const t = $('glCapInput'); if (!t || !lbKey || !fb) return;
+    const v = t.value.trim().slice(0, 200);
+    try {
+      await fb.update(fb.ref(fb.db, 'gallery/' + lbKey), { caption: v });
+      lbEditing = false;
+      openLb(lbKey, true);
+    } catch(err){ toast('Kaydedilemedi: ' + (err && err.message ? err.message : err)); }
+  }
+
+  if (galleryGrid) galleryGrid.addEventListener('click', e => {
+    const b = e.target.closest('.pola'); if (b) openLb(b.getAttribute('data-k'));
+  });
+
+  if (lb) lb.addEventListener('click', e => {
+    if (e.target === lb || e.target.closest('#glClose')) return closeLb();
+    if (e.target.closest('#glPrev')) return step(1);      // sağa: daha eski
+    if (e.target.closest('#glNext')) return step(-1);
+    if (e.target.closest('#glCapEdit')){ lbEditing = true; return openLb(lbKey, true); }
+    if (e.target.closest('#glCapSave')) return saveCaption();
+    if (e.target.closest('#glCapCancel')){ lbEditing = false; return openLb(lbKey, true); }
+  });
+
+  document.addEventListener('keydown', e => {
+    if (!lbKey) return;
+    if (e.key === 'Escape'){ if (lbEditing){ lbEditing = false; openLb(lbKey, true); } else closeLb(); }
+    if (lbEditing) return;
+    if (e.key === 'ArrowLeft') step(1);
+    if (e.key === 'ArrowRight') step(-1);
+  });
   function init(){
     if (inited) return; inited = true;
     whenFb(_fb => {
