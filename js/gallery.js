@@ -71,7 +71,11 @@
     if (lbKey) openLb(lbKey, true);      // açık kutu varsa tazele
     // veritabanında hâlâ base64 duran kayıt var mı?
     const legacy = photos.filter(p => !p.url && p.img).length;
-    if (photoMigrate) photoMigrate.style.display = legacy ? '' : 'none';
+    if (photoMigrate){
+      photoMigrate.style.display = legacy ? '' : 'none';
+      photoMigrate.textContent = legacy ? ('⬆ Eski fotoğrafları taşı (' + legacy + ')')
+                                        : '⬆ Eski fotoğrafları taşı';
+    }
   }
 
   /* ---------- büyütme kutusu ---------- */
@@ -213,9 +217,36 @@
   }
 
   if (photoMigrate) photoMigrate.addEventListener('click', async () => {
-    const u = user(); if (!u || !fb) return;
-    const mine = photos.filter(p => !p.url && p.img && (p.byUid === u.uid || isNuman(u)));
-    if (!mine.length){ photoHint.textContent = 'Taşınacak (senin eklediğin) eski fotoğraf yok.'; return; }
+    console.log('[migrate] tıklandı');
+    /* fb yerelde boşsa köprüden al — bu ekran açılmadan da çalışsın */
+    if (!fb && window.fb) fb = window.fb;
+    if (!fb){ photoHint.textContent = 'Veritabanı bağlantısı hazır değil, sayfayı yenile.'; console.warn('[migrate] fb yok'); return; }
+    if (!fb.sRef || !fb.storage){
+      photoHint.textContent = 'Depo bağlantısı yok — js/app.js güncel mi?';
+      console.warn('[migrate] fb.storage/sRef eksik — eski app.js olabilir'); return;
+    }
+    const u = user();
+    if (!u){ photoHint.textContent = 'Önce giriş yapmalısın.'; console.warn('[migrate] kullanıcı yok'); return; }
+
+    /* photos boş olabilir (liste henüz çizilmediyse) → doğrudan oku */
+    let pool = photos;
+    if (!pool.length){
+      try {
+        const snap = await fb.get(fb.ref(fb.db, 'gallery'));
+        pool = Object.entries(snap.val() || {}).map(([k,v]) => Object.assign({ k }, v));
+        console.log('[migrate] veritabanından okundu:', pool.length);
+      } catch(e){ photoHint.textContent = 'Albüm okunamadı: ' + e.message; return; }
+    }
+
+    const legacyAll = pool.filter(p => !p.url && p.img);
+    const mine = legacyAll.filter(p => p.byUid === u.uid || isNuman(u));
+    console.log('[migrate] eski toplam:', legacyAll.length, '· benim:', mine.length);
+    if (!mine.length){
+      photoHint.textContent = legacyAll.length
+        ? legacyAll.length + ' eski fotoğraf var ama hiçbiri senin eklediğin değil.'
+        : 'Taşınacak eski fotoğraf yok.';
+      return;
+    }
     if (!await (window.ask ? window.ask : async m => window.confirm(m))(
       mine.length + ' fotoğraf depoya taşınacak. Devam edilsin mi?')) return;
 
