@@ -15,7 +15,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Çalışma Odası">
-  <link rel="stylesheet" href="/css/app.css?v=28">
+  <link rel="stylesheet" href="/css/app.css?v=29">
 </head>
 <body>
   <div class="container">
@@ -634,6 +634,23 @@
         <div id="photoHint" class="bday-hint"></div>
       </div>
       <div id="galleryGrid" class="gallery"></div>
+
+      <div id="galleryLb" class="gl-wrap" hidden style="display:none">
+        <button class="gl-x" id="glClose" title="Kapat">✕</button>
+        <button class="gl-nav prev" id="glPrev" title="Önceki">‹</button>
+        <button class="gl-nav next" id="glNext" title="Sonraki">›</button>
+        <div class="gl-card">
+          <div class="gl-photo"><img id="glImg" alt="Fotoğraf"></div>
+          <div class="gl-below">
+            <div id="glCapBox"></div>
+            <div class="gl-foot">
+              <span class="gl-meta" id="glMeta"></span>
+              <span class="gl-count" id="glCount"></span>
+              <button class="item-del gl-del" id="glDel" data-kind="gallery" title="Sil">✕</button>
+            </div>
+          </div>
+        </div>
+      </div>
       <div id="galleryEmpty" class="bday-empty">Henüz fotoğraf yok — ilkini sen ekle 💕</div>
     </section>
 
