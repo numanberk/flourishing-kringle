@@ -275,10 +275,6 @@ button:hover{box-shadow:var(--hover-shadow);transform:translateY(-1px)}
 #videoMinBtn{ font-size:var(--fs-xs); padding:6px 12px; border-radius:var(--r-full); flex:none; }
 
 /* ==== profil ==== */
-#profView{
-  position:fixed; inset:0; z-index:8000; display:none;
-  background:var(--bg); overflow-y:auto; -webkit-overflow-scrolling:touch;
-}
 #profView.open{ display:block; }
 .prof-head{ display:flex; gap:20px; align-items:center; margin-top:14px; flex-wrap:wrap; }
 .prof-av-wrap{ position:relative; flex:none; }
@@ -1011,12 +1007,7 @@ select:disabled{ opacity:.6; }
 /* ============================================================
    LIBRARY — PDF'leri Kindle'lara gönder + okuma listesi
    ============================================================ */
-#libView{
-  position:fixed; inset:0; z-index:8000; display:none;
-  background:var(--bg); overflow-y:auto; -webkit-overflow-scrolling:touch;
-}
 #libView.open{ display:block; }
-.lib-inner{ max-width:680px; margin:0 auto; padding:70px 20px 70px; }
 #libView h2{ color:var(--acc); margin:0 0 6px; }
 .lib-item{
   background:var(--card); border:1px solid var(--border); border-radius:var(--r-md);
@@ -1026,16 +1017,11 @@ select:disabled{ opacity:.6; }
 .lib-del{ flex:none; border-radius:var(--r-full); padding:4px 10px; }
 .lib-pending{ color:var(--acc); }
 @media (max-width:640px){
-  .lib-inner{ padding:64px 14px 50px; }
 }
 
 /* ============================================================
    MOVIE NIGHT — izlenecekler notları + meet + izleyelim çağrısı
    ============================================================ */
-#watchView{
-  position:fixed; inset:0; z-index:8000; display:none;
-  background:var(--bg); overflow-y:auto; -webkit-overflow-scrolling:touch;
-}
 #watchView.open{ display:block; }
 #watchView textarea, #wnModal textarea{
   background:var(--input-bg); border:1px solid var(--border); color:var(--text);
@@ -1290,10 +1276,6 @@ button.primary:not(:disabled):hover{ filter:brightness(1.06); }
 /* ============================================================
    HABITS — ortak & kişisel alışkanlık takibi
    ============================================================ */
-#habitView{
-  position:fixed; inset:0; z-index:8000; display:none;
-  background:var(--bg); overflow-y:auto; -webkit-overflow-scrolling:touch;
-}
 #habitView.open{ display:block; }
 #habitView h2{ color:var(--acc); margin:0 0 14px; }
 .dock-dot{
@@ -1332,13 +1314,8 @@ button.primary:not(:disabled):hover{ filter:brightness(1.06); }
 /* ============================================================
    CYCLE — döngü takibi
    ============================================================ */
-#cycleView{
-  position:fixed; inset:0; z-index:8200; display:none;
-  background:var(--bg); overflow-y:auto; -webkit-overflow-scrolling:touch;
-}
 #cycleView[hidden]{ display:none !important; }
 #cycleView.open{ display:block; }
-.cy-inner{ max-width:520px; margin:0 auto; padding:64px 18px 60px; }
 
 #habitSigil{ cursor:default; -webkit-tap-highlight-color:transparent; user-select:none; }
 
@@ -1437,7 +1414,7 @@ button.primary:not(:disabled):hover{ filter:brightness(1.06); }
 }
 .cy-hrow .muted{ font-size:var(--fs-xs); }
 .cy-foot{ margin-top:18px; text-align:center; font-size:var(--fs-2xs); color:var(--muted); }
-@media (max-width:640px){ .cy-inner{ padding:60px 14px 46px; } .cy-hero{ width:200px; height:200px; } .cy-day{ font-size:var(--fs-5xl); } }
+@media (max-width:640px){ .cy-hero{ width:200px; height:200px; } .cy-day{ font-size:var(--fs-5xl); } }
 
 /* izleyici modu: takvim/çipler yalnızca bilgi amaçlı */
 #cycleView.cy-ro .cy-chip{ cursor:default; }
@@ -1460,13 +1437,8 @@ button.primary:not(:disabled):hover{ filter:brightness(1.06); }
 .tl-entry-txt{ flex:1; display:flex; flex-direction:column; }
 .tl-entry-chev{ color:var(--muted); font-size:var(--fs-2xl); }
 
-#tierView{
-  position:fixed; inset:0; z-index:8300; display:none;
-  background:var(--bg); overflow-y:auto; -webkit-overflow-scrolling:touch;
-}
 #tierView[hidden]{ display:none !important; }
 #tierView.open{ display:block; }
-.tl-inner{ max-width:760px; margin:0 auto; padding:64px 16px 60px; }
 .tl-h2{ color:var(--acc); margin:0 0 4px; }
 .tl-hint{ font-size:var(--fs-xs); color:var(--muted); margin-bottom:16px; }
 .tl-hint.armed{ color:var(--acc); font-weight:600; }
@@ -1521,7 +1493,6 @@ button.primary:not(:disabled):hover{ filter:brightness(1.06); }
 .tl-pool.target{ outline:2px solid var(--acc); outline-offset:1px; }
 .tl-empty{ margin-top:14px; font-size:var(--fs-xs); color:var(--muted); text-align:center; }
 @media (max-width:640px){
-  .tl-inner{ padding:58px 12px 46px; }
   .tl-label{ width:62px; font-size:var(--fs-sm); }
   .tl-tile{ width:44px; height:62px; }
 }
@@ -1563,14 +1534,36 @@ button.primary:not(:disabled):hover{ filter:brightness(1.06); }
 .hb-expand:hover{ color:var(--acc); border-color:var(--acc); box-shadow:none; transform:none; }
 .hb-item.open{ border-color:var(--acc); }
 .hb-long{ margin-top:12px; padding-top:12px; border-top:1px solid var(--border); }
+/* --- 12 haftalık takvim --- */
+.hb-cal{ --dow-w:26px; }
+.hb-cal-months{
+  display:grid; grid-template-columns:repeat(12, 1fr);
+  gap:3px; margin-left:calc(var(--dow-w) + 6px); margin-bottom:var(--sp-1);
+}
+.hb-cal-months span{
+  font-size:var(--fs-2xs); color:var(--muted); line-height:1;
+  white-space:nowrap; overflow:hidden;
+}
+.hb-cal-body{ display:flex; gap:6px; align-items:stretch; }
+.hb-cal-dow{
+  display:grid; grid-template-rows:repeat(7, 1fr); gap:3px;
+  width:var(--dow-w); flex:none;
+}
+.hb-cal-dow span{
+  font-size:var(--fs-2xs); color:var(--muted); line-height:1;
+  display:flex; align-items:center; justify-content:flex-end;
+}
 .hb-long-grid{
-  display:grid; grid-template-rows:repeat(7, 1fr); grid-auto-flow:column;
-  grid-auto-columns:1fr; gap:3px;
+  flex:1; display:grid; grid-template-rows:repeat(7, 1fr); grid-auto-flow:column;
+  grid-template-columns:repeat(12, 1fr); gap:3px;
 }
 .hb-long-grid i{
   width:100%; aspect-ratio:1; border-radius:3px; font-style:normal;
   background:var(--tag-bg); border:1px solid var(--border); display:block;
+  cursor:default;
 }
+.hb-long-grid i.future{ opacity:.25; border-style:dashed; }
+.hb-long-grid i.today{ outline:2px solid var(--acc); outline-offset:1px; }
 .hb-long-grid i.me{ background:var(--ok); border-color:var(--ok); }
 .hb-long-grid i.them{ background:var(--acc); border-color:var(--acc); }
 .hb-long-grid i.both{
@@ -1770,19 +1763,30 @@ button.primary:not(:disabled):hover{ filter:brightness(1.06); }
 }
 .hb-pane.on{ display:block; opacity:1; transform:none; }
 
-/* hatırlatma satırı */
-.hb-remind{ display:flex; align-items:center; gap:8px; margin-top:11px; }
+/* hatırlatma satırı — tek bir grup gibi dursun, dağınık düğmeler değil */
+.hb-remind{
+  display:flex; align-items:center; gap:var(--sp-2); margin-top:var(--sp-3);
+  padding-top:var(--sp-3); border-top:1px solid var(--border);
+}
 .hb-bell{
-  border-radius:var(--r-full); padding:5px 10px; font-size:var(--fs-md); line-height:1;
-  background:var(--tag-bg); border:1px solid var(--border); opacity:.6;
+  border-radius:var(--r-full); width:34px; height:34px; padding:0; flex:none;
+  display:flex; align-items:center; justify-content:center;
+  font-size:var(--fs-sm); line-height:1; min-height:0;
+  background:var(--tag-bg); border:1px solid var(--border); opacity:.55;
 }
 .hb-bell.on{ opacity:1; border-color:var(--acc); background:color-mix(in srgb, var(--acc) 16%, transparent); }
 .hb-bell:hover{ opacity:1; box-shadow:none; transform:none; }
 .hb-time{
-  padding:5px 9px; border-radius:var(--r-sm); font-size:var(--fs-sm);
+  padding:6px 10px; border-radius:var(--r-sm); font-size:var(--fs-sm);
   background:var(--bg); border:1px solid var(--border); color:var(--text);
+  font-variant-numeric:tabular-nums;
 }
-.hb-bell-off{ border-radius:var(--r-full); padding:4px 9px; font-size:var(--fs-xs); opacity:.6; background:transparent; border:1px solid var(--border); }
+.hb-remind .muted{ font-size:var(--fs-xs); }
+.hb-bell-off{
+  border-radius:var(--r-full); width:28px; height:28px; padding:0; flex:none;
+  display:flex; align-items:center; justify-content:center; min-height:0;
+  font-size:var(--fs-2xs); opacity:.5; background:transparent; border:1px solid var(--border);
+}
 .hb-bell-off:hover{ opacity:1; color:var(--danger); border-color:var(--danger); box-shadow:none; transform:none; }
 
 /* kurs */
@@ -1991,3 +1995,76 @@ button, .chip-btn, .hb-tab, .cy-chip, .hb-fchip{ min-height:34px; }
 button, .chip-btn, .lg-card, .hb-item, .cs-item, .lib-item{
   transition-timing-function:cubic-bezier(.4,0,.2,1);
 }
+
+/* ============================================================
+   SHEET — tüm tam ekran panellerin ORTAK sunumu
+   Altı ayrı yerde neredeyse aynı kural vardı; hepsi burada.
+   Panel açma/kapama mantığı modüllerde aynen kalıyor, yalnızca
+   görünüm ve davranış tekilleşiyor.
+   ============================================================ */
+#libView, #watchView, #habitView, #cycleView, #tierView, #profView{
+  position:fixed; inset:0; z-index:8000;
+  display:none;                     /* varsayılan KAPALI — .open açar */
+  background:var(--bg);
+  overflow-y:auto; -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+#libView.open, #watchView.open, #habitView.open, #profView.open{ display:block; }
+#cycleView[hidden], #tierView[hidden]{ display:none !important; }
+#cycleView{ z-index:8200; }
+#tierView{ z-index:8300; }
+
+/* açılırken alttan yükselsin (Depth / Hierarchy) */
+#libView.open, #watchView.open, #habitView.open,
+#cycleView.open, #tierView.open, #profView.open{
+  animation:sheetUp .28s cubic-bezier(.32,.72,0,1);
+}
+@keyframes sheetUp{
+  from{ transform:translateY(18px); opacity:0; }
+  to{ transform:none; opacity:1; }
+}
+
+/* üstte tutamaç — sürüklenebilir olduğunu ima eder */
+#libView::before, #watchView::before, #habitView::before,
+#cycleView::before, #tierView::before, #profView::before{
+  content:''; position:sticky; top:0; z-index:4;
+  display:block; width:40px; height:5px; margin:0 auto;
+  margin-top:calc(env(safe-area-inset-top) + var(--sp-2));
+  border-radius:var(--r-full); background:var(--border);
+}
+
+/* içerik sarmalayıcıları tek ölçüye gelsin */
+.lib-inner, .cy-inner, .tl-inner{
+  max-width:680px; margin:0 auto;
+  padding:var(--sp-4) var(--sp-5) var(--sp-8);
+  padding-bottom:calc(env(safe-area-inset-bottom) + var(--sp-8));
+}
+.tl-inner{ max-width:760px; }
+.cy-inner{ max-width:520px; }
+@media (max-width:640px){
+  .lib-inner, .cy-inner, .tl-inner{ padding-left:var(--sp-4); padding-right:var(--sp-4); }
+}
+
+/* ============================================================
+   BUTONLAR — tek sistem (Consistency)
+   ============================================================ */
+.btn, button.primary, .chip-btn, .hb-fchip, .cy-chip{
+  font-family:var(--font-ui);
+}
+/* ikincil: sessiz zemin, belirgin kenar */
+.btn-secondary{
+  background:var(--tag-bg); border:1px solid var(--border); color:var(--text);
+  border-radius:var(--r-sm); padding:10px 14px; font-weight:600; font-size:var(--fs-sm);
+}
+/* üçüncül: yalnızca metin */
+.btn-quiet{
+  background:transparent; border:0; box-shadow:none; color:var(--muted);
+  border-radius:var(--r-sm); padding:8px 10px; font-weight:600; font-size:var(--fs-sm);
+}
+.btn-quiet:hover{ color:var(--text); box-shadow:none; transform:none; }
+/* yıkıcı */
+.btn-danger{
+  background:transparent; border:1px solid var(--danger); color:var(--danger);
+  border-radius:var(--r-sm); padding:9px 13px; font-weight:600; font-size:var(--fs-sm);
+}
+.btn-danger:hover{ background:color-mix(in srgb, var(--danger) 12%, transparent); box-shadow:none; }
