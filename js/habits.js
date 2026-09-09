@@ -57,23 +57,63 @@ export function initHabits(ctx){
 
   /* Uzun görünüm: son 12 hafta. Her gün için ikimizin durumunu ayrı
      ayrı biliyoruz — renk kimin yaptığını gösteriyor. */
-  function longGrid(id, me, otherUid){
+  const TR_AY = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
+  const TR_AY_UZUN = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran',
+                      'Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+
+  /* 12 haftalık takvim. Sütun = hafta, satır = haftanın günü; bu yüzden
+     başlangıcı PAZARTESİye hizalıyoruz, yoksa satırlar gün belirtmiyor.
+     Üstte ay adları, solda gün kısaltmaları var. */
+  function longGrid(id, me, otherUid, myName, theirName){
     const mine = (logs[me] || {})[id] || {};
     const theirs = otherUid ? ((logs[otherUid] || {})[id] || {}) : {};
-    const DAYS = 84;
+    const WEEKS = 12;
+    const today = new Date(); today.setHours(12,0,0,0);
+    const tKey = todayKey(today);
+
+    // bu haftanın pazartesisi
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+    // 11 hafta geriye git → toplam 12 sütun
+    const start = new Date(monday); start.setDate(monday.getDate() - (WEEKS - 1) * 7);
+
+    const cols = [];        // ay etiketi için
     const cells = [];
-    const start = new Date(); start.setDate(start.getDate() - (DAYS - 1));
-    for (let i = 0; i < DAYS; i++){
-      const d = new Date(start); d.setDate(start.getDate() + i);
-      const k = todayKey(d);
-      const a = !!mine[k], b = !!theirs[k];
-      let cls = '';
-      if (a && b) cls = 'both';
-      else if (a) cls = 'me';
-      else if (b) cls = 'them';
-      cells.push(`<i class="${cls}" title="${k}"></i>`);
+    for (let w = 0; w < WEEKS; w++){
+      const colFirst = new Date(start); colFirst.setDate(start.getDate() + w * 7);
+      cols.push(colFirst);
+      for (let d = 0; d < 7; d++){
+        const day = new Date(colFirst); day.setDate(colFirst.getDate() + d);
+        const k = todayKey(day);
+        const future = day > today;
+        const a = !!mine[k], b = !!theirs[k];
+        let cls = future ? 'future' : '';
+        if (a && b) cls = 'both';
+        else if (a) cls = 'me';
+        else if (b) cls = 'them';
+        if (k === tKey) cls += ' today';
+        const label = day.getDate() + ' ' + TR_AY_UZUN[day.getMonth()];
+        const who = [a ? (myName || 'Sen') : null, b ? (theirName || '') : null]
+                      .filter(Boolean).join(' + ');
+        cells.push(`<i class="${cls}" title="${label}${who ? ' · ' + who : ''}"></i>`);
+      }
     }
-    return cells.join('');
+
+    // ay etiketleri: ay değiştiği sütunda göster
+    let prev = -1;
+    const months = cols.map(c => {
+      const m = c.getMonth();
+      const show = m !== prev; prev = m;
+      return `<span>${show ? TR_AY[m] : ''}</span>`;
+    }).join('');
+
+    return `<div class="hb-cal">
+      <div class="hb-cal-months">${months}</div>
+      <div class="hb-cal-body">
+        <div class="hb-cal-dow"><span>Pzt</span><span></span><span>Çar</span><span></span><span>Cum</span><span></span><span>Paz</span></div>
+        <div class="hb-long-grid">${cells.join('')}</div>
+      </div>
+    </div>`;
   }
 
   const nameOf = u => (users[u] || {}).displayName || 'Arkadaşın';
@@ -168,7 +208,9 @@ export function initHabits(ctx){
                         Object.keys(users).find(u => u !== me) || null;
       const longPart = isOpen ? `
         <div class="hb-long">
-          <div class="hb-long-grid">${longGrid(id, ownerUid, h.type === 'shared' ? otherUid2 : null)}</div>
+          ${longGrid(id, ownerUid, h.type === 'shared' ? otherUid2 : null,
+                     ro ? nameOf(ownerUid) : 'Sen',
+                     otherUid2 ? nameOf(otherUid2) : '')}
           <div class="hb-long-legend">
             <span><i class="me"></i>${ro ? escapeHtml(nameOf(ownerUid)) : 'Sen'}</span>
             ${h.type === 'shared' && otherUid2 ? `<span><i class="them"></i>${escapeHtml(nameOf(otherUid2))}</span>` : ''}
