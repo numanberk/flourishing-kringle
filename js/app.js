@@ -367,11 +367,17 @@ function attachGlobalListeners() {
    bu damga durur; hem karşı taraf donmuş sayaç görmez hem de bir dahaki
    girişte süreyi damgaya kadar sayabiliriz. */
 const BEAT_MS = 60000;
-const STALE_MS = 3 * BEAT_MS;   // 3 dk sessizlik = karşı tarafta "canlı değil" göster
+/* Telefon kilitlenince/arka plana atılınca tarayıcı zamanlayıcıları
+   donduruyor: kalp atışı DURMASI normaldir, çökme işareti DEĞİL.
+   O yüzden atış yokluğu artık süreyi sıfırlamıyor; sadece "şu an
+   bağlantısı yok" rozetini etkiliyor. */
+const STALE_MS = 15 * 60 * 1000;   // yalnızca canlı noktası için
 /* Oturumu KAPATMAK için çok daha geniş bir pencere. Arka plandaki sekmede
    tarayıcı zamanlayıcıları donduruyor; 3 dk'da kapatmak sekme değiştirince
    çalışmayı sonlandırıyordu. */
 const RESUME_MS = 30 * 60 * 1000;
+/* Bu süreyi aşan bir oturum unutulmuş sayılır ve tavana çekilir. */
+const MAX_SESSION_MS = 8 * 60 * 60 * 1000;
 let beatTimer = null;
 function startBeat(){
   if (beatTimer) return;
@@ -384,6 +390,17 @@ function startBeat(){
   beatTimer = setInterval(tick, BEAT_MS);
 }
 function stopBeat(){ if (beatTimer){ clearInterval(beatTimer); beatTimer = null; } }
+
+/* Telefon açılır açılmaz damgayı tazele: arka planda setInterval
+   donuyor, dönünce ilk tik'i beklemeden güncelleyelim. */
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible') return;
+  const uid = (auth.currentUser || {}).uid;
+  if (!uid || !amStudying()) return;
+  update(ref(db, `users/${uid}`), { lastBeat: Date.now() }).catch(() => {});
+  startBeat();
+  draw();
+});
 
 /* Bir oturum canlı mı, yoksa sekme kapanıp öylece mi kalmış? */
 function liveStudy(u){
@@ -401,15 +418,19 @@ async function reconcileStudy(uid){
        zaten false yapıyor, ama süre hâlâ yazılmayı bekliyor. */
     prunePerDay(uid, (u.totals || {}).perDay);   // girişte bir kez budama
     if (!u.currentStartAt) return;
-    const beat = u.lastBeat || u.currentStartAt;
-    if (Date.now() - beat < RESUME_MS){
-      // yakın zamanda nefes almış → oturum sürüyor, sürdür
+    /* Kullanıcı "başlat"a bastı ve hiç "bitir" demedi → oturum SÜRÜYOR.
+       Eskiden kalp atışı bayatsa kapatıp süreyi son atışa kadar
+       yazıyorduk; telefonda atış hemen donduğu için bu 0 saniye
+       kaydediyordu. Artık makul süre içindeyse oturumu sürdürüyoruz. */
+    const running = Date.now() - u.currentStartAt;
+    if (running < MAX_SESSION_MS){
       await update(ref(db, `users/${uid}`), { studying: true, lastBeat: Date.now() });
       startBeat();
       return;
     }
-    const endAt = Math.max(u.currentStartAt, u.lastBeat || 0);
-    const elapsed = Math.max(0, endAt - u.currentStartAt);
+    // 8 saati aşmış: unutulmuş kabul et, tavandan yaz
+    const elapsed = MAX_SESSION_MS;
+    const endAt = u.currentStartAt + elapsed;
     const day = todayKey(new Date(u.currentStartAt));
     /* ÖNEMLİ: totals nesnesini komple yazmıyoruz. Önce oku-sonra-yaz
        yapınca iki yazma çakışınca biri diğerini eziyordu ve günün
@@ -564,7 +585,10 @@ function draw(){
     const u = users[uid];
     const isOnline = !!(presence[uid] && presence[uid].online);
     const name = u.displayName || "Kullanıcı";
-    const studying = liveStudy(u);          // bayat (kopmuş) oturum canlı sayılmaz
+    /* studying bayrağına güven: kişi başlattıysa sayaç işlemeli.
+       liveStudy yalnızca "şu an bağlantıda mı" rozetini belirliyor. */
+    const studying = !!(u.studying && u.currentStartAt);
+    const beatFresh = liveStudy(u);
     const startAt = u.currentStartAt;
     const perDay = u.totals?.perDay || {};
     const todayMsBase = perDay[today] || 0;
@@ -580,7 +604,7 @@ function draw(){
     lb.push({ uid, name: escapeHtml(name), ms: todayMs, done: pct >= 1 });
     // yapısal imza: bunlar değişmedikçe kart YENİDEN ÇİZİLMEZ (hover titremesi çözümü)
     const shownStreak = liveStreak(u);
-    const sig = [name, studying, isOnline, u.currentSubject || '', shownStreak, targetMin, pct >= 1, avatar || '', uid !== myUid].join('¦');
+    const sig = [name, studying, beatFresh, isOnline, u.currentSubject || '', shownStreak, targetMin, pct >= 1, avatar || '', uid !== myUid].join('¦');
     cardData[uid] = { uid, name, studying, isOnline, currentMs, todayMs, allTimeMs, targetMin, pct, avatar, subject: u.currentSubject, streak: shownStreak, sig, isMe: uid === myUid };
     const cardEl = listEl.querySelector(`.user-card[data-uid="${uid}"]`);
     if (!cardEl || cardEl.dataset.sig !== sig) structureChanged = true;
